@@ -3,17 +3,17 @@
 <!--START_SECTION:waka-->
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-9-blue)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-808223%20lines%20of%20code-blue)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-808453%20lines%20of%20code-blue)
 
 **🐱 My Github Data** 
 
-> 🏆 634 Contributions in the Year 2021
+> 🏆 638 Contributions in the Year 2021
  > 
-> 📦 197.3 kB Used in Github's Storage 
+> 📦 197.4 kB Used in Github's Storage 
  > 
 > 💼 Opted to Hire
  > 
-> 📜 20 Public Repositories 
+> 📜 21 Public Repositories 
  > 
 > 🔑 18 Private Repositories  
  > 
@@ -60,11 +60,11 @@ VS Code                  12 hrs 39 mins      ███████████�
 **I Mostly Code in PHP** 
 
 ```text
-PHP                      14 repos            ███████████░░░░░░░░░░░░░░   43.75% 
-Java                     5 repos             ████░░░░░░░░░░░░░░░░░░░░░   15.62% 
-Vue                      4 repos             ███░░░░░░░░░░░░░░░░░░░░░░   12.5% 
-JavaScript               3 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   9.38% 
-Blade                    2 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   6.25%
+PHP                      14 repos            ██████████░░░░░░░░░░░░░░░   42.42% 
+Java                     6 repos             ████░░░░░░░░░░░░░░░░░░░░░   18.18% 
+Vue                      4 repos             ███░░░░░░░░░░░░░░░░░░░░░░   12.12% 
+JavaScript               3 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   9.09% 
+Blade                    2 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   6.06%
 
 ```
 
