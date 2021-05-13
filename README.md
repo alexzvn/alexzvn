@@ -1,15 +1,15 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
-![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
+![Profile Views](http://img.shields.io/badge/Profile%20Views-2-blue)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-872200%20lines%20of%20code-blue)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-873527%20lines%20of%20code-blue)
 
 **🐱 My Github Data** 
 
-> 🏆 711 Contributions in the Year 2021
+> 🏆 719 Contributions in the Year 2021
  > 
-> 📦 199.7 kB Used in Github's Storage 
+> 📦 201.4 kB Used in Github's Storage 
  > 
 > 💼 Opted to Hire
  > 
