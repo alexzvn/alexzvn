@@ -1,21 +1,23 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
+![Code Time](http://img.shields.io/badge/Code%20Time-837%20hrs%2057%20mins-blue)
+
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-11-blue)
 
 ![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-380%20Thousand%20lines%20of%20code-blue)
 
 **🐱 My GitHub Data** 
 
-> 🏆 107 Contributions in the Year 2022
+> 🏆 108 Contributions in the Year 2022
  > 
-> 📦 215.8 kB Used in GitHub's Storage 
+> 📦 216.2 kB Used in GitHub's Storage 
  > 
 > 💼 Opted to Hire
  > 
 > 📜 47 Public Repositories 
  > 
-> 🔑 17 Private Repositories  
+> 🔑 18 Private Repositories  
  > 
 **I'm an Early 🐤** 
 
@@ -56,11 +58,11 @@ No Activity Tracked This Week
 **I Mostly Code in PHP** 
 
 ```text
-PHP                      16 repos            ████████░░░░░░░░░░░░░░░░░   32.65% 
-Java                     11 repos            █████░░░░░░░░░░░░░░░░░░░░   22.45% 
-TypeScript               7 repos             ███░░░░░░░░░░░░░░░░░░░░░░   14.29% 
-Vue                      5 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   10.2% 
-Blade                    2 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   4.08%
+PHP                      16 repos            ████████░░░░░░░░░░░░░░░░░   32.0% 
+Java                     11 repos            █████░░░░░░░░░░░░░░░░░░░░   22.0% 
+TypeScript               7 repos             ███░░░░░░░░░░░░░░░░░░░░░░   14.0% 
+Vue                      5 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   10.0% 
+Blade                    2 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   4.0%
 
 ```
 
@@ -70,5 +72,5 @@ Blade                    2 repos             █░░░░░░░░░░�
 ![Chart not found](https://raw.githubusercontent.com/alexzvn/alexzvn/main/charts/bar_graph.png) 
 
 
- Last Updated on 08/02/2022 18:44:00 UTC
+ Last Updated on 10/02/2022 18:47:51 UTC
 <!--END_SECTION:waka-->
