@@ -1,7 +1,7 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
-![Profile Views](http://img.shields.io/badge/Profile%20Views-1-blue)
+![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
 ![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-382%20Thousand%20lines%20of%20code-blue)
 
@@ -70,5 +70,5 @@ Blade                    2 repos             █░░░░░░░░░░�
 ![Chart not found](https://raw.githubusercontent.com/alexzvn/alexzvn/main/charts/bar_graph.png) 
 
 
- Last Updated on 28/03/2022 18:53:26 UTC
+ Last Updated on 30/03/2022 18:51:50 UTC
 <!--END_SECTION:waka-->
