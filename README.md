@@ -1,7 +1,7 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-0-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-837%20hrs%2057%20mins-blue)
 
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-9-blue)
 
@@ -68,5 +68,5 @@ Blade                    2 repos             ░░░░░░░░░░░�
 
 
 
- Last Updated on 11/05/2022 18:52:28 UTC
+ Last Updated on 11/05/2022 18:59:36 UTC
 <!--END_SECTION:waka-->
