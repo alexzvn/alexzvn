@@ -1,7 +1,7 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-0%20secs-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-838%20hrs%2041%20mins-blue)
 
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
@@ -48,10 +48,14 @@ Sunday       171 commits    ███░░░░░░░░░░░░░░�
 ⌚︎ Time Zone: Asia/Ho_Chi_Minh
 
 💬 Programming Languages: 
-No Activity Tracked This Week
+Bash                     27 mins             ████████████████░░░░░░░░░   63.51% 
+SQL                      11 mins             ███████░░░░░░░░░░░░░░░░░░   27.64% 
+PHP                      2 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   4.71% 
+JSON                     1 min               █░░░░░░░░░░░░░░░░░░░░░░░░   3.98% 
+Other                    0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   0.17%
 
 🔥 Editors: 
-No Activity Tracked This Week
+VS Code                  43 mins             █████████████████████████   100.0%
 
 ```
 
@@ -68,5 +72,5 @@ JavaScript               3 repos             █░░░░░░░░░░�
 
 
 
- Last Updated on 31/05/2022 18:51:46 UTC
+ Last Updated on 31/05/2022 19:03:06 UTC
 <!--END_SECTION:waka-->
