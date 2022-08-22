@@ -9,6 +9,8 @@
 
 **🐱 My GitHub Data** 
 
+> 🏆 654 Contributions in the Year 2022
+ > 
 > 📦 957.8 kB Used in GitHub's Storage 
  > 
 > 💼 Opted to Hire
@@ -46,10 +48,10 @@ Sunday       161 commits    ███░░░░░░░░░░░░░░�
 ⌚︎ Time Zone: Asia/Ho_Chi_Minh
 
 💬 Programming Languages: 
-Git Config               0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   0%
+No Activity Tracked This Week
 
 🔥 Editors: 
-VS Code                  0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   0%
+No Activity Tracked This Week
 
 ```
 
@@ -66,5 +68,5 @@ JavaScript               3 repos             █░░░░░░░░░░�
 
 
 
- Last Updated on 22/08/2022 18:58:36 UTC
+ Last Updated on 22/08/2022 19:06:09 UTC
 <!--END_SECTION:waka-->
