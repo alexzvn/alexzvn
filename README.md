@@ -1,7 +1,7 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-838%20hrs%2047%20mins-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-0%20secs-blue)
 
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
@@ -19,42 +19,6 @@
  > 
 > 🔑 25 Private Repositories  
  > 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning    149 commits    ███░░░░░░░░░░░░░░░░░░░░░░   13.47% 
-🌆 Daytime    527 commits    ████████████░░░░░░░░░░░░░   47.65% 
-🌃 Evening    395 commits    █████████░░░░░░░░░░░░░░░░   35.71% 
-🌙 Night      35 commits     ░░░░░░░░░░░░░░░░░░░░░░░░░   3.16%
-
-```
-📅 **I'm Most Productive on Wednesday** 
-
-```text
-Monday       171 commits    ███░░░░░░░░░░░░░░░░░░░░░░   15.46% 
-Tuesday      144 commits    ███░░░░░░░░░░░░░░░░░░░░░░   13.02% 
-Wednesday    236 commits    █████░░░░░░░░░░░░░░░░░░░░   21.34% 
-Thursday     172 commits    ████░░░░░░░░░░░░░░░░░░░░░   15.55% 
-Friday       125 commits    ██░░░░░░░░░░░░░░░░░░░░░░░   11.3% 
-Saturday     112 commits    ██░░░░░░░░░░░░░░░░░░░░░░░   10.13% 
-Sunday       146 commits    ███░░░░░░░░░░░░░░░░░░░░░░   13.2%
-
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-⌚︎ Time Zone: Asia/Ho_Chi_Minh
-
-💬 Programming Languages: 
-No Activity Tracked This Week
-
-🔥 Editors: 
-No Activity Tracked This Week
-
-```
-
 **I Mostly Code in PHP** 
 
 ```text
@@ -68,5 +32,5 @@ JavaScript               3 repos             █░░░░░░░░░░�
 
 
 
- Last Updated on 03/09/2022 19:00:49 UTC
+ Last Updated on 04/09/2022 18:58:00 UTC
 <!--END_SECTION:waka-->
