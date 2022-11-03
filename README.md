@@ -48,11 +48,10 @@ Sunday       136 commits    ███░░░░░░░░░░░░░░�
 ⌚︎ Time Zone: Asia/Ho_Chi_Minh
 
 💬 Programming Languages: 
-PHP                      4 mins              █████████████████████░░░░   84.08% 
-Blade Template           0 secs              ████░░░░░░░░░░░░░░░░░░░░░   15.92%
+No Activity Tracked This Week
 
 🔥 Editors: 
-VS Code                  5 mins              █████████████████████████   100.0%
+No Activity Tracked This Week
 
 ```
 
@@ -69,5 +68,5 @@ JavaScript               5 repos             █░░░░░░░░░░�
 
 
 
- Last Updated on 03/11/2022 18:56:10 UTC
+ Last Updated on 03/11/2022 19:09:10 UTC
 <!--END_SECTION:waka-->
