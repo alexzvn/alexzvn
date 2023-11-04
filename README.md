@@ -1,7 +1,7 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-996%20hrs%2014%20mins-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-996%20hrs%2018%20mins-blue)
 
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
@@ -46,11 +46,11 @@ Sunday                   2365 commits        ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Ho_Chi_Minh
 
 💬 Programming Languages: 
-Other                    8 hrs 55 mins       █████████████████████████   99.81 % 
-Figma Design             1 min               ░░░░░░░░░░░░░░░░░░░░░░░░░   00.19 % 
+Other                    7 hrs 52 mins       █████████████████████████   99.79 % 
+Figma Design             1 min               ░░░░░░░░░░░░░░░░░░░░░░░░░   00.21 % 
 
 🔥 Editors: 
-Firefox                  8 hrs 56 mins       █████████████████████████   100.00 % 
+Firefox                  7 hrs 53 mins       █████████████████████████   100.00 % 
 ```
 
 **I Mostly Code in TypeScript** 
@@ -66,5 +66,5 @@ Svelte                   1 repo              ░░░░░░░░░░░�
 
 
 
- Last Updated on 03/11/2023 18:38:37 UTC
+ Last Updated on 04/11/2023 18:38:17 UTC
 <!--END_SECTION:waka-->
