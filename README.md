@@ -11,8 +11,6 @@
 
 > 📦 1.4 MB Used in GitHub's Storage 
  > 
-> 🏆 1,001 Contributions in the Year 2023
- > 
 > 💼 Opted to Hire
  > 
 > 📜 67 Public Repositories 
@@ -65,5 +63,5 @@ Svelte                   1 repo              ░░░░░░░░░░░�
 
 
 
- Last Updated on 17/12/2023 18:46:11 UTC
+ Last Updated on 17/12/2023 18:49:26 UTC
 <!--END_SECTION:waka-->
