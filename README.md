@@ -11,6 +11,8 @@
 
 > 📦 1.4 MB Used in GitHub's Storage 
  > 
+> 🏆 31 Contributions in the Year 2024
+ > 
 > 💼 Opted to Hire
  > 
 > 📜 68 Public Repositories 
@@ -70,5 +72,5 @@ Rust                     1 repo              ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 27/01/2024 18:38:03 UTC
+ Last Updated on 27/01/2024 18:41:21 UTC
 <!--END_SECTION:waka-->
