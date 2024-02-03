@@ -1,4 +1,5 @@
 # Alex say: "Hello ~~work~~ world 🐾"
+Email me to: `personal@alexzvn.me`
 
 <!--START_SECTION:waka-->
 ![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
