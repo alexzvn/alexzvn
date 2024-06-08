@@ -1,7 +1,12 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 Email me to: `personal@alexzvn.me`
 
-[![My Skills]([https://skillicons.dev/icons?i=js,html,css,wasm](https://skillicons.dev/icons?i=ts,js,php,nodejs,bun,vue,nuxt,react,svelte,tauri,laravel,rust,mongodb,docker,electron,redis,rabbitmq,tailwind,git,cloudflare,elysia,mysql,nginx,rollupjs,sentry,ubuntu,yarn,html,css,vite&theme=light))](https://skillicons.dev)
+
+<p align=center>
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=ts,js,php,nodejs,bun,vue,nuxt,react,svelte,tauri,laravel,rust,mongodb,docker,electron,redis,rabbitmq,tailwind,git,cloudflare,elysia,mysql,nginx,rollupjs,sentry,ubuntu,yarn,html,css,vite&theme=light" />
+  </a>
+</p>
 
 <!--START_SECTION:waka-->
 ![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
