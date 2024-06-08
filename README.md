@@ -4,7 +4,7 @@ Email me to: `personal@alexzvn.me`
 
 <p align=center>
   <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=ts,js,php,nodejs,bun,vue,nuxt,react,svelte,tauri,laravel,rust,mongodb,docker,electron,redis,rabbitmq,tailwind,git,cloudflare,elysia,mysql,nginx,rollupjs,sentry,ubuntu,yarn,html,css,vite&theme=light" />
+    <img src="https://skillicons.dev/icons?i=ts,js,php,nodejs,bun,vue,nuxt,react,svelte,tauri,laravel,rust,mongodb,docker,electron,redis,rabbitmq,tailwind,git,cloudflare,elysia,mysql,nginx,rollupjs,sentry,ubuntu,yarn,html,css,vite" />
   </a>
 </p>
 
