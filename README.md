@@ -19,6 +19,8 @@ Email me to: `personal@alexzvn.me`
 
 > 📦 1.5 MB Used in GitHub's Storage 
  > 
+> 🏆 877 Contributions in the Year 2024
+ > 
 > 💼 Opted to Hire
  > 
 > 📜 75 Public Repositories 
@@ -78,5 +80,5 @@ Rust                     1 repo              ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 26/06/2024 19:11:15 UTC
+ Last Updated on 26/06/2024 19:15:26 UTC
 <!--END_SECTION:waka-->
