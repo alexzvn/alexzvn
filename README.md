@@ -9,6 +9,8 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
+![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
+
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
 ![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-40.5%20million%20lines%20of%20code-blue)
@@ -23,6 +25,42 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 46 Private Repositories 
  > 
+**I'm an Early 🐤** 
+
+```text
+🌞 Morning                3708 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.00 % 
+🌆 Daytime                11556 commits       ████████████░░░░░░░░░░░░░   46.74 % 
+🌃 Evening                8483 commits        █████████░░░░░░░░░░░░░░░░   34.31 % 
+🌙 Night                  977 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   03.95 % 
+```
+📅 **I'm Most Productive on Wednesday** 
+
+```text
+Monday                   3924 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.87 % 
+Tuesday                  2842 commits        ███░░░░░░░░░░░░░░░░░░░░░░   11.49 % 
+Wednesday                4122 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.67 % 
+Thursday                 3694 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.94 % 
+Friday                   3765 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.23 % 
+Saturday                 3296 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.33 % 
+Sunday                   3081 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.46 % 
+```
+
+
+📊 **This Week I Spent My Time On** 
+
+```text
+🕑︎ Time Zone: Asia/Ho_Chi_Minh
+
+💬 Programming Languages: 
+No Activity Tracked This Week
+
+🔥 Editors: 
+No Activity Tracked This Week
+
+💻 Operating System: 
+No Activity Tracked This Week
+```
+
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -40,5 +78,5 @@ HTML                     3 repos             █░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 24/07/2024 18:43:23 UTC
+ Last Updated on 24/07/2024 18:47:27 UTC
 <!--END_SECTION:waka-->
