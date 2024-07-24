@@ -9,17 +9,13 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
-
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-342.4%20thousand%20lines%20of%20code-blue)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-40.5%20million%20lines%20of%20code-blue)
 
 **🐱 My GitHub Data** 
 
 > 📦 1.6 MB Used in GitHub's Storage 
- > 
-> 🏆 1,068 Contributions in the Year 2024
  > 
 > 💼 Opted to Hire
  > 
@@ -27,42 +23,6 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 46 Private Repositories 
  > 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning                827 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.21 % 
-🌆 Daytime                3039 commits        ██████████████░░░░░░░░░░░   55.91 % 
-🌃 Evening                1487 commits        ███████░░░░░░░░░░░░░░░░░░   27.35 % 
-🌙 Night                  83 commits          ░░░░░░░░░░░░░░░░░░░░░░░░░   01.53 % 
-```
-📅 **I'm Most Productive on Saturday** 
-
-```text
-Monday                   691 commits         ███░░░░░░░░░░░░░░░░░░░░░░   12.71 % 
-Tuesday                  739 commits         ███░░░░░░░░░░░░░░░░░░░░░░   13.59 % 
-Wednesday                867 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.95 % 
-Thursday                 844 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.53 % 
-Friday                   676 commits         ███░░░░░░░░░░░░░░░░░░░░░░   12.44 % 
-Saturday                 958 commits         ████░░░░░░░░░░░░░░░░░░░░░   17.62 % 
-Sunday                   661 commits         ███░░░░░░░░░░░░░░░░░░░░░░   12.16 % 
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-🕑︎ Time Zone: Asia/Ho_Chi_Minh
-
-💬 Programming Languages: 
-No Activity Tracked This Week
-
-🔥 Editors: 
-No Activity Tracked This Week
-
-💻 Operating System: 
-No Activity Tracked This Week
-```
-
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -80,5 +40,5 @@ HTML                     3 repos             █░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 23/07/2024 19:20:27 UTC
+ Last Updated on 24/07/2024 18:43:23 UTC
 <!--END_SECTION:waka-->
