@@ -11,13 +11,15 @@ Email me to: `personal@alexzvn.me`
 <!--START_SECTION:waka-->
 ![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
 
-![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
+![Profile Views](http://img.shields.io/badge/Profile%20Views-1-blue)
 
 ![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-40.5%20million%20lines%20of%20code-blue)
 
 **🐱 My GitHub Data** 
 
 > 📦 1.6 MB Used in GitHub's Storage 
+ > 
+> 🏆 1,476 Contributions in the Year 2024
  > 
 > 💼 Opted to Hire
  > 
@@ -78,5 +80,5 @@ HTML                     3 repos             █░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 24/09/2024 19:20:48 UTC
+ Last Updated on 24/09/2024 19:25:23 UTC
 <!--END_SECTION:waka-->
