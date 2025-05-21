@@ -9,11 +9,9 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
-
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-5.8%20million%20lines%20of%20code-blue)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-40.7%20million%20lines%20of%20code-blue)
 
 **🐱 My GitHub Data** 
 
@@ -25,42 +23,6 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 53 Private Repositories 
  > 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning                2081 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.65 % 
-🌆 Daytime                6934 commits        ███████████░░░░░░░░░░░░░░   45.48 % 
-🌃 Evening                5862 commits        ██████████░░░░░░░░░░░░░░░   38.45 % 
-🌙 Night                  370 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   02.43 % 
-```
-📅 **I'm Most Productive on Thursday** 
-
-```text
-Monday                   2300 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.08 % 
-Tuesday                  2123 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.92 % 
-Wednesday                2346 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.39 % 
-Thursday                 2545 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.69 % 
-Friday                   2217 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.54 % 
-Saturday                 2080 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.64 % 
-Sunday                   1636 commits        ███░░░░░░░░░░░░░░░░░░░░░░   10.73 % 
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-🕑︎ Time Zone: Asia/Ho_Chi_Minh
-
-💬 Programming Languages: 
-No Activity Tracked This Week
-
-🔥 Editors: 
-No Activity Tracked This Week
-
-💻 Operating System: 
-No Activity Tracked This Week
-```
-
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -78,5 +40,5 @@ CSS                      3 repos             █░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 20/05/2025 19:28:27 UTC
+ Last Updated on 21/05/2025 18:47:27 UTC
 <!--END_SECTION:waka-->
