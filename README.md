@@ -9,17 +9,15 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
-
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-2.9%20million%20lines%20of%20code-blue)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-40.7%20million%20lines%20of%20code-blue)
 
 **🐱 My GitHub Data** 
 
 > 📦 1.6 MB Used in GitHub's Storage 
  > 
-> 🏆 1,043 Contributions in the Year 2025
+> 🏆 1,054 Contributions in the Year 2025
  > 
 > 💼 Opted to Hire
  > 
@@ -27,42 +25,6 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 53 Private Repositories 
  > 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning                1573 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.62 % 
-🌆 Daytime                5035 commits        ████████████░░░░░░░░░░░░░   46.81 % 
-🌃 Evening                3871 commits        █████████░░░░░░░░░░░░░░░░   35.99 % 
-🌙 Night                  278 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   02.58 % 
-```
-📅 **I'm Most Productive on Thursday** 
-
-```text
-Monday                   1596 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.84 % 
-Tuesday                  1415 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.15 % 
-Wednesday                1716 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.95 % 
-Thursday                 1753 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.30 % 
-Friday                   1572 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.61 % 
-Saturday                 1532 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.24 % 
-Sunday                   1173 commits        ███░░░░░░░░░░░░░░░░░░░░░░   10.90 % 
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-🕑︎ Time Zone: Asia/Ho_Chi_Minh
-
-💬 Programming Languages: 
-No Activity Tracked This Week
-
-🔥 Editors: 
-No Activity Tracked This Week
-
-💻 Operating System: 
-No Activity Tracked This Week
-```
-
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -80,5 +42,5 @@ CSS                      3 repos             █░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 28/07/2025 19:34:58 UTC
+ Last Updated on 30/07/2025 18:52:09 UTC
 <!--END_SECTION:waka-->
