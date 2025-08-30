@@ -9,8 +9,6 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
-
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
 ![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-43.6%20million%20lines%20of%20code-blue)
@@ -19,7 +17,7 @@ Email me to: `personal@alexzvn.me`
 
 > 📦 1.7 MB Used in GitHub's Storage 
  > 
-> 🏆 1,273 Contributions in the Year 2025
+> 🏆 0 Contributions in the Year 2025
  > 
 > 💼 Opted to Hire
  > 
@@ -27,42 +25,6 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 54 Private Repositories 
  > 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning                4281 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.48 % 
-🌆 Daytime                12211 commits       ███████████░░░░░░░░░░░░░░   44.15 % 
-🌃 Evening                9893 commits        █████████░░░░░░░░░░░░░░░░   35.77 % 
-🌙 Night                  1271 commits        █░░░░░░░░░░░░░░░░░░░░░░░░   04.60 % 
-```
-📅 **I'm Most Productive on Monday** 
-
-```text
-Monday                   4601 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.64 % 
-Tuesday                  3243 commits        ███░░░░░░░░░░░░░░░░░░░░░░   11.73 % 
-Wednesday                4507 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.30 % 
-Thursday                 4084 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.77 % 
-Friday                   4186 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.14 % 
-Saturday                 3603 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.03 % 
-Sunday                   3432 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.41 % 
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-🕑︎ Time Zone: Asia/Ho_Chi_Minh
-
-💬 Programming Languages: 
-No Activity Tracked This Week
-
-🔥 Editors: 
-No Activity Tracked This Week
-
-💻 Operating System: 
-No Activity Tracked This Week
-```
-
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -80,5 +42,5 @@ CSS                      3 repos             █░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 29/08/2025 18:46:39 UTC
+ Last Updated on 30/08/2025 18:45:45 UTC
 <!--END_SECTION:waka-->
