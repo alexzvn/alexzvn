@@ -9,17 +9,15 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
-
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-1-blue)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-18.6%20million%20lines%20of%20code-blue)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-43.7%20million%20lines%20of%20code-blue)
 
 **🐱 My GitHub Data** 
 
 > 📦 1.7 MB Used in GitHub's Storage 
  > 
-> 🏆 1,643 Contributions in the Year 2025
+> 🏆 1,644 Contributions in the Year 2025
  > 
 > 💼 Opted to Hire
  > 
@@ -27,42 +25,6 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 59 Private Repositories 
  > 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning                3386 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.91 % 
-🌆 Daytime                10048 commits       ███████████░░░░░░░░░░░░░░   44.26 % 
-🌃 Evening                8355 commits        █████████░░░░░░░░░░░░░░░░   36.80 % 
-🌙 Night                  915 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   04.03 % 
-```
-📅 **I'm Most Productive on Thursday** 
-
-```text
-Monday                   3494 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.39 % 
-Tuesday                  2826 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.45 % 
-Wednesday                3585 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.79 % 
-Thursday                 3609 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.90 % 
-Friday                   3340 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.71 % 
-Saturday                 3074 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.54 % 
-Sunday                   2776 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.23 % 
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-🕑︎ Time Zone: Asia/Ho_Chi_Minh
-
-💬 Programming Languages: 
-No Activity Tracked This Week
-
-🔥 Editors: 
-No Activity Tracked This Week
-
-💻 Operating System: 
-No Activity Tracked This Week
-```
-
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -80,5 +42,5 @@ Svelte                   2 repos             ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 15/11/2025 19:29:51 UTC
+ Last Updated on 16/11/2025 18:47:36 UTC
 <!--END_SECTION:waka-->
