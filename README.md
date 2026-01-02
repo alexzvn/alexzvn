@@ -9,6 +9,8 @@ Email me to: `personal@alexzvn.me`
 </p>
 
 <!--START_SECTION:waka-->
+![Code Time](http://img.shields.io/badge/Code%20Time-1%2C066%20hrs%2055%20mins-blue)
+
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
 
 ![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-43.87%20million%20lines%20of%20code-blue)
@@ -25,6 +27,42 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 59 Private Repositories 
  > 
+**I'm an Early 🐤** 
+
+```text
+🌞 Morning                4785 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.59 % 
+🌆 Daytime                13473 commits       ███████████░░░░░░░░░░░░░░   43.89 % 
+🌃 Evening                10934 commits       █████████░░░░░░░░░░░░░░░░   35.62 % 
+🌙 Night                  1505 commits        █░░░░░░░░░░░░░░░░░░░░░░░░   04.90 % 
+```
+📅 **I'm Most Productive on Monday** 
+
+```text
+Monday                   5167 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.83 % 
+Tuesday                  3555 commits        ███░░░░░░░░░░░░░░░░░░░░░░   11.58 % 
+Wednesday                4987 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.25 % 
+Thursday                 4534 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.77 % 
+Friday                   4574 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.90 % 
+Saturday                 4090 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.32 % 
+Sunday                   3790 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.35 % 
+```
+
+
+📊 **This Week I Spent My Time On** 
+
+```text
+🕑︎ Time Zone: Asia/Ho_Chi_Minh
+
+💬 Programming Languages: 
+No Activity Tracked This Week
+
+🔥 Editors: 
+No Activity Tracked This Week
+
+💻 Operating System: 
+No Activity Tracked This Week
+```
+
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -42,5 +80,5 @@ Svelte                   2 repos             ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 02/01/2026 19:33:15 UTC
+ Last Updated on 02/01/2026 19:40:22 UTC
 <!--END_SECTION:waka-->
