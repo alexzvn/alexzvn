@@ -19,6 +19,8 @@ Email me to: `personal@alexzvn.me`
 
 > 📦 1.7 MB Used in GitHub's Storage 
  > 
+> 🏆 98 Contributions in the Year 2026
+ > 
 > 💼 Opted to Hire
  > 
 > 📜 84 Public Repositories 
@@ -72,5 +74,5 @@ No Activity Tracked This Week
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 11/02/2026 21:45:20 UTC
+ Last Updated on 11/02/2026 21:45:44 UTC
 <!--END_SECTION:waka-->
