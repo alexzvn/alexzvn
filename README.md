@@ -13,7 +13,7 @@ Email me to: `personal@alexzvn.me`
 
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue?style=flat)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-0%20lines%20of%20code-blue?style=flat)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-44.40%20million%20lines%20of%20code-blue?style=flat)
 
 **🐱 My GitHub Data** 
 
@@ -30,21 +30,21 @@ Email me to: `personal@alexzvn.me`
 **I'm an Early 🐤** 
 
 ```text
-🌞 Morning                0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-🌆 Daytime                0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-🌃 Evening                0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-🌙 Night                  0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
+🌞 Morning                5280 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.77 % 
+🌆 Daytime                14618 commits       ███████████░░░░░░░░░░░░░░   43.67 % 
+🌃 Evening                11916 commits       █████████░░░░░░░░░░░░░░░░   35.60 % 
+🌙 Night                  1662 commits        █░░░░░░░░░░░░░░░░░░░░░░░░   04.96 % 
 ```
 📅 **I'm Most Productive on Monday** 
 
 ```text
-Monday                   0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-Tuesday                  0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-Wednesday                0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-Thursday                 0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-Friday                   0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-Saturday                 0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
-Sunday                   0 commits           ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
+Monday                   5640 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.85 % 
+Tuesday                  3829 commits        ███░░░░░░░░░░░░░░░░░░░░░░   11.44 % 
+Wednesday                5506 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.45 % 
+Thursday                 4927 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.72 % 
+Friday                   4910 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.67 % 
+Saturday                 4514 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.48 % 
+Sunday                   4150 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.40 % 
 ```
 
 
@@ -63,8 +63,14 @@ No Activity Tracked This Week
 No Activity Tracked This Week
 ```
 
-```text
+**I Mostly Code in TypeScript** 
 
+```text
+TypeScript               39 repos            ███████░░░░░░░░░░░░░░░░░░   29.55 % 
+Vue                      23 repos            ████░░░░░░░░░░░░░░░░░░░░░   17.42 % 
+Kotlin                   6 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   04.55 % 
+HTML                     3 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   02.27 % 
+Svelte                   2 repos             ░░░░░░░░░░░░░░░░░░░░░░░░░   01.52 % 
 ```
 
 
@@ -74,5 +80,5 @@ No Activity Tracked This Week
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 09/04/2026 09:48:16 UTC
+ Last Updated on 09/04/2026 09:58:14 UTC
 <!--END_SECTION:waka-->
