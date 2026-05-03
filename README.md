@@ -63,14 +63,8 @@ No Activity Tracked This Week
 No Activity Tracked This Week
 ```
 
-**I Mostly Code in TypeScript** 
-
 ```text
-TypeScript               39 repos            ███████░░░░░░░░░░░░░░░░░░   29.32 % 
-Vue                      23 repos            ████░░░░░░░░░░░░░░░░░░░░░   17.29 % 
-Kotlin                   7 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   05.26 % 
-HTML                     3 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   02.26 % 
-Svelte                   2 repos             ░░░░░░░░░░░░░░░░░░░░░░░░░   01.50 % 
+
 ```
 
 
@@ -80,5 +74,5 @@ Svelte                   2 repos             ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 03/05/2026 12:13:45 UTC
+ Last Updated on 03/05/2026 12:14:10 UTC
 <!--END_SECTION:waka-->
