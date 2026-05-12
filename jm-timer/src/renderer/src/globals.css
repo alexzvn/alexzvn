@@ -50,3 +50,12 @@ button {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Hard on/off blink for live alert messages (~1.1 Hz) */
+@keyframes jm-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.1; }
+}
+.jm-blink {
+  animation: jm-blink 0.9s steps(2, start) infinite;
+}

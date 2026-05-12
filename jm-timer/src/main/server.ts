@@ -1,0 +1,171 @@
+import { createServer, type IncomingMessage, type Server as HttpServer, type ServerResponse } from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { networkInterfaces } from 'node:os';
+import { app } from 'electron';
+import { Server as IoServer } from 'socket.io';
+import { dispatch, getState, subscribe } from './state';
+import type { Command } from '@shared/timer-state';
+
+export const SERVER_PORT = 7777;
+export const SERVER_HOST = '0.0.0.0';
+export const VITE_DEV_PORT = 5173;
+
+let http: HttpServer | null = null;
+let io: IoServer | null = null;
+
+const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.htm': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.json': 'application/json; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.map': 'application/json; charset=utf-8',
+};
+
+function rendererDistDir(): string {
+  // After electron-vite build: <app>/out/renderer
+  return path.join(app.getAppPath(), 'out', 'renderer');
+}
+
+function serveStatic(req: IncomingMessage, res: ServerResponse): void {
+  const distDir = rendererDistDir();
+  const url = new URL(req.url ?? '/', 'http://localhost');
+  let urlPath = url.pathname;
+  if (urlPath === '/' || urlPath === '') urlPath = '/index.html';
+
+  const safe = path.normalize(path.join(distDir, urlPath));
+  if (!safe.startsWith(distDir)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
+
+  fs.stat(safe, (err, stat) => {
+    if (err || !stat.isFile()) {
+      // SPA fallback to index.html (e.g. /?view=remote rewrites)
+      const idx = path.join(distDir, 'index.html');
+      fs.readFile(idx, (e2, data) => {
+        if (e2) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(data);
+      });
+      return;
+    }
+    const mime =
+      MIME[path.extname(safe).toLowerCase()] ?? 'application/octet-stream';
+    res.writeHead(200, {
+      'Content-Type': mime,
+      'Cache-Control': 'public, max-age=3600',
+    });
+    fs.createReadStream(safe).pipe(res);
+  });
+}
+
+export function startServer(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const isPackaged = app.isPackaged;
+
+    http = createServer((req, res) => {
+      const url = (req.url ?? '/').split('?')[0];
+
+      if (url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, mode: isPackaged ? 'prod' : 'dev' }));
+        return;
+      }
+
+      // Socket.IO attaches its own listener for /socket.io/* and intercepts first.
+      // Anything else: in dev, the remote renderer lives on Vite (port 5173).
+      // In prod, we serve the built renderer.
+      if (!isPackaged) {
+        res.writeHead(
+          404,
+          { 'Content-Type': 'text/plain; charset=utf-8' },
+        );
+        res.end(
+          'JM Timer dev server\n\nOpen the renderer via the Vite dev server (port 5173, ?view=remote).\n',
+        );
+        return;
+      }
+      serveStatic(req, res);
+    });
+
+    io = new IoServer(http, {
+      cors: { origin: '*' },
+      pingTimeout: 4000,
+      pingInterval: 2000,
+    });
+
+    io.on('connection', (socket) => {
+      socket.emit('state', getState());
+      socket.on('cmd', (cmd: Command) => {
+        try {
+          const next = dispatch(cmd);
+          io?.emit('state', next);
+        } catch (err) {
+          console.error('[jm-timer] bad command', cmd, err);
+        }
+      });
+    });
+
+    subscribe((s) => {
+      io?.emit('state', s);
+    });
+
+    http.once('error', reject);
+    http.listen(SERVER_PORT, SERVER_HOST, () => {
+      console.log(
+        `[jm-timer] socket.io + http listening on http://${SERVER_HOST}:${SERVER_PORT} (${isPackaged ? 'prod' : 'dev'})`,
+      );
+      resolve();
+    });
+  });
+}
+
+export function stopServer(): void {
+  io?.close();
+  http?.close();
+  io = null;
+  http = null;
+}
+
+/** Returns all IPv4 LAN addresses (non-internal). */
+export function getLanAddresses(): string[] {
+  const out: string[] = [];
+  const ifaces = networkInterfaces();
+  for (const list of Object.values(ifaces)) {
+    if (!list) continue;
+    for (const iface of list) {
+      if (iface.family === 'IPv4' && !iface.internal && iface.address) {
+        out.push(iface.address);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Returns Remote-View URLs that can be opened on any device in the LAN.
+ * In dev the renderer is served by Vite on port 5173 (but the socket still
+ * lives on port 7777, the client derives it from window.location.hostname).
+ */
+export function getRemoteUrls(): string[] {
+  const port = app.isPackaged ? SERVER_PORT : VITE_DEV_PORT;
+  return getLanAddresses().map(
+    (ip) => `http://${ip}:${port}/?view=remote`,
+  );
+}

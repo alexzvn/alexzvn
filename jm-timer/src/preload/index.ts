@@ -1,14 +1,41 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
+
+const SERVER_HOST = '127.0.0.1';
+const SERVER_PORT = 7777;
 
 const api = {
   platform: process.platform,
   versions: process.versions,
+  serverUrl: `http://${SERVER_HOST}:${SERVER_PORT}`,
+  speaker: {
+    open: () => ipcRenderer.invoke('speaker:open') as Promise<void>,
+    close: () => ipcRenderer.invoke('speaker:close') as Promise<void>,
+    toggle: () => ipcRenderer.invoke('speaker:toggle') as Promise<void>,
+    isOpen: () => ipcRenderer.invoke('speaker:isOpen') as Promise<boolean>,
+    setFullscreen: (flag: boolean) =>
+      ipcRenderer.invoke('speaker:fullscreen', flag) as Promise<boolean>,
+    isFullscreen: () =>
+      ipcRenderer.invoke('speaker:isFullscreen') as Promise<boolean>,
+    onStatus: (cb: (open: boolean) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, open: boolean) => cb(open);
+      ipcRenderer.on('speaker:status', listener);
+      return () => {
+        ipcRenderer.off('speaker:status', listener);
+      };
+    },
+  },
+  remote: {
+    getUrls: () => ipcRenderer.invoke('remote:getUrls') as Promise<string[]>,
+    getAddresses: () =>
+      ipcRenderer.invoke('remote:getAddresses') as Promise<string[]>,
+  },
+  closeWindow: () => ipcRenderer.invoke('window:close') as Promise<void>,
 };
 
 if (process.contextIsolated) {
   contextBridge.exposeInMainWorld('jm', api);
 } else {
-  // @ts-expect-error fallback if context isolation is disabled
+  // @ts-expect-error fallback when context isolation is off (we don't use this path)
   window.jm = api;
 }
 

@@ -12,7 +12,8 @@ interface Item {
 const ITEMS: Item[] = [
   { id: 'clock',     label: 'Clock',     hint: 'Real-Time' },
   { id: 'countdown', label: 'Countdown', hint: 'HH:MM:SS' },
-  { id: 'timetable', label: 'Timetable', hint: 'Coming soon', disabled: true },
+  { id: 'timetable', label: 'Timetable', hint: 'Regieplan' },
+  { id: 'remote',    label: 'Remote',    hint: 'LAN' },
   { id: 'settings',  label: 'Farben',    hint: 'Timer-States' },
 ];
 
