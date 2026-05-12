@@ -7,7 +7,8 @@
   "type": "module",
   "scripts": {
     "dev": "electron-vite dev",
-    "dev:codespace": "electron-vite build && xvfb-run -a --server-args='-screen 0 1280x800x24' electron-vite preview",
+    "dev:codespace": "electron-vite build && tsx src/standalone/server.ts",
+    "serve": "tsx src/standalone/server.ts",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
