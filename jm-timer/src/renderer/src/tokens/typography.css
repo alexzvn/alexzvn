@@ -1,0 +1,32 @@
+@layer base {
+  :root {
+    --text-xs:   12px;
+    --text-sm:   13px;
+    --text-base: 15px;
+    --text-lg:   17px;
+    --text-xl:   20px;
+    --text-2xl:  24px;
+    --text-3xl:  30px;
+    --text-4xl:  40px;
+    --text-5xl:  56px;
+
+    --tracking-tight:  -0.01em;
+    --tracking-normal: 0;
+    --tracking-wide:   0.06em;
+    --tracking-wider:  0.12em;
+    --tracking-widest: 0.14em;
+
+    --leading-display: 1.05;
+    --leading-tight:   1.15;
+    --leading-snug:    1.35;
+    --leading-normal:  1.55;
+    --leading-relaxed: 1.7;
+
+    --radius-sm:   2px;
+    --radius:      4px;
+    --radius-md:   6px;
+    --radius-lg:   8px;
+    --radius-xl:   12px;
+    --radius-full: 9999px;
+  }
+}

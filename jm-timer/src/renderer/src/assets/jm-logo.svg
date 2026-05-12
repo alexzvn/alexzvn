@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="#FFE819" aria-label="Jakobs Medien">
+  <!-- Stylised J: horizontal slab with a hook curving down on the left -->
+  <path d="M14 12 H82 V25 H32 C26 25 22 29 22 35 V44 H10 V35 C10 21 14 12 14 12 Z"/>
+  <!-- Stylised M: stencil-style with vertical legs and a centred V -->
+  <path d="M18 50 H32 L42 78 L50 60 L58 78 L68 50 H82 V94 H68 V70 L60 90 H40 L32 70 V94 H18 Z"/>
+</svg>
