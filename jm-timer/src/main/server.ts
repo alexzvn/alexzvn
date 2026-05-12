@@ -133,7 +133,7 @@ export function startServer(): Promise<void> {
     http.once('error', reject);
     http.listen(SERVER_PORT, SERVER_HOST, () => {
       console.log(
-        `[jm-timer] socket.io + http listening on http://${SERVER_HOST}:${SERVER_PORT} (${isPackaged ? 'prod' : 'dev'})`,
+        `[jm-timer] socket.io + http listening on http://${SERVER_HOST}:${SERVER_PORT} (${mode})`,
       );
       resolve();
     });

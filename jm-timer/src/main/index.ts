@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { loadState } from './state';
 import {
   startServer,
@@ -10,7 +9,8 @@ import {
   getLanAddresses,
 } from './server';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
+// __dirname is a CJS built-in, available because vite builds main as CommonJS.
+declare const __dirname: string;
 
 type ViewName = 'operator' | 'speaker';
 

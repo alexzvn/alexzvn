@@ -10,8 +10,15 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: { alias: sharedAlias },
     build: {
+      // Build the main process as CommonJS — Electron 33's ESM main has a
+      // known interop bug with CJS deps (socket.io, etc.) that causes
+      // "Cannot read properties of undefined (reading 'exports')" on startup.
       rollupOptions: {
         input: { index: resolve(__dirname, 'src/main/index.ts') },
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].cjs',
+        },
       },
     },
   },
