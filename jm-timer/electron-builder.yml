@@ -1,7 +1,7 @@
 appId: gmbh.jakobs.timer
 productName: JM Timer
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
-copyright: "© ${author}"
+copyright: "© Jakobs Medien GmbH"
 
 directories:
   output: release

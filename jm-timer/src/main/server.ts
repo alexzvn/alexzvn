@@ -77,27 +77,31 @@ function serveStatic(req: IncomingMessage, res: ServerResponse): void {
 
 export function startServer(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const isPackaged = app.isPackaged;
+    const distIndex = path.join(rendererDistDir(), 'index.html');
+    const canServeStatic = fs.existsSync(distIndex);
+    const mode = app.isPackaged
+      ? 'prod'
+      : canServeStatic
+        ? 'preview'
+        : 'dev';
 
     http = createServer((req, res) => {
       const url = (req.url ?? '/').split('?')[0];
 
       if (url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, mode: isPackaged ? 'prod' : 'dev' }));
+        res.end(JSON.stringify({ ok: true, mode }));
         return;
       }
 
       // Socket.IO attaches its own listener for /socket.io/* and intercepts first.
-      // Anything else: in dev, the remote renderer lives on Vite (port 5173).
-      // In prod, we serve the built renderer.
-      if (!isPackaged) {
-        res.writeHead(
-          404,
-          { 'Content-Type': 'text/plain; charset=utf-8' },
-        );
+      // Renderer assets only get served if a built bundle is present.
+      if (!canServeStatic) {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end(
-          'JM Timer dev server\n\nOpen the renderer via the Vite dev server (port 5173, ?view=remote).\n',
+          'JM Timer dev server\n\nNo built renderer found.\n' +
+            'Run `npm run build` first, then `npm run preview` / `npm run dev:codespace`.\n' +
+            'For local dev with hot-reload, open the Vite dev server on port 5173 instead.\n',
         );
         return;
       }
