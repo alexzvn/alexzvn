@@ -13,10 +13,9 @@
     "isolatedModules": true,
     "noEmit": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "./src/renderer/src",
     "paths": {
-      "@/*": ["./*"],
-      "@shared/*": ["../../shared/*"]
+      "@/*": ["./src/renderer/src/*"],
+      "@shared/*": ["./src/shared/*"]
     }
   },
   "include": [
