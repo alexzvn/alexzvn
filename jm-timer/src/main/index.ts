@@ -17,6 +17,12 @@ import {
   getRemoteUrls,
   getLanAddresses,
 } from './server';
+import {
+  getAuth,
+  loadAuth,
+  regenerateToken,
+  setAuthEnabled,
+} from './auth';
 
 declare const __dirname: string;
 
@@ -268,6 +274,12 @@ function registerIpc(): void {
   });
   ipcMain.handle('remote:getUrls', () => getRemoteUrls());
   ipcMain.handle('remote:getAddresses', () => getLanAddresses());
+
+  ipcMain.handle('auth:get', () => getAuth());
+  ipcMain.handle('auth:setEnabled', (_event, enabled: boolean) =>
+    setAuthEnabled(enabled),
+  );
+  ipcMain.handle('auth:regenerate', () => regenerateToken());
 }
 
 // Single-instance lock — second launch focuses the existing instance.
@@ -287,6 +299,7 @@ if (!gotLock) {
 
   app.whenReady().then(async () => {
     loadState();
+    loadAuth();
     await startServer();
     registerIpc();
     setupTray();

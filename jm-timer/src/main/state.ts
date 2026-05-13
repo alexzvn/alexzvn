@@ -33,6 +33,14 @@ export function loadState(): void {
           ? parsed.timetable!.items
           : [],
         activeIndex: null,
+        autoAdvance:
+          typeof parsed.timetable?.autoAdvance === 'boolean'
+            ? parsed.timetable.autoAdvance
+            : INITIAL_STATE.timetable.autoAdvance,
+        autoAdvanceGraceSec:
+          typeof parsed.timetable?.autoAdvanceGraceSec === 'number'
+            ? parsed.timetable.autoAdvanceGraceSec
+            : INITIAL_STATE.timetable.autoAdvanceGraceSec,
       },
       message: {
         text: typeof parsed.message?.text === 'string' ? parsed.message.text : '',
@@ -70,7 +78,11 @@ function persist(): void {
         {
           countdown: { durationMs: state.countdown.durationMs },
           colors: state.colors,
-          timetable: { items: state.timetable.items },
+          timetable: {
+            items: state.timetable.items,
+            autoAdvance: state.timetable.autoAdvance,
+            autoAdvanceGraceSec: state.timetable.autoAdvanceGraceSec,
+          },
           message: { text: state.message.text },
         },
         null,

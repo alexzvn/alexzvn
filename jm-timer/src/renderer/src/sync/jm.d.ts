@@ -17,6 +17,13 @@ declare global {
         getUrls: () => Promise<string[]>;
         getAddresses: () => Promise<string[]>;
       };
+      auth: {
+        get: () => Promise<{ enabled: boolean; token: string }>;
+        setEnabled: (
+          enabled: boolean,
+        ) => Promise<{ enabled: boolean; token: string }>;
+        regenerate: () => Promise<{ enabled: boolean; token: string }>;
+      };
       closeWindow: () => Promise<void>;
     };
   }

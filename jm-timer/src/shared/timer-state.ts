@@ -32,6 +32,11 @@ export interface TimetableState {
   items: TimetableItem[];
   /** Index of the item currently loaded into the countdown, or null when ad-hoc. */
   activeIndex: number | null;
+  /** When true, the operator window auto-advances to the next item after the
+   *  current item's countdown reaches -graceSec (i.e. graceSec overtime). */
+  autoAdvance: boolean;
+  /** Grace period in seconds after overtime before auto-advance fires. */
+  autoAdvanceGraceSec: number;
 }
 
 export interface MessageState {
@@ -63,7 +68,12 @@ export const INITIAL_STATE: SyncedState = {
     pausedRemainingMs: null,
   },
   colors: { ...DEFAULT_COLORS },
-  timetable: { items: [], activeIndex: null },
+  timetable: {
+    items: [],
+    activeIndex: null,
+    autoAdvance: false,
+    autoAdvanceGraceSec: 5,
+  },
   message: { text: '', blinking: false },
 };
 
@@ -84,6 +94,8 @@ export type Command =
   | { type: 'tt:next' }
   | { type: 'tt:prev' }
   | { type: 'tt:clearActive' }
+  | { type: 'tt:setAutoAdvance'; enabled: boolean }
+  | { type: 'tt:setAutoAdvanceGrace'; sec: number }
   | { type: 'msg:set'; text: string }
   | { type: 'msg:setBlink'; blinking: boolean }
   | { type: 'msg:clear' };
@@ -217,7 +229,7 @@ export function reduce(
         if (idx === activeIndex) activeIndex = null;
         else if (idx < activeIndex) activeIndex -= 1;
       }
-      return { ...state, timetable: { items, activeIndex } };
+      return { ...state, timetable: { ...tt, items, activeIndex } };
     }
 
     case 'tt:move': {
@@ -234,7 +246,7 @@ export function reduce(
         else if (idx < activeIndex && newIdx >= activeIndex) activeIndex -= 1;
         else if (idx > activeIndex && newIdx <= activeIndex) activeIndex += 1;
       }
-      return { ...state, timetable: { items, activeIndex } };
+      return { ...state, timetable: { ...tt, items, activeIndex } };
     }
 
     case 'tt:setAll': {
@@ -244,7 +256,7 @@ export function reduce(
       }));
       return {
         ...state,
-        timetable: { items, activeIndex: null },
+        timetable: { ...tt, items, activeIndex: null },
         countdown: resetCountdownToDuration(cd.durationMs),
       };
     }
@@ -294,6 +306,14 @@ export function reduce(
     case 'tt:clearActive':
       if (tt.activeIndex === null) return state;
       return { ...state, timetable: { ...tt, activeIndex: null } };
+
+    case 'tt:setAutoAdvance':
+      return { ...state, timetable: { ...tt, autoAdvance: cmd.enabled } };
+
+    case 'tt:setAutoAdvanceGrace': {
+      const sec = Math.max(0, Math.round(cmd.sec));
+      return { ...state, timetable: { ...tt, autoAdvanceGraceSec: sec } };
+    }
 
     case 'msg:set': {
       const text = cmd.text;

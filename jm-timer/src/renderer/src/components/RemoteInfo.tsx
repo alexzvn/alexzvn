@@ -6,11 +6,17 @@ import { StatusPill } from './ui/StatusPill';
 import { Button } from './ui/Button';
 import { cn } from '@/lib/cn';
 
+interface AuthState {
+  enabled: boolean;
+  token: string;
+}
+
 export function RemoteInfo() {
   const connected = useStore((s) => s.connected);
   const [urls, setUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [auth, setAuth] = useState<AuthState | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,16 +42,33 @@ export function RemoteInfo() {
       cancelled = true;
       clearInterval(id);
     };
+  }, [auth?.enabled, auth?.token]);
+
+  useEffect(() => {
+    if (!window.jm?.auth) return;
+    window.jm.auth.get().then((a) => setAuth(a));
   }, []);
 
-  async function copy(url: string) {
+  async function copy(text: string) {
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(url);
+      await navigator.clipboard.writeText(text);
+      setCopied(text);
       window.setTimeout(() => setCopied(null), 1500);
     } catch {
-      // ignore (some browsers in non-secure contexts)
+      // ignore
     }
+  }
+
+  async function toggleAuth() {
+    if (!window.jm?.auth || !auth) return;
+    const next = await window.jm.auth.setEnabled(!auth.enabled);
+    setAuth(next);
+  }
+
+  async function regenerate() {
+    if (!window.jm?.auth) return;
+    const next = await window.jm.auth.regenerate();
+    setAuth(next);
   }
 
   return (
@@ -111,6 +134,77 @@ export function RemoteInfo() {
         </div>
       </Card>
 
+      {auth && (
+        <Card>
+          <div className="p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <SectionHeader>Auth · Token-Schutz</SectionHeader>
+              <StatusPill status={auth.enabled ? 'live' : 'info'}>
+                {auth.enabled ? 'Auth aktiv' : 'Offen (kein Token)'}
+              </StatusPill>
+            </div>
+
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Aktiviert, akzeptiert der Sync-Server nur Remote-Clients, die den
+              Token mitschicken. Loopback (Operator + Speaker auf demselben
+              Rechner) ist immer ohne Token erlaubt. Die LAN-URLs oben enthalten
+              automatisch <code>?token=…</code>, du kannst sie 1:1 an die Geräte
+              schicken.
+            </p>
+
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] border border-[var(--border)]/40 bg-[var(--card)]/40">
+              <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)] shrink-0">
+                Token
+              </span>
+              <code
+                className={cn(
+                  'flex-1 text-sm font-mono break-all',
+                  auth.enabled
+                    ? 'text-[var(--foreground)]'
+                    : 'text-[var(--muted-foreground)]',
+                )}
+              >
+                {auth.token}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                uppercase={false}
+                onClick={() => copy(auth.token)}
+              >
+                {copied === auth.token ? 'Kopiert' : 'Kopieren'}
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                uppercase={false}
+                onClick={regenerate}
+              >
+                Neuen Token generieren
+              </Button>
+              <Button
+                variant={auth.enabled ? 'outline' : 'primary'}
+                size="md"
+                onClick={toggleAuth}
+              >
+                {auth.enabled ? 'Auth deaktivieren' : 'Auth aktivieren'}
+              </Button>
+            </div>
+
+            {auth.enabled && (
+              <p className="text-xs text-[var(--muted-foreground)]">
+                Tipp: ein neuer Token invalidiert bestehende Remote-Verbindungen
+                — sie reconnecten automatisch, schlagen aber fehl bis die neue
+                URL geöffnet wird.
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
+
       <Card variant="nested">
         <div className="p-5 flex flex-col gap-3">
           <SectionHeader>Hinweise</SectionHeader>
@@ -133,9 +227,9 @@ export function RemoteInfo() {
             </li>
             <li>
               <span className="text-[var(--slash)] mr-2">/</span>
-              Aktuell keine Authentifizierung — Remote-Clients im gleichen Netz
-              können sich frei verbinden. Für öffentliche Netze unbedingt
-              vorsichtig sein.
+              Für öffentliche / unbekannte Netzwerke{' '}
+              <strong>Auth aktivieren</strong> (oben). Im vertrauenswürdigen
+              Backstage-LAN ist es meist überflüssig.
             </li>
           </ul>
         </div>

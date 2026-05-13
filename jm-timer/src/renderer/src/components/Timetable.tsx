@@ -17,6 +17,7 @@ import { Card } from './ui/Card';
 import { TimetableRow } from './TimetableRow';
 import { XlsxImport } from './XlsxImport';
 import { DelayControls } from './DelayControls';
+import { AutoAdvanceSettings } from './AutoAdvanceSettings';
 
 export function Timetable() {
   const tt = useStore((s) => s.timetable);
@@ -198,6 +199,8 @@ export function Timetable() {
           </div>
         </Card>
       ) : null}
+
+      {tt.items.length > 0 && <AutoAdvanceSettings />}
 
       {tt.items.length > 0 ? (
         <Card>

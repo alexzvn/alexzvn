@@ -5,6 +5,7 @@ import { networkInterfaces } from 'node:os';
 import { app } from 'electron';
 import { Server as IoServer } from 'socket.io';
 import { dispatch, getState, subscribe } from './state';
+import { getAuth, isTokenValid } from './auth';
 import type { Command } from '@shared/timer-state';
 
 export const SERVER_PORT = 7777;
@@ -114,6 +115,32 @@ export function startServer(): Promise<void> {
       pingInterval: 2000,
     });
 
+    // Auth middleware: when enabled, every socket must present a matching
+    // token via handshake.auth.token or ?token=... query. Loopback (Electron
+    // renderer) always passes — we trust the local preload bridge.
+    io.use((socket, next) => {
+      const remoteAddr = socket.handshake.address ?? '';
+      const isLoopback =
+        remoteAddr === '127.0.0.1' ||
+        remoteAddr === '::1' ||
+        remoteAddr === '::ffff:127.0.0.1';
+      if (isLoopback) return next();
+
+      const auth = getAuth();
+      if (!auth.enabled) return next();
+
+      const supplied =
+        (typeof socket.handshake.auth?.token === 'string'
+          ? (socket.handshake.auth.token as string)
+          : undefined) ??
+        (typeof socket.handshake.query?.token === 'string'
+          ? (socket.handshake.query.token as string)
+          : undefined);
+
+      if (isTokenValid(supplied)) return next();
+      return next(new Error('unauthorised'));
+    });
+
     io.on('connection', (socket) => {
       socket.emit('state', getState());
       socket.on('cmd', (cmd: Command) => {
@@ -166,10 +193,16 @@ export function getLanAddresses(): string[] {
  * Returns Remote-View URLs that can be opened on any device in the LAN.
  * In dev the renderer is served by Vite on port 5173 (but the socket still
  * lives on port 7777, the client derives it from window.location.hostname).
+ *
+ * When token-auth is enabled the URLs include `&token=…` so the Remote
+ * browser can authenticate the socket connection without manual entry.
  */
 export function getRemoteUrls(): string[] {
   const port = app.isPackaged ? SERVER_PORT : VITE_DEV_PORT;
+  const auth = getAuth();
+  const tokenQuery =
+    auth.enabled && auth.token ? `&token=${encodeURIComponent(auth.token)}` : '';
   return getLanAddresses().map(
-    (ip) => `http://${ip}:${port}/?view=remote`,
+    (ip) => `http://${ip}:${port}/?view=remote${tokenQuery}`,
   );
 }

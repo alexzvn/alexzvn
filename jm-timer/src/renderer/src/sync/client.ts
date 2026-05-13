@@ -22,6 +22,13 @@ export function resolveServerUrl(): string {
   return `http://127.0.0.1:${DEFAULT_PORT}`;
 }
 
+function resolveToken(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get('token');
+  return t && t.length > 0 ? t : undefined;
+}
+
 export function connect(
   url: string,
   onState: (state: SyncedState) => void,
@@ -29,16 +36,23 @@ export function connect(
 ): Socket {
   if (socket) return socket;
 
+  const token = resolveToken();
+
   socket = io(url, {
     transports: ['websocket'],
     reconnection: true,
     reconnectionDelay: 200,
     reconnectionDelayMax: 2000,
+    auth: token ? { token } : undefined,
   });
 
   socket.on('connect', () => onConnectionChange(true));
   socket.on('disconnect', () => onConnectionChange(false));
   socket.on('state', onState);
+  socket.on('connect_error', (err) => {
+    // Token-mismatch shows up as Error('unauthorised') from the middleware.
+    console.warn('[jm-timer] socket connect error:', err.message);
+  });
 
   return socket;
 }

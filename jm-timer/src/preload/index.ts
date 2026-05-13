@@ -29,6 +29,20 @@ const api = {
     getAddresses: () =>
       ipcRenderer.invoke('remote:getAddresses') as Promise<string[]>,
   },
+  auth: {
+    get: () =>
+      ipcRenderer.invoke('auth:get') as Promise<{ enabled: boolean; token: string }>,
+    setEnabled: (enabled: boolean) =>
+      ipcRenderer.invoke('auth:setEnabled', enabled) as Promise<{
+        enabled: boolean;
+        token: string;
+      }>,
+    regenerate: () =>
+      ipcRenderer.invoke('auth:regenerate') as Promise<{
+        enabled: boolean;
+        token: string;
+      }>,
+  },
   closeWindow: () => ipcRenderer.invoke('window:close') as Promise<void>,
 };
 

@@ -40,6 +40,8 @@ export interface AppState extends SyncedState {
   ttNext: () => void;
   ttPrev: () => void;
   ttClearActive: () => void;
+  ttSetAutoAdvance: (enabled: boolean) => void;
+  ttSetAutoAdvanceGrace: (sec: number) => void;
 
   // Message commands
   setMessage: (text: string) => void;
@@ -79,6 +81,10 @@ export const useStore = create<AppState>((set) => ({
   ttNext: () => sendCommand({ type: 'tt:next' }),
   ttPrev: () => sendCommand({ type: 'tt:prev' }),
   ttClearActive: () => sendCommand({ type: 'tt:clearActive' }),
+  ttSetAutoAdvance: (enabled) =>
+    sendCommand({ type: 'tt:setAutoAdvance', enabled }),
+  ttSetAutoAdvanceGrace: (sec) =>
+    sendCommand({ type: 'tt:setAutoAdvanceGrace', sec }),
 
   setMessage: (text) => sendCommand({ type: 'msg:set', text }),
   setMessageBlink: (blinking) => sendCommand({ type: 'msg:setBlink', blinking }),
