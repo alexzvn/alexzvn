@@ -11,6 +11,12 @@ files:
   - out/**/*
   - package.json
 
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
 asar: true
 
 mac:
@@ -24,7 +30,7 @@ mac:
         - arm64
         - x64
   category: public.app-category.productivity
-  # icon: build/icon.icns         # 1024x1024 ICNS — optional
+  icon: build/icon.png
   hardenedRuntime: false           # set true + add entitlements once notarising
   gatekeeperAssess: false
 
@@ -33,7 +39,7 @@ win:
     - target: nsis
       arch:
         - x64
-  # icon: build/icon.ico           # 256x256 ICO — optional
+  icon: build/icon.ico
 
 linux:
   target:
@@ -44,7 +50,7 @@ linux:
       arch:
         - x64
   category: AudioVideo
-  # icon: build/icon.png           # 512x512 PNG — optional
+  icon: build/icon.png
 
 nsis:
   oneClick: false
