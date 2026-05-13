@@ -9,8 +9,14 @@ interface Props {
   reactive?: boolean;
   className?: string;
   /** override the size (CSS clamp by default) */
-  size?: 'fit' | 'fullscreen';
+  size?: 'fit' | 'fullscreen' | 'preview';
 }
+
+const FONT_SIZES: Record<NonNullable<Props['size']>, string> = {
+  fit: 'clamp(3rem, 14vw, 14rem)',
+  fullscreen: 'clamp(6rem, 22vw, 26rem)',
+  preview: 'clamp(1.25rem, 3.2vw, 2rem)',
+};
 
 export function TimerDisplay({ ms, reactive = true, className, size = 'fit' }: Props) {
   const colors = useStore((s) => s.colors);
@@ -21,18 +27,13 @@ export function TimerDisplay({ ms, reactive = true, className, size = 'fit' }: P
     else if (ms <= colors.warningAtSec * 1000) color = colors.warning;
   }
 
-  const fontSize =
-    size === 'fullscreen'
-      ? 'clamp(6rem, 22vw, 26rem)'
-      : 'clamp(3rem, 14vw, 14rem)';
-
   return (
     <div
       className={cn(
-        'font-extrabold leading-none tabular tracking-tight select-none',
+        'font-extrabold leading-none tabular tracking-tight select-none whitespace-nowrap',
         className,
       )}
-      style={{ color, fontSize }}
+      style={{ color, fontSize: FONT_SIZES[size] }}
     >
       {formatHMS(ms)}
     </div>

@@ -36,7 +36,7 @@ export function ColorPicker() {
 
       <Card>
         <div className="p-6 flex flex-col gap-6">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Preview ms={5 * 60_000 + 30_000} label="Normal" />
             <Preview ms={30_000} label="Warning" />
             <Preview ms={-12_000} label="Overtime" />
@@ -131,13 +131,11 @@ function ColorRow({
 
 function Preview({ ms, label }: { ms: number; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 p-4 rounded-[var(--radius-lg)] bg-[var(--background)]/40 border border-[var(--border)]/40">
+    <div className="flex flex-col items-center gap-3 p-4 rounded-[var(--radius-lg)] bg-[var(--background)]/40 border border-[var(--border)]/40 overflow-hidden min-w-0">
       <div className="text-xs uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
         {label}
       </div>
-      <div className="scale-[0.45] origin-center -my-8">
-        <TimerDisplay ms={ms} reactive />
-      </div>
+      <TimerDisplay ms={ms} reactive size="preview" />
     </div>
   );
 }
