@@ -13,13 +13,14 @@ import { MACRO_CATALOG, type MacroEntry, type MacroCategory } from '@shared/tric
 import { canDo } from '@shared/roles';
 import { cn } from '@/lib/cn';
 import { AuditLogPanel } from './AuditLogPanel';
+import { PgmPreview } from './PgmPreview';
+import { DskPanel } from './DskPanel';
+import { DdrPanel } from './DdrPanel';
 
 const QUICK_ACTIONS: Array<{ id: string; label: string; shortcut: string; variant?: 'primary' | 'destructive' | 'accent' | 'outline' }> = [
   { id: 'take', label: 'Take', shortcut: 'main_take', variant: 'primary' },
   { id: 'auto', label: 'Auto', shortcut: 'main_auto', variant: 'accent' },
   { id: 'ftb', label: 'Fade Black', shortcut: 'main_fade_to_black', variant: 'destructive' },
-  { id: 'dsk1-on', label: 'DSK1 On', shortcut: 'dsk_1_take_on', variant: 'outline' },
-  { id: 'dsk1-off', label: 'DSK1 Off', shortcut: 'dsk_1_take_off', variant: 'outline' },
   { id: 'rec', label: 'REC', shortcut: 'record_toggle_start', variant: 'outline' },
   { id: 'stream', label: 'STREAM', shortcut: 'streaming_toggle_start', variant: 'outline' },
 ];
@@ -112,19 +113,27 @@ export function TricasterPanel() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {QUICK_ACTIONS.map((a) => (
-              <Button
-                key={a.id}
-                variant={a.variant ?? 'outline'}
-                size="lg"
-                disabled={!canExec || status?.state !== 'connected'}
-                onClick={() => exec(a.shortcut)}
-                className="min-w-[120px]"
-              >
-                {a.label}
-              </Button>
-            ))}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-6 mb-6 items-start">
+            <div className="flex flex-wrap gap-2">
+              {QUICK_ACTIONS.map((a) => (
+                <Button
+                  key={a.id}
+                  variant={a.variant ?? 'outline'}
+                  size="lg"
+                  disabled={!canExec || status?.state !== 'connected'}
+                  onClick={() => exec(a.shortcut)}
+                  className="min-w-[120px]"
+                >
+                  {a.label}
+                </Button>
+              ))}
+            </div>
+            <PgmPreview ndiSource={`${current.name} (PGM)`} />
+          </div>
+
+          <div className="flex flex-col gap-6 mb-6">
+            <DskPanel onExec={exec} disabled={!canExec || status?.state !== 'connected'} />
+            <DdrPanel onExec={exec} disabled={!canExec || status?.state !== 'connected'} />
           </div>
 
           <MacroBrowser onExec={exec} disabled={!canExec || status?.state !== 'connected'} />
@@ -209,9 +218,12 @@ function MacroBrowser({
   onExec: (shortcut: string) => void;
   disabled: boolean;
 }) {
+  // DSK and DDR have their own dedicated panels above — hide them here to avoid duplication.
+  const HIDDEN_CATEGORIES: ReadonlySet<MacroCategory> = new Set(['DSK', 'DDR']);
   const grouped = useMemo(() => {
     const map = new Map<MacroCategory, MacroEntry[]>();
     for (const m of MACRO_CATALOG) {
+      if (HIDDEN_CATEGORIES.has(m.category)) continue;
       const arr = map.get(m.category) ?? [];
       arr.push(m);
       map.set(m.category, arr);

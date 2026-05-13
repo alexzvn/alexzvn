@@ -26,6 +26,7 @@ export interface TricasterStatus {
 export type MacroCategory =
   | 'Switcher'
   | 'DSK'
+  | 'DDR'
   | 'Record'
   | 'Stream'
   | 'M/E'
@@ -41,6 +42,50 @@ export interface MacroEntry {
   description?: string;
 }
 
+// Number of DSKs and DDRs available on the TriCaster TC2 Elite (4 each).
+export const DSK_COUNT = 4;
+export const DDR_COUNT = 4;
+
+export interface DskEntry {
+  index: number;        // 1..DSK_COUNT
+  label: string;        // "DSK 1"
+  onShortcut: string;
+  offShortcut: string;
+}
+
+export const DSK_ENTRIES: DskEntry[] = Array.from({ length: DSK_COUNT }, (_, i) => {
+  const idx = i + 1;
+  return {
+    index: idx,
+    label: `DSK ${idx}`,
+    onShortcut: `dsk_${idx}_take_on`,
+    offShortcut: `dsk_${idx}_take_off`,
+  };
+});
+
+export type DdrTransport = 'play' | 'pause' | 'stop' | 'next' | 'prev';
+
+export interface DdrEntry {
+  index: number;        // 1..DDR_COUNT
+  label: string;        // "DDR 1"
+  shortcuts: Record<DdrTransport, string>;
+}
+
+export const DDR_ENTRIES: DdrEntry[] = Array.from({ length: DDR_COUNT }, (_, i) => {
+  const idx = i + 1;
+  return {
+    index: idx,
+    label: `DDR ${idx}`,
+    shortcuts: {
+      play: `ddr_${idx}_play`,
+      pause: `ddr_${idx}_pause`,
+      stop: `ddr_${idx}_stop`,
+      next: `ddr_${idx}_select_next`,
+      prev: `ddr_${idx}_select_previous`,
+    },
+  };
+});
+
 // Static catalog seeded from "Full list of NewTek TriCaster Macros". This is
 // a useful subset for the MVP — the full list can be added later. Names follow
 // the LiveControl HTTP/Shortcut API conventions (case-sensitive).
@@ -50,11 +95,19 @@ export const MACRO_CATALOG: MacroEntry[] = [
   { id: 'sw-auto', category: 'Switcher', label: 'Auto', shortcut: 'main_auto' },
   { id: 'sw-fade', category: 'Switcher', label: 'Fade to Black', shortcut: 'main_fade_to_black' },
 
-  // DSK
-  { id: 'dsk1-on', category: 'DSK', label: 'DSK 1 On', shortcut: 'dsk_1_take_on' },
-  { id: 'dsk1-off', category: 'DSK', label: 'DSK 1 Off', shortcut: 'dsk_1_take_off' },
-  { id: 'dsk2-on', category: 'DSK', label: 'DSK 2 On', shortcut: 'dsk_2_take_on' },
-  { id: 'dsk2-off', category: 'DSK', label: 'DSK 2 Off', shortcut: 'dsk_2_take_off' },
+  // DSKs 1-4 (also exposed via the dedicated DSK panel — kept here as a
+  // fallback / quick search reference)
+  ...DSK_ENTRIES.flatMap((d) => [
+    { id: `dsk${d.index}-on`, category: 'DSK' as const, label: `${d.label} On`, shortcut: d.onShortcut },
+    { id: `dsk${d.index}-off`, category: 'DSK' as const, label: `${d.label} Off`, shortcut: d.offShortcut },
+  ]),
+
+  // DDRs 1-4 (also exposed via the dedicated DDR panel)
+  ...DDR_ENTRIES.flatMap((d) => [
+    { id: `ddr${d.index}-play`, category: 'DDR' as const, label: `${d.label} · Play`, shortcut: d.shortcuts.play },
+    { id: `ddr${d.index}-pause`, category: 'DDR' as const, label: `${d.label} · Pause`, shortcut: d.shortcuts.pause },
+    { id: `ddr${d.index}-stop`, category: 'DDR' as const, label: `${d.label} · Stop`, shortcut: d.shortcuts.stop },
+  ]),
 
   // Record / Stream
   { id: 'rec-start', category: 'Record', label: 'Record · Start', shortcut: 'record_toggle_start' },

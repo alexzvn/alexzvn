@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useSession } from '@/store/session';
-import { useApp } from '@/store/app';
+import { useApp, type Section } from '@/store/app';
 import { apiFetch } from '@/sync/client';
 import { Logo } from './Logo';
 import { cn } from '@/lib/cn';
 
-const SECTION_LABELS: Record<string, string> = {
-  video: 'Video',
-  audio: 'Audio',
-  licht: 'Licht',
-  setup: 'Setup',
-};
+interface NavItem {
+  id: Section;
+  label: string;
+  hint?: string;
+  comingSoon?: boolean;
+}
+
+const NAV: NavItem[] = [
+  { id: 'video', label: 'Video', hint: 'TriCaster · PTZ · Kumo' },
+  { id: 'audio', label: 'Audio', hint: 'Coming soon', comingSoon: true },
+  { id: 'licht', label: 'Licht', hint: 'Coming soon', comingSoon: true },
+  { id: 'setup', label: 'Setup', hint: 'Geräte · Benutzer' },
+];
 
 export function Topbar() {
   const section = useApp((s) => s.section);
+  const setSection = useApp((s) => s.setSection);
   const connected = useSession((s) => s.connected);
   const user = useSession((s) => s.user);
   const token = useSession((s) => s.token);
@@ -38,7 +46,7 @@ export function Topbar() {
   return (
     <header
       className={cn(
-        'relative h-14 flex items-center justify-between',
+        'relative h-16 flex items-center justify-between',
         'px-6 border-b border-[var(--border)]/60',
         'bg-[var(--card)]/60 backdrop-blur-md',
       )}
@@ -49,12 +57,29 @@ export function Topbar() {
                    bg-gradient-to-r from-transparent via-[var(--primary)]/30 to-transparent"
       />
 
-      <div className="flex items-center gap-3">
-        <Logo className="lg:hidden" size={22} />
-        <span className="text-xs uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-          <span className="text-[var(--slash)] mr-2">/</span>
-          {SECTION_LABELS[section] ?? section}
-        </span>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
+          <Logo size={28} />
+          <div className="hidden md:flex flex-col leading-tight">
+            <span className="text-sm font-extrabold tracking-[0.06em]">JM STUDIO</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              Control
+            </span>
+          </div>
+        </div>
+
+        <nav className="flex items-center gap-1">
+          {NAV.map((item) => (
+            <NavButton
+              key={item.id}
+              label={item.label}
+              hint={item.hint}
+              active={section === item.id}
+              comingSoon={item.comingSoon}
+              onClick={() => setSection(item.id)}
+            />
+          ))}
+        </nav>
       </div>
 
       <div className="flex items-center gap-2">
@@ -88,6 +113,52 @@ export function Topbar() {
         </button>
       </div>
     </header>
+  );
+}
+
+function NavButton({
+  label,
+  hint,
+  active,
+  comingSoon,
+  onClick,
+}: {
+  label: string;
+  hint?: string;
+  active?: boolean;
+  comingSoon?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'relative h-10 px-4 rounded-[var(--radius)] flex items-center gap-2',
+        'text-sm font-bold transition-colors',
+        active
+          ? 'bg-[var(--highlight)] text-[var(--foreground)]'
+          : 'text-[var(--foreground)]/75 hover:bg-[var(--highlight)] hover:text-[var(--foreground)]',
+      )}
+    >
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-2 right-2 -bottom-px h-[2px] rounded-t bg-[var(--primary)]"
+        />
+      )}
+      <span>{label}</span>
+      {hint && (
+        <span
+          className={cn(
+            'hidden lg:inline text-[10px] uppercase tracking-[0.12em] font-semibold',
+            comingSoon ? 'text-[var(--muted-foreground)]/60' : 'text-[var(--muted-foreground)]',
+          )}
+        >
+          {hint}
+        </span>
+      )}
+    </button>
   );
 }
 
