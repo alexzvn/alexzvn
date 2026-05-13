@@ -1,0 +1,20 @@
+* [33m5cb144d1a3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Refactor code structure for improved readability and maintainability
+* [33m5ac43073b5[m fix: correct path configurations in TypeScript configuration files
+* [33m66ee0ee1d9[m feat: initialize jm-timer project with essential files
+* [33m2d5f5d79e9[m Refactor code structure for improved readability and maintainability
+* [33m40f99eb71b[m fix: update dev:codespace script to use standalone server
+* [33m1f387f0398[m feat: add standalone Node server for headless environments
+* [33ma3f1268510[m fix: update copyright information and improve server response messages
+* [33maf2ac077d8[m feat: implement XLSX import functionality for timetable management
+* [33m6e236e4911[m Refactor code structure for improved readability and maintainability
+[31m|[m * [33m5813f2d93a[m[33m ([m[1;31morigin/main[m[33m)[m Updated with Dev Metrics
+[31m|[m * [33m264e929168[m Updated with Dev Metrics
+[31m|[m * [33mc57b18c494[m Updated with Dev Metrics
+[31m|[m * [33mb3925f2348[m Updated with Dev Metrics
+[31m|[m * [33mb38adf23b8[m Updated with Dev Metrics
+[31m|[m * [33mdbabbd4adf[m Updated with Dev Metrics
+[31m|[m * [33m293603afeb[m Updated with Dev Metrics
+[31m|[m * [33m0df7fdf68f[m Updated with Dev Metrics
+[31m|[m * [33mf8f5e0c995[m Updated with Dev Metrics
+[31m|[m * [33m678f1cf178[m Updated with Dev Metrics
+[31m|[m * [33mb66ee80079[m Updated with Dev Metrics
