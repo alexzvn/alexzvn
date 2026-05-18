@@ -86,11 +86,11 @@ export function DeviceTable() {
               <div className="flex gap-1">
                 {canEdit && (
                   <>
-                    <Button size="sm" variant="ghost" onClick={() => setEditing(d.id)}>
-                      Edit
+                    <Button size="sm" variant="outline" onClick={() => setEditing(d.id)}>
+                      Bearbeiten
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => remove(d.id)}>
-                      Del
+                    <Button size="sm" variant="destructive" onClick={() => remove(d.id)}>
+                      Entfernen
                     </Button>
                   </>
                 )}

@@ -9,7 +9,13 @@ import { useApp } from '@/store/app';
 import { useSession } from '@/store/session';
 import { emitWithAck, apiFetch } from '@/sync/client';
 import { EVENTS, type TricasterStatusEvent } from '@shared/protocol';
-import { MACRO_CATALOG, type MacroEntry, type MacroCategory } from '@shared/tricaster';
+import {
+  MACRO_CATALOG,
+  DEFAULT_TRICASTER_PORT,
+  type MacroEntry,
+  type MacroCategory,
+  type TricasterConfig,
+} from '@shared/tricaster';
 import { canDo } from '@shared/roles';
 import { cn } from '@/lib/cn';
 import { AuditLogPanel } from './AuditLogPanel';
@@ -32,6 +38,7 @@ export function TricasterPanel() {
   const token = useSession((s) => s.token);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const current = useMemo(
     () => tricasters.find((t) => t.id === selectedId) ?? tricasters[0],
@@ -54,15 +61,25 @@ export function TricasterPanel() {
     }
   }
 
-  async function addTricaster(host: string, name: string): Promise<void> {
-    const id = `tc-${Date.now().toString(36)}`;
+  async function saveTricaster(cfg: TricasterConfig): Promise<void> {
     await apiFetch('/api/tricasters', {
       method: 'POST',
       token,
-      body: JSON.stringify({ id, name, host, port: 5951 }),
+      body: JSON.stringify(cfg),
     });
     setAdding(false);
-    setSelectedId(id);
+    setEditing(false);
+    setSelectedId(cfg.id);
+  }
+
+  async function deleteTricaster(id: string): Promise<void> {
+    if (!confirm('TriCaster-Instanz wirklich entfernen?')) return;
+    await apiFetch(`/api/tricasters/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      token,
+    });
+    setEditing(false);
+    setSelectedId(null);
   }
 
   return (
@@ -84,15 +101,53 @@ export function TricasterPanel() {
               >
                 {tricasters.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.host})
+                    {t.name} ({t.host}:{t.port})
                   </option>
                 ))}
               </select>
               <StatusBadge status={status} />
+              {canManage && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing((v) => !v)}
+                >
+                  {editing ? 'Schließen' : 'Bearbeiten'}
+                </Button>
+              )}
             </>
           ) : null}
         </div>
       </div>
+
+      {current && status?.state === 'down' && status.lastError && (
+        <div className="mb-4 rounded-[var(--radius)] border border-[var(--destructive)]/50 bg-[var(--destructive)]/10 px-3 py-2 text-xs">
+          <span className="font-extrabold uppercase tracking-wider text-[var(--destructive)]">
+            Verbindung fehlgeschlagen:
+          </span>{' '}
+          <span className="text-[var(--foreground)]">{status.lastError}</span>
+          <span className="text-[var(--muted-foreground)]">
+            {' '}
+            — Adresse{' '}
+            <code className="tabular-nums">
+              http://{current.host}
+              {current.port !== 80 ? `:${current.port}` : ''}/v1/version
+            </code>{' '}
+            prüfen.
+          </span>
+        </div>
+      )}
+
+      {current && editing && canManage && (
+        <div className="mb-6 rounded-[var(--radius)] border border-[var(--border)]/60 bg-[var(--card)]/40 p-4">
+          <TricasterForm
+            initial={current}
+            onSubmit={saveTricaster}
+            onCancel={() => setEditing(false)}
+            onDelete={() => deleteTricaster(current.id)}
+          />
+        </div>
+      )}
 
       {!current ? (
         <div className="flex flex-col gap-3 items-start">
@@ -101,7 +156,7 @@ export function TricasterPanel() {
           </p>
           {canManage ? (
             adding ? (
-              <AddTricasterForm onSubmit={addTricaster} onCancel={() => setAdding(false)} />
+              <TricasterForm onSubmit={saveTricaster} onCancel={() => setAdding(false)} />
             ) : (
               <Button onClick={() => setAdding(true)}>TriCaster hinzufügen</Button>
             )
@@ -141,7 +196,7 @@ export function TricasterPanel() {
           {canManage && (
             <div className="mt-6 pt-4 border-t border-[var(--border)]/40 flex gap-2">
               {adding ? (
-                <AddTricasterForm onSubmit={addTricaster} onCancel={() => setAdding(false)} />
+                <TricasterForm onSubmit={saveTricaster} onCancel={() => setAdding(false)} />
               ) : (
                 <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
                   Weitere Instanz
@@ -166,27 +221,43 @@ function StatusBadge({ status }: { status: TricasterStatusEvent | undefined }) {
   if (status.state === 'connected')
     return <StatusPill status="live">Connected · v{status.version ?? '?'}</StatusPill>;
   if (status.state === 'polling') return <StatusPill status="setup">Polling …</StatusPill>;
-  return <StatusPill status="error">Offline</StatusPill>;
+  return (
+    <span title={status.lastError ?? 'Offline'}>
+      <StatusPill status="error">Offline</StatusPill>
+    </span>
+  );
 }
 
-function AddTricasterForm({
+function TricasterForm({
+  initial,
   onSubmit,
   onCancel,
+  onDelete,
 }: {
-  onSubmit: (host: string, name: string) => Promise<void>;
+  initial?: TricasterConfig;
+  onSubmit: (cfg: TricasterConfig) => Promise<void>;
   onCancel: () => void;
+  onDelete?: () => void;
 }) {
-  const [host, setHost] = useState('');
-  const [name, setName] = useState('TriCaster TC2');
+  const [name, setName] = useState(initial?.name ?? 'TriCaster TC2');
+  const [host, setHost] = useState(initial?.host ?? '');
+  const [port, setPort] = useState(String(initial?.port ?? DEFAULT_TRICASTER_PORT));
   const [busy, setBusy] = useState(false);
+
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!host || !name) return;
+        const portNum = Number(port);
+        if (!host || !name || !Number.isInteger(portNum) || portNum <= 0) return;
         setBusy(true);
         try {
-          await onSubmit(host, name);
+          await onSubmit({
+            id: initial?.id ?? `tc-${Date.now().toString(36)}`,
+            name,
+            host,
+            port: portNum,
+          });
         } finally {
           setBusy(false);
         }
@@ -199,7 +270,22 @@ function AddTricasterForm({
       </label>
       <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">
         Host / IP
-        <Input value={host} onChange={(e) => setHost(e.target.value)} placeholder="192.168.10.50" required />
+        <Input
+          value={host}
+          onChange={(e) => setHost(e.target.value)}
+          placeholder="192.168.10.10"
+          required
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">
+        Port
+        <Input
+          type="number"
+          value={port}
+          onChange={(e) => setPort(e.target.value)}
+          className="w-24"
+          required
+        />
       </label>
       <Button type="submit" disabled={busy}>
         Speichern
@@ -207,6 +293,11 @@ function AddTricasterForm({
       <Button type="button" variant="ghost" onClick={onCancel}>
         Abbrechen
       </Button>
+      {onDelete && (
+        <Button type="button" variant="destructive" onClick={onDelete}>
+          Entfernen
+        </Button>
+      )}
     </form>
   );
 }

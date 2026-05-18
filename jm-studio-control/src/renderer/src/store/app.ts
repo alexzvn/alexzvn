@@ -9,6 +9,11 @@ import type { UserRow } from '@/types/admin';
 
 export type Section = 'video' | 'audio' | 'licht' | 'setup';
 
+/** Stable identity for a discovered device — used for dedup and dismissal. */
+export function discoveryKey(d: DiscoveredDevice): string {
+  return d.mac ?? `${d.protocol}:${d.ip}`;
+}
+
 interface AppState {
   section: Section;
   setSection: (s: Section) => void;
@@ -29,6 +34,7 @@ interface AppState {
   setDiscoveryRunning: (running: boolean) => void;
   appendDiscoveryResults: (results: DiscoveredDevice[]) => void;
   finishDiscovery: (count: number, durationMs: number) => void;
+  dismissDiscoveryResult: (key: string) => void;
   clearDiscovery: () => void;
 
   audit: AuditEntry[];
@@ -64,12 +70,19 @@ export const useApp = create<AppState>((set) => ({
   appendDiscoveryResults: (results) =>
     set((s) => {
       const merged = new Map<string, DiscoveredDevice>();
-      for (const d of s.discovery.results) merged.set(d.mac ?? `${d.protocol}:${d.ip}`, d);
-      for (const d of results) merged.set(d.mac ?? `${d.protocol}:${d.ip}`, d);
+      for (const d of s.discovery.results) merged.set(discoveryKey(d), d);
+      for (const d of results) merged.set(discoveryKey(d), d);
       return { discovery: { ...s.discovery, results: [...merged.values()] } };
     }),
   finishDiscovery: (count, durationMs) =>
     set((s) => ({ discovery: { ...s.discovery, running: false, lastDuration: durationMs, results: s.discovery.results } })),
+  dismissDiscoveryResult: (key) =>
+    set((s) => ({
+      discovery: {
+        ...s.discovery,
+        results: s.discovery.results.filter((d) => discoveryKey(d) !== key),
+      },
+    })),
   clearDiscovery: () =>
     set((s) => ({ discovery: { ...s.discovery, results: [] } })),
 

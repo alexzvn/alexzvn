@@ -1,9 +1,10 @@
-import { useApp } from '@/store/app';
+import { useApp, discoveryKey } from '@/store/app';
 import { useSession } from '@/store/session';
 import { Button } from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/StatusPill';
-import { emitWithAck } from '@/sync/client';
+import { emitWithAck, apiFetch } from '@/sync/client';
 import { EVENTS } from '@shared/protocol';
+import { DEFAULT_TRICASTER_PORT } from '@shared/tricaster';
 import { canDo } from '@shared/roles';
 import type { DiscoveredDevice, DeviceKind } from '@shared/device';
 
@@ -29,7 +30,9 @@ export function DiscoverPanel() {
   const discovery = useApp((s) => s.discovery);
   const setRunning = useApp((s) => s.setDiscoveryRunning);
   const clear = useApp((s) => s.clearDiscovery);
+  const dismiss = useApp((s) => s.dismissDiscoveryResult);
   const role = useSession((s) => s.user?.role);
+  const token = useSession((s) => s.token);
   const canScan = role ? canDo(role, 'discovery:run') : false;
   const canAdd = role ? canDo(role, 'inventory:write') : false;
 
@@ -44,10 +47,11 @@ export function DiscoverPanel() {
   }
 
   async function addToInventory(d: DiscoveredDevice): Promise<void> {
+    const kind = guessKind(d);
     await emitWithAck(EVENTS.INVENTORY_UPSERT, {
       device: {
         id: `dev-${(d.mac ?? d.ip).replace(/[^a-z0-9]/gi, '')}`,
-        kind: guessKind(d),
+        kind,
         name: d.name ?? d.model ?? d.ip,
         ip: d.ip,
         mac: d.mac,
@@ -55,6 +59,26 @@ export function DiscoverPanel() {
         vendor: d.vendor,
       },
     });
+    // A discovered TriCaster should also become a controllable instance in the
+    // Video tab — otherwise it only appears in the inventory table.
+    if (kind === 'tricaster') {
+      try {
+        await apiFetch('/api/tricasters', {
+          method: 'POST',
+          token,
+          body: JSON.stringify({
+            id: `tc-${(d.mac ?? d.ip).replace(/[^a-z0-9]/gi, '')}`,
+            name: d.name ?? d.model ?? `TriCaster ${d.ip}`,
+            host: d.ip,
+            port: DEFAULT_TRICASTER_PORT,
+          }),
+        });
+      } catch (err) {
+        console.warn('tricaster instance create failed', err);
+      }
+    }
+    // Once adopted, drop it from the scan list so it's clear what's left.
+    dismiss(discoveryKey(d));
   }
 
   return (
@@ -101,12 +125,20 @@ export function DiscoverPanel() {
             <div className="text-xs text-[var(--muted-foreground)]">
               {d.vendor ?? ''} {d.model ?? ''}
             </div>
-            <div>
+            <div className="flex gap-1 justify-end">
               {canAdd && (
                 <Button size="sm" variant="outline" onClick={() => addToInventory(d)}>
                   Übernehmen
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => dismiss(discoveryKey(d))}
+                title="Aus der Liste ausblenden"
+              >
+                Ausblenden
+              </Button>
             </div>
           </div>
         ))

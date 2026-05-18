@@ -61,16 +61,18 @@ export function syncFromConfig(): void {
 }
 
 async function pollOne(entry: Entry): Promise<void> {
-  const version = await entry.client.version();
+  const result = await entry.client.version();
   const next: TricasterStatus = {
     id: entry.cfg.id,
-    state: version ? 'connected' : 'down',
-    version: version ?? undefined,
+    state: result.ok ? 'connected' : 'down',
+    version: result.version,
     lastChecked: Date.now(),
-    lastError: version ? undefined : 'no response',
+    lastError: result.ok ? undefined : (result.error ?? 'no response'),
   };
   const changed =
-    next.state !== entry.status.state || next.version !== entry.status.version;
+    next.state !== entry.status.state ||
+    next.version !== entry.status.version ||
+    next.lastError !== entry.status.lastError;
   entry.status = next;
   if (changed) emit(next);
 }

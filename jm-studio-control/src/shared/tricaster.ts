@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-export const DEFAULT_TRICASTER_PORT = 5951;
+// The TriCaster LiveControl HTTP/Shortcut API is served on the standard
+// HTTP port (80) — e.g. http://<tricaster-ip>/v1/shortcut?name=...
+export const DEFAULT_TRICASTER_PORT = 80;
 
 export const TricasterConfigSchema = z.object({
   id: z.string().min(1),
