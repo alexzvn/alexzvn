@@ -25,6 +25,42 @@ Email me to: `personal@alexzvn.me`
  > 
 > 🔑 61 Private Repositories 
  > 
+**I'm an Early 🐤** 
+
+```text
+🌞 Morning                5351 commits        ████░░░░░░░░░░░░░░░░░░░░░   15.44 % 
+🌆 Daytime                15230 commits       ███████████░░░░░░░░░░░░░░   43.95 % 
+🌃 Evening                12317 commits       █████████░░░░░░░░░░░░░░░░   35.55 % 
+🌙 Night                  1752 commits        █░░░░░░░░░░░░░░░░░░░░░░░░   05.06 % 
+```
+📅 **I'm Most Productive on Monday** 
+
+```text
+Monday                   5930 commits        ████░░░░░░░░░░░░░░░░░░░░░   17.11 % 
+Tuesday                  4122 commits        ███░░░░░░░░░░░░░░░░░░░░░░   11.90 % 
+Wednesday                5714 commits        ████░░░░░░░░░░░░░░░░░░░░░   16.49 % 
+Thursday                 5092 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.70 % 
+Friday                   5055 commits        ████░░░░░░░░░░░░░░░░░░░░░   14.59 % 
+Saturday                 4559 commits        ███░░░░░░░░░░░░░░░░░░░░░░   13.16 % 
+Sunday                   4178 commits        ███░░░░░░░░░░░░░░░░░░░░░░   12.06 % 
+```
+
+
+📊 **This Week I Spent My Time On** 
+
+```text
+🕑︎ Time Zone: Asia/Ho_Chi_Minh
+
+💬 Programming Languages: 
+No Activity Tracked This Week
+
+🔥 Editors: 
+No Activity Tracked This Week
+
+💻 Operating System: 
+No Activity Tracked This Week
+```
+
 **I Mostly Code in TypeScript** 
 
 ```text
@@ -42,5 +78,5 @@ Svelte                   2 repos             ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 28/05/2026 19:42:52 UTC
+ Last Updated on 28/05/2026 20:00:29 UTC
 <!--END_SECTION:waka-->
