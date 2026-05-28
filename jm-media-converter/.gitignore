@@ -1,0 +1,12 @@
+node_modules/
+out/
+release/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.local
+
+# Bundled FFmpeg binaries are added per-platform at packaging time (see resources/bin/README.md)
+resources/bin/win/
+resources/bin/mac/
+resources/bin/linux/
