@@ -24,6 +24,17 @@ export function formatDuration(sec: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
+/** Parse "SS", "M:SS" or "H:MM:SS" (also accepts decimals) into seconds. */
+export function parseDuration(input: string): number | null {
+  const s = input.trim();
+  if (!s) return null;
+  const parts = s.split(':');
+  if (parts.some((p) => p === '' || isNaN(Number(p)))) return null;
+  let sec = 0;
+  for (const p of parts) sec = sec * 60 + Number(p);
+  return sec < 0 ? null : sec;
+}
+
 export function formatEta(sec?: number): string {
   if (sec == null || !isFinite(sec)) return '';
   if (sec < 60) return `${Math.round(sec)} s`;

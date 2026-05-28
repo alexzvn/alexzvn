@@ -17,7 +17,7 @@ import { Select } from '@/components/Select';
 import { JobCard } from '@/components/JobCard';
 import { PreviewModal } from '@/components/PreviewModal';
 import { useJobs } from '@/store/jobs';
-import { basename, formatBytes, formatDuration } from '@/lib/format';
+import { basename, formatBytes, formatDuration, parseDuration } from '@/lib/format';
 import { cn } from '@/lib/cn';
 
 interface Staged {
@@ -26,6 +26,18 @@ interface Staged {
   info?: MediaInfo;
   probing: boolean;
   error?: string;
+  trimStartStr: string;
+  trimEndStr: string;
+}
+
+/** Resolve a staged item's trim range + validity from its text fields. */
+function trimOf(s: Staged): { start: number; end: number; valid: boolean } {
+  const dur = s.info?.durationSec ?? 0;
+  const start = parseDuration(s.trimStartStr) ?? 0;
+  const parsedEnd = parseDuration(s.trimEndStr);
+  const end = parsedEnd == null ? dur : parsedEnd;
+  const valid = dur <= 0 ? true : start >= 0 && end > start && end <= dur + 0.5;
+  return { start, end, valid };
 }
 
 const HW_LABEL: Record<string, string> = {
@@ -88,12 +100,24 @@ export function VideoView() {
     if (!fresh.length) return;
     setStaged((prev) => [
       ...prev,
-      ...fresh.map((p) => ({ path: p, name: basename(p).replace(/\.[^.]+$/, ''), probing: true })),
+      ...fresh.map((p) => ({
+        path: p,
+        name: basename(p).replace(/\.[^.]+$/, ''),
+        probing: true,
+        trimStartStr: '0:00',
+        trimEndStr: '',
+      })),
     ]);
     for (const p of fresh) {
       try {
         const info = await window.jmc.media.probe(p);
-        setStaged((prev) => prev.map((s) => (s.path === p ? { ...s, info, probing: false } : s)));
+        setStaged((prev) =>
+          prev.map((s) =>
+            s.path === p
+              ? { ...s, info, probing: false, trimEndStr: s.trimEndStr || formatDuration(info.durationSec) }
+              : s,
+          ),
+        );
       } catch {
         setStaged((prev) =>
           prev.map((s) => (s.path === p ? { ...s, probing: false, error: 'Datei konnte nicht gelesen werden' } : s)),
@@ -113,6 +137,8 @@ export function VideoView() {
   }
 
   function specFor(s: Staged, jobId: string): VideoConvertSpec {
+    const dur = s.info?.durationSec ?? 0;
+    const { start, end } = trimOf(s);
     return {
       jobId,
       inputPath: s.path,
@@ -125,14 +151,16 @@ export function VideoView() {
       bitrateKbps: rateControllable && rateControl !== 'quality' ? bitrateKbps : null,
       audioCodec,
       audioBitrateKbps: usesAudioBitrate(audioCodec) ? audioBitrateKbps : null,
+      trimStartSec: start > 0 ? start : undefined,
+      trimEndSec: dur > 0 && end < dur - 0.01 ? end : undefined,
       useHardware: useHardware && hwAvailable,
-      durationSec: s.info?.durationSec ?? 0,
+      durationSec: dur,
     };
   }
 
   function start(): void {
     if (!outputDir) return;
-    const ready = staged.filter((s) => s.info && !s.error);
+    const ready = staged.filter((s) => s.info && !s.error && trimOf(s).valid);
     for (const s of ready) {
       const jobId = crypto.randomUUID();
       addJob({
@@ -149,7 +177,7 @@ export function VideoView() {
     setStaged([]);
   }
 
-  const readyCount = staged.filter((s) => s.info && !s.error).length;
+  const readyCount = staged.filter((s) => s.info && !s.error && trimOf(s).valid).length;
   const canConvert = Boolean(outputDir) && readyCount > 0;
   const [lo, hi] = preset.qualityRange ?? [14, 32];
 
@@ -218,6 +246,44 @@ export function VideoView() {
                           .join(' · ')
                       : ''}
               </p>
+
+              {s.info && !s.error && (() => {
+                const { start, end, valid } = trimOf(s);
+                return (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
+                    <span className="uppercase tracking-[0.1em] font-semibold text-[var(--muted-foreground)]">
+                      Beschneiden
+                    </span>
+                    <label className="flex items-center gap-1.5">
+                      <span className="text-[var(--muted-foreground)]">Start</span>
+                      <TimeInput
+                        value={s.trimStartStr}
+                        onChange={(v) =>
+                          setStaged((prev) => prev.map((x) => (x.path === s.path ? { ...x, trimStartStr: v } : x)))
+                        }
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5">
+                      <span className="text-[var(--muted-foreground)]">Ende</span>
+                      <TimeInput
+                        value={s.trimEndStr}
+                        onChange={(v) =>
+                          setStaged((prev) => prev.map((x) => (x.path === s.path ? { ...x, trimEndStr: v } : x)))
+                        }
+                      />
+                    </label>
+                    {valid ? (
+                      <span className="text-[var(--muted-foreground)] tabular">
+                        → Dauer {formatDuration(end - start)}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--destructive)] font-bold">
+                        Ungültiger Bereich (Ende muss nach Start und innerhalb der Länge liegen)
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
@@ -382,6 +448,18 @@ export function VideoView() {
         />
       )}
     </div>
+  );
+}
+
+function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="0:00"
+      spellCheck={false}
+      className="w-20 h-8 px-2 rounded-[var(--radius)] bg-[var(--input)] border border-[var(--border)] text-[12px] tabular text-center focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+    />
   );
 }
 

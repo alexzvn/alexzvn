@@ -162,9 +162,19 @@ async function runJob(spec: VideoConvertSpec, preset: VideoPreset): Promise<void
   const encoder = pickEncoder(preset, spec.useHardware, available, hwKind);
   const outputPath = resolveOutputPath(spec, preset);
 
+  // Trim: -ss before -i (fast input seek), -t = trimmed duration.
+  const fullDur = spec.durationSec > 0 ? spec.durationSec : 0;
+  const trimStart = spec.trimStartSec && spec.trimStartSec > 0 ? spec.trimStartSec : 0;
+  const trimEnd = spec.trimEndSec != null && spec.trimEndSec > 0 ? spec.trimEndSec : fullDur;
+  const trimActive = trimStart > 0 || (fullDur > 0 && trimEnd < fullDur);
+  const outDur = Math.max(0, (trimEnd || fullDur) - trimStart);
+  const progressDur = trimActive && outDur > 0 ? outDur : fullDur;
+
   const args = [
     '-y',
+    ...(trimStart > 0 ? ['-ss', String(trimStart)] : []),
     '-i', spec.inputPath,
+    ...(trimActive && outDur > 0 ? ['-t', String(outDur)] : []),
     ...scaleArgs(spec.scaleHeight),
     '-c:v', encoder,
     ...videoRateArgs(preset, encoder, spec.rateControl, spec.quality, spec.bitrateKbps),
@@ -215,7 +225,7 @@ async function runJob(spec: VideoConvertSpec, preset: VideoPreset): Promise<void
       }
     }
     if (outSec != null && !ended) {
-      const dur = spec.durationSec > 0 ? spec.durationSec : 0;
+      const dur = progressDur;
       const percent = dur > 0 ? Math.min(99.5, Math.max(0, (outSec / dur) * 100)) : -1;
       const speedNum = lastSpeed ? Number(lastSpeed.replace('x', '')) : 0;
       const etaSec = dur > 0 && speedNum > 0 ? Math.max(0, (dur - outSec) / speedNum) : undefined;

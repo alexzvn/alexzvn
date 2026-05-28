@@ -51,8 +51,12 @@ export interface VideoConvertSpec {
   audioCodec: string;
   /** Audio bitrate (kbps) for lossy audio codecs. */
   audioBitrateKbps?: number | null;
+  /** Trim start in seconds (cut off the beginning); 0/undefined = from start. */
+  trimStartSec?: number;
+  /** Trim end in seconds (cut off after this point); undefined = to the end. */
+  trimEndSec?: number;
   useHardware: boolean;
-  /** Source duration in seconds, used for progress calculation. */
+  /** Full source duration in seconds. */
   durationSec: number;
 }
 
