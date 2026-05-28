@@ -118,6 +118,16 @@ export function VideoView() {
 
   return (
     <div className="space-y-6">
+      {encoders && encoders.available.length === 0 && (
+        <Card className="p-4 border-[var(--destructive)]/50">
+          <p className="text-sm font-bold text-[var(--destructive)]">FFmpeg nicht gefunden</p>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+            Die Videokonvertierung benötigt FFmpeg. Es wurde weder eine gebündelte Binary noch ein
+            FFmpeg im System-PATH gefunden.
+          </p>
+        </Card>
+      )}
+
       <DropZone hint="Videodateien hierher ziehen oder auswählen" onFiles={addFiles} onPick={pick} />
 
       {staged.length > 0 && (
