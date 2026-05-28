@@ -113,3 +113,50 @@ export const SCALE_OPTIONS: { label: string; value: number | null }[] = [
   { label: '720p', value: 720 },
   { label: '480p', value: 480 },
 ];
+
+export interface AudioCodecOption {
+  id: string;
+  label: string;
+  lossless?: boolean;
+}
+
+export const AUDIO_CODECS: AudioCodecOption[] = [
+  { id: 'aac', label: 'AAC' },
+  { id: 'libmp3lame', label: 'MP3' },
+  { id: 'ac3', label: 'AC-3 (Dolby Digital)' },
+  { id: 'alac', label: 'ALAC (verlustfrei)', lossless: true },
+  { id: 'pcm_s16le', label: 'PCM / WAV (verlustfrei)', lossless: true },
+  { id: 'copy', label: 'Originalspur übernehmen' },
+  { id: 'none', label: 'Kein Ton' },
+];
+
+export const AUDIO_BITRATES = [96, 128, 160, 192, 256, 320];
+
+export function audioCodecOption(id: string): AudioCodecOption | undefined {
+  return AUDIO_CODECS.find((c) => c.id === id);
+}
+
+/** Audio codecs that mux cleanly into the preset's container. */
+export function audioCodecsForContainer(container: Container): string[] {
+  if (container === 'mov') return ['aac', 'pcm_s16le', 'alac', 'copy', 'none'];
+  if (container === 'mkv') return ['aac', 'libmp3lame', 'ac3', 'alac', 'pcm_s16le', 'copy', 'none'];
+  return ['aac', 'libmp3lame', 'ac3', 'alac', 'copy', 'none']; // mp4
+}
+
+export function isLosslessAudio(id: string): boolean {
+  return Boolean(audioCodecOption(id)?.lossless);
+}
+
+export function usesAudioBitrate(id: string): boolean {
+  return id !== 'none' && id !== 'copy' && !isLosslessAudio(id);
+}
+
+/** A sensible default video bitrate (kbps) for VBR/CBR by target height. */
+export function defaultBitrateKbps(height: number | null): number {
+  if (!height) return 8000;
+  if (height >= 2160) return 35000;
+  if (height >= 1440) return 16000;
+  if (height >= 1080) return 8000;
+  if (height >= 720) return 5000;
+  return 2500;
+}

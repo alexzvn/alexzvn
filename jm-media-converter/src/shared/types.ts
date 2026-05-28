@@ -31,19 +31,49 @@ export interface EncoderSupport {
   available: string[];
 }
 
+export type RateControl = 'quality' | 'vbr' | 'cbr';
+
 export interface VideoConvertSpec {
   jobId: string;
   inputPath: string;
   outputDir: string;
+  /** Base output name without extension; defaults to the input basename. */
+  outputName?: string;
   presetId: string;
   /** Target height in px; null/undefined keeps original resolution. */
   scaleHeight?: number | null;
-  /** Quality override (CRF/CQ scale); null/undefined uses the preset default. */
+  rateControl: RateControl;
+  /** CRF/CQ value for rateControl='quality'; null uses the preset default. */
   quality?: number | null;
-  audioEnabled: boolean;
+  /** Target video bitrate (kbps) for rateControl='vbr'|'cbr'. */
+  bitrateKbps?: number | null;
+  /** Audio codec id ('aac','libmp3lame','ac3','alac','pcm_s16le','copy','none'). */
+  audioCodec: string;
+  /** Audio bitrate (kbps) for lossy audio codecs. */
+  audioBitrateKbps?: number | null;
   useHardware: boolean;
   /** Source duration in seconds, used for progress calculation. */
   durationSec: number;
+}
+
+export interface PreviewRequest {
+  inputPath: string;
+  atSec: number;
+  presetId: string;
+  scaleHeight?: number | null;
+  rateControl: RateControl;
+  quality?: number | null;
+  bitrateKbps?: number | null;
+  useHardware: boolean;
+  durationSec: number;
+}
+
+export interface PreviewResult {
+  originalDataUrl: string;
+  encodedDataUrl: string;
+  /** Extrapolated full-length output size estimate in bytes (video stream). */
+  estimatedBytes: number;
+  segmentSec: number;
 }
 
 export interface OfficeConvertSpec {
@@ -83,6 +113,7 @@ export interface JmcApi {
   };
   media: {
     probe: (path: string) => Promise<MediaInfo>;
+    previewFrame: (req: PreviewRequest) => Promise<PreviewResult>;
   };
   encoders: {
     get: () => Promise<EncoderSupport>;

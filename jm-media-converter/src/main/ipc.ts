@@ -1,9 +1,11 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import type {
   OfficeConvertSpec,
+  PreviewRequest,
   VideoConvertSpec,
 } from '@shared/types';
 import { probeMedia } from './ffmpeg/probe';
+import { previewFrame } from './ffmpeg/preview';
 import { detectEncoders } from './ffmpeg/encoders';
 import { cancelVideo, enqueueVideo, setVideoEmitter } from './ffmpeg/convert';
 import { enqueueOffice, setOfficeEmitter } from './office/convert';
@@ -61,6 +63,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle('media:probe', (_event, filePath: string) => probeMedia(filePath));
+
+  ipcMain.handle('media:previewFrame', (_event, req: PreviewRequest) => previewFrame(req));
 
   ipcMain.handle('encoders:get', () => detectEncoders());
 

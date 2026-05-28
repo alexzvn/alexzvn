@@ -1,8 +1,8 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import type { ConvertProgress, ConvertResult, VideoConvertSpec } from '@shared/types';
-import { getPreset, type VideoPreset } from '@shared/presets';
+import type { ConvertProgress, ConvertResult, RateControl, VideoConvertSpec } from '@shared/types';
+import { getPreset, usesAudioBitrate, type VideoPreset } from '@shared/presets';
 import { ffmpegPath } from './locate';
 import { detectEncoders } from './encoders';
 
@@ -61,7 +61,7 @@ async function pump(): Promise<void> {
   }
 }
 
-function pickEncoder(preset: VideoPreset, useHardware: boolean, available: string[], hwKind: string | null): string {
+export function pickEncoder(preset: VideoPreset, useHardware: boolean, available: string[], hwKind: string | null): string {
   if (useHardware && hwKind) {
     const enc = preset.hwEncoder?.[hwKind as keyof typeof preset.hwEncoder];
     if (enc && available.includes(enc)) return enc;
@@ -69,36 +69,76 @@ function pickEncoder(preset: VideoPreset, useHardware: boolean, available: strin
   return preset.swEncoder;
 }
 
-function qualityArgs(preset: VideoPreset, encoder: string, quality?: number | null): string[] {
-  if (preset.qualityKind !== 'crf') return [];
-  const q = quality ?? preset.defaultQuality ?? 22;
-  if (encoder.endsWith('_nvenc')) return ['-rc', 'vbr', '-cq', String(q), '-b:v', '0'];
-  if (encoder.endsWith('_qsv')) return ['-global_quality', String(q)];
-  if (encoder.endsWith('_vaapi')) return ['-qp', String(q)];
-  if (encoder.endsWith('_videotoolbox')) {
-    const [lo, hi] = preset.qualityRange ?? [14, 32];
-    const t = Math.min(1, Math.max(0, (q - lo) / (hi - lo)));
-    const vq = Math.round(80 - t * 45); // lower CRF → higher VT quality
-    return ['-q:v', String(Math.min(100, Math.max(1, vq)))];
+/** Build the video rate-control args for the given encoder + mode. */
+export function videoRateArgs(
+  preset: VideoPreset,
+  encoder: string,
+  rateControl: RateControl,
+  quality?: number | null,
+  bitrateKbps?: number | null,
+): string[] {
+  if (preset.qualityKind !== 'crf') return []; // ProRes/DNxHR are profile-based
+
+  if (rateControl === 'quality') {
+    const q = quality ?? preset.defaultQuality ?? 22;
+    if (encoder.endsWith('_nvenc')) return ['-rc', 'vbr', '-cq', String(q), '-b:v', '0'];
+    if (encoder.endsWith('_qsv')) return ['-global_quality', String(q)];
+    if (encoder.endsWith('_vaapi')) return ['-qp', String(q)];
+    if (encoder.endsWith('_videotoolbox')) {
+      const [lo, hi] = preset.qualityRange ?? [14, 32];
+      const t = Math.min(1, Math.max(0, (q - lo) / (hi - lo)));
+      const vq = Math.round(80 - t * 45); // lower CRF → higher VT quality
+      return ['-q:v', String(Math.min(100, Math.max(1, vq)))];
+    }
+    return ['-crf', String(q)]; // libx264 / libx265 / libsvtav1
   }
-  return ['-crf', String(q)]; // libx264 / libx265 / libsvtav1
+
+  const kbps = Math.max(100, Math.round(bitrateKbps ?? 8000));
+  const b = `${kbps}k`;
+  const buf = `${kbps * 2}k`;
+
+  if (rateControl === 'cbr') {
+    if (encoder.endsWith('_nvenc')) return ['-rc', 'cbr', '-b:v', b];
+    if (encoder.endsWith('_qsv')) return ['-b:v', b, '-maxrate', b, '-bufsize', buf];
+    if (encoder.endsWith('_vaapi')) return ['-rc_mode', 'CBR', '-b:v', b];
+    if (encoder.endsWith('_videotoolbox')) return ['-b:v', b];
+    return ['-b:v', b, '-minrate', b, '-maxrate', b, '-bufsize', buf];
+  }
+
+  // vbr — target average bitrate
+  if (encoder.endsWith('_nvenc')) return ['-rc', 'vbr', '-b:v', b, '-maxrate', `${Math.round(kbps * 1.5)}k`];
+  if (encoder.endsWith('_qsv')) return ['-b:v', b];
+  if (encoder.endsWith('_vaapi')) return ['-rc_mode', 'VBR', '-b:v', b];
+  if (encoder.endsWith('_videotoolbox')) return ['-b:v', b];
+  return ['-b:v', b];
 }
 
-function audioArgs(preset: VideoPreset, audioEnabled: boolean): string[] {
-  if (!audioEnabled) return ['-an'];
-  if (preset.audioCodec === 'copy') return ['-c:a', 'copy'];
-  const args = ['-c:a', preset.audioCodec];
-  if (preset.audioBitrateKbps) args.push('-b:a', `${preset.audioBitrateKbps}k`);
+function audioArgs(spec: VideoConvertSpec): string[] {
+  const codec = spec.audioCodec;
+  if (codec === 'none') return ['-an'];
+  if (codec === 'copy') return ['-c:a', 'copy'];
+  const args = ['-c:a', codec];
+  if (usesAudioBitrate(codec) && spec.audioBitrateKbps) {
+    args.push('-b:a', `${spec.audioBitrateKbps}k`);
+  }
   return args;
 }
 
-function scaleArgs(scaleHeight?: number | null): string[] {
+export function scaleArgs(scaleHeight?: number | null): string[] {
   if (!scaleHeight) return [];
   return ['-vf', `scale=-2:${scaleHeight}:flags=lanczos`];
 }
 
+function sanitizeName(name: string): string {
+  // Strip path separators and characters illegal on Windows.
+  return name.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, ' ').trim() || 'output';
+}
+
 function resolveOutputPath(spec: VideoConvertSpec, preset: VideoPreset): string {
-  const base = path.basename(spec.inputPath, path.extname(spec.inputPath));
+  const base =
+    spec.outputName && spec.outputName.trim()
+      ? sanitizeName(spec.outputName)
+      : path.basename(spec.inputPath, path.extname(spec.inputPath));
   const sameAsInput = (p: string) => path.resolve(p) === path.resolve(spec.inputPath);
   let candidate = path.join(spec.outputDir, `${base}.${preset.container}`);
   let i = 1;
@@ -127,9 +167,9 @@ async function runJob(spec: VideoConvertSpec, preset: VideoPreset): Promise<void
     '-i', spec.inputPath,
     ...scaleArgs(spec.scaleHeight),
     '-c:v', encoder,
-    ...qualityArgs(preset, encoder, spec.quality),
+    ...videoRateArgs(preset, encoder, spec.rateControl, spec.quality, spec.bitrateKbps),
     ...(preset.extraArgs ?? []),
-    ...audioArgs(preset, spec.audioEnabled),
+    ...audioArgs(spec),
     '-progress', 'pipe:1',
     '-nostats',
     '-loglevel', 'error',

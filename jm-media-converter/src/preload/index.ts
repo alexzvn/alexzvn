@@ -5,6 +5,7 @@ import type {
   JmcApi,
   JobKind,
   OfficeConvertSpec,
+  PreviewRequest,
   VideoConvertSpec,
 } from '@shared/types';
 
@@ -17,6 +18,7 @@ const api: JmcApi = {
   },
   media: {
     probe: (filePath) => ipcRenderer.invoke('media:probe', filePath),
+    previewFrame: (req: PreviewRequest) => ipcRenderer.invoke('media:previewFrame', req),
   },
   encoders: {
     get: () => ipcRenderer.invoke('encoders:get'),
