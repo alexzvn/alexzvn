@@ -43,6 +43,43 @@ export interface SaveBytesRequest {
   bytes: Uint8Array;
 }
 
+export interface AiStatus {
+  modelPresent: boolean;
+  modelId: string;
+}
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  createdAt: number;
+  /** Small preview as a data URL, ready to render in the library grid. */
+  thumbDataUrl: string;
+}
+
+export interface LibraryAddRequest {
+  name: string;
+  /** Full-resolution PNG of the asset. */
+  pngBytes: Uint8Array;
+  /** Small PNG thumbnail. */
+  thumbBytes: Uint8Array;
+  width: number;
+  height: number;
+}
+
+export interface AiSegmentRequest {
+  /** RGBA pixels of a square image, length size*size*4. */
+  rgba: Uint8Array;
+  size: number;
+}
+
+export interface AiSegmentResult {
+  /** 8-bit alpha matte, length size*size (255 = foreground). */
+  matte: Uint8Array;
+  size: number;
+}
+
 /** Shape exposed on `window.jmg` by the preload bridge. */
 export interface JmgApi {
   platform: NodeJS.Platform;
@@ -65,6 +102,19 @@ export interface JmgApi {
   fonts: {
     /** List font family names installed on the machine. */
     list: () => Promise<string[]>;
+  };
+  ai: {
+    /** Whether the local segmentation model is available. */
+    status: () => Promise<AiStatus>;
+    /** Run background segmentation on a square RGBA buffer; returns an alpha matte. */
+    segment: (req: AiSegmentRequest) => Promise<AiSegmentResult>;
+  };
+  library: {
+    list: () => Promise<LibraryItem[]>;
+    add: (req: LibraryAddRequest) => Promise<LibraryItem>;
+    remove: (id: string) => Promise<void>;
+    /** Full-resolution PNG bytes of a stored asset. */
+    read: (id: string) => Promise<Uint8Array | null>;
   };
   shell: {
     reveal: (path: string) => Promise<void>;

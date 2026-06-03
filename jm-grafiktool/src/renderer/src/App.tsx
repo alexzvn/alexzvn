@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell';
 import { EditorView } from './views/EditorView';
 import { BibliothekView } from './views/BibliothekView';
 import { EditorActions } from './components/editor/EditorActions';
+import { cn } from './lib/cn';
 
 export type Section = 'editor' | 'bibliothek';
 
@@ -15,7 +16,12 @@ export function App() {
       onSection={setSection}
       topbarExtra={section === 'editor' ? <EditorActions /> : null}
     >
-      {section === 'editor' ? <EditorView /> : <BibliothekView />}
+      {/* The editor stays mounted (keeps the document + engine alive) and is
+          just hidden when another section is active. */}
+      <div className={cn('h-full', section !== 'editor' && 'hidden')}>
+        <EditorView />
+      </div>
+      {section === 'bibliothek' && <BibliothekView onInserted={() => setSection('editor')} />}
     </AppShell>
   );
 }

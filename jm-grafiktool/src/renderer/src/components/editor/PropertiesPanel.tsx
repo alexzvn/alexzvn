@@ -4,6 +4,7 @@ import type { TextStyle } from '@/engine/types';
 import { PanelLabel, Slider, Swatch, Segment, Toggle } from './controls';
 import { Select } from '@/components/ui/Select';
 import { useFonts } from './useFonts';
+import { MagicMaskPanel } from './MagicMaskPanel';
 
 /** First family from a CSS font-family stack, unquoted. */
 function parseFamily(ff: string): string {
@@ -105,6 +106,10 @@ export function PropertiesPanel() {
         )}
       </div>
     );
+  }
+
+  if (layer?.kind === 'raster') {
+    return <MagicMaskPanel layerId={layer.id} />;
   }
 
   return (

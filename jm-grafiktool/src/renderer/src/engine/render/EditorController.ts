@@ -151,6 +151,9 @@ export class EditorController {
 
   private resize(): void {
     const rect = this.container.getBoundingClientRect();
+    // Ignore zero-size (e.g. while hidden behind another tab) so we keep the
+    // last good viewport and don't divide by zero in fit().
+    if (rect.width === 0 || rect.height === 0) return;
     this.cssW = Math.max(1, rect.width);
     this.cssH = Math.max(1, rect.height);
     this.dpr = window.devicePixelRatio || 1;
@@ -526,6 +529,54 @@ export class EditorController {
     this.notify();
   }
 
+  /** Set (or clear) a layer's alpha mask — used by Magic Mask / Freistellen. */
+  setLayerMask(id: string, mask: HTMLCanvasElement | null): void {
+    const l = this.doc.layerById(id);
+    if (!l) return;
+    const prev = l.mask;
+    this.pushStructural(
+      mask ? 'Freistellen (KI)' : 'Maske entfernen',
+      () => {
+        l.mask = mask;
+      },
+      () => {
+        l.mask = prev;
+      },
+    );
+  }
+
+  /** Permanently apply a layer's mask to its pixels (raster only), then drop it. */
+  applyMask(id: string): void {
+    const l = this.doc.layerById(id);
+    if (!l || l.kind !== 'raster' || !l.mask) return;
+    const before = createCanvas(l.canvas.width, l.canvas.height);
+    before.ctx.drawImage(l.canvas, 0, 0);
+    const prevMask = l.mask;
+    const lctx = l.canvas.getContext('2d')!;
+    lctx.save();
+    lctx.globalCompositeOperation = 'destination-in';
+    lctx.drawImage(prevMask, -l.offsetX, -l.offsetY);
+    lctx.restore();
+    const after = createCanvas(l.canvas.width, l.canvas.height);
+    after.ctx.drawImage(l.canvas, 0, 0);
+    const target = l.canvas;
+    this.pushStructural(
+      'Maske anwenden',
+      () => {
+        const c = target.getContext('2d')!;
+        c.clearRect(0, 0, target.width, target.height);
+        c.drawImage(after.canvas, 0, 0);
+        l.mask = null;
+      },
+      () => {
+        const c = target.getContext('2d')!;
+        c.clearRect(0, 0, target.width, target.height);
+        c.drawImage(before.canvas, 0, 0);
+        l.mask = prevMask;
+      },
+    );
+  }
+
   renameLayer(id: string, name: string): void {
     const l = this.doc.layerById(id);
     if (!l) return;
@@ -632,6 +683,19 @@ export class EditorController {
     this.viewport.fit(doc.width, doc.height, this.cssW, this.cssH);
     this.requestRender();
     this.notify();
+  }
+
+  /** Insert a prebuilt layer (e.g. from a template) above the active layer. */
+  addLayer(layer: Layer): void {
+    const at = this.doc.activeLayerId ? this.doc.indexOf(this.doc.activeLayerId) + 1 : this.doc.layers.length;
+    this.pushStructural(
+      `${layer.name} hinzufügen`,
+      () => {
+        if (this.doc.indexOf(layer.id) < 0) this.doc.layers.splice(at, 0, layer);
+        this.doc.activeLayerId = layer.id;
+      },
+      () => this.doc.removeLayer(layer.id),
+    );
   }
 
   /** Add an imported bitmap as a new raster layer, fit into the document. */

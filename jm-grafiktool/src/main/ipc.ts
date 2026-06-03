@@ -9,6 +9,8 @@ import type {
   SaveImageRequest,
   SaveImageResult,
 } from '@shared/types';
+import { registerAiIpc } from './ai';
+import { registerLibraryIpc } from './library';
 
 const IMAGE_EXT = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tif', 'tiff'];
 const OPEN_EXT = [...IMAGE_EXT, 'psd', 'svg', 'jmg'];
@@ -23,6 +25,9 @@ async function readPicked(filePath: string): Promise<PickedImage> {
 }
 
 export function registerIpc(getWindow: () => BrowserWindow | null): void {
+  registerAiIpc();
+  registerLibraryIpc();
+
   ipcMain.handle('dialog:pickImages', async (): Promise<PickedImage[]> => {
     const win = getWindow();
     const options: Electron.OpenDialogOptions = {

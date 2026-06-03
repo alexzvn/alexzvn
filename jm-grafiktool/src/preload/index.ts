@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
+  AiSegmentRequest,
   JmgApi,
+  LibraryAddRequest,
   OpenedFile,
   OpenKind,
   PickedImage,
@@ -22,6 +24,16 @@ const api: JmgApi = {
   },
   fonts: {
     list: () => ipcRenderer.invoke('fonts:list') as Promise<string[]>,
+  },
+  ai: {
+    status: () => ipcRenderer.invoke('ai:status'),
+    segment: (req: AiSegmentRequest) => ipcRenderer.invoke('ai:segment', req),
+  },
+  library: {
+    list: () => ipcRenderer.invoke('library:list'),
+    add: (req: LibraryAddRequest) => ipcRenderer.invoke('library:add', req),
+    remove: (id: string) => ipcRenderer.invoke('library:remove', id) as Promise<void>,
+    read: (id: string) => ipcRenderer.invoke('library:read', id),
   },
   shell: {
     reveal: (path) => ipcRenderer.invoke('shell:reveal', path) as Promise<void>,
