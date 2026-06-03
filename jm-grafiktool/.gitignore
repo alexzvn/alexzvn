@@ -1,0 +1,10 @@
+node_modules/
+out/
+release/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.local
+
+# AI models are bundled per-platform at packaging time or downloaded on first run.
+resources/models/*.onnx

@@ -1,0 +1,51 @@
+appId: gmbh.jakobs.grafiktool
+productName: JM Grafiktool
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+# Native modules with prebuilt binaries cannot be loaded from inside the asar
+# archive, so they are unpacked. onnxruntime-node arrives in Phase 3 (Magic Mask).
+asarUnpack:
+  - "**/node_modules/onnxruntime-node/**"
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.graphics-design
+  icon: build/icon.png
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Grafiktool
+
+publish: null
