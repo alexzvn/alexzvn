@@ -25,6 +25,24 @@ export interface SaveImageResult {
   path?: string;
 }
 
+export interface OpenedFile {
+  path: string;
+  fileName: string;
+  bytes: Uint8Array;
+}
+
+/** Which file types the open dialog should offer. */
+export type OpenKind = 'all' | 'project';
+
+export interface SaveBytesRequest {
+  suggestedName: string;
+  /** File extension without the dot, e.g. 'psd' | 'jmg'. */
+  ext: string;
+  /** Human label for the dialog filter, e.g. 'Photoshop'. */
+  filterName: string;
+  bytes: Uint8Array;
+}
+
 /** Shape exposed on `window.jmg` by the preload bridge. */
 export interface JmgApi {
   platform: NodeJS.Platform;
@@ -39,6 +57,10 @@ export interface JmgApi {
     read: (path: string) => Promise<PickedImage>;
     /** Show a save dialog and write the encoded image to disk. */
     saveImage: (req: SaveImageRequest) => Promise<SaveImageResult>;
+    /** Open one file (images, PSD, SVG, TIFF or .jmg projects) as raw bytes. */
+    open: (kind: OpenKind) => Promise<OpenedFile | null>;
+    /** Show a save dialog and write arbitrary bytes (PSD, .jmg) to disk. */
+    saveBytes: (req: SaveBytesRequest) => Promise<SaveImageResult>;
   };
   shell: {
     reveal: (path: string) => Promise<void>;
