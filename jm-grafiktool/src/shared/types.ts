@@ -62,6 +62,10 @@ export interface JmgApi {
     /** Show a save dialog and write arbitrary bytes (PSD, .jmg) to disk. */
     saveBytes: (req: SaveBytesRequest) => Promise<SaveImageResult>;
   };
+  fonts: {
+    /** List font family names installed on the machine. */
+    list: () => Promise<string[]>;
+  };
   shell: {
     reveal: (path: string) => Promise<void>;
     openExternal: (url: string) => Promise<void>;

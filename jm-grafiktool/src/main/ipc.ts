@@ -99,6 +99,23 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     },
   );
 
+  ipcMain.handle('fonts:list', async (): Promise<string[]> => {
+    try {
+      const mod = (await import('font-list')) as unknown as {
+        getFonts?: (o?: { disableQuoting?: boolean }) => Promise<string[]>;
+        default?: { getFonts?: (o?: { disableQuoting?: boolean }) => Promise<string[]> };
+      };
+      const getFonts = mod.getFonts ?? mod.default?.getFonts;
+      if (!getFonts) return [];
+      const fonts = await getFonts({ disableQuoting: true });
+      return Array.from(
+        new Set(fonts.map((f) => f.replace(/^"|"$/g, '').trim()).filter(Boolean)),
+      ).sort((a, b) => a.localeCompare(b));
+    } catch {
+      return [];
+    }
+  });
+
   ipcMain.handle('shell:reveal', (_event, filePath: string) => {
     shell.showItemInFolder(filePath);
   });

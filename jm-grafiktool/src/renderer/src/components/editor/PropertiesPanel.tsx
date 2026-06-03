@@ -2,10 +2,18 @@ import { useActiveLayer, useEditor } from '@/store/editor';
 import { hexToRgba, rgbToHex } from '@/engine/color';
 import type { TextStyle } from '@/engine/types';
 import { PanelLabel, Slider, Swatch, Segment, Toggle } from './controls';
+import { Select } from '@/components/ui/Select';
+import { useFonts } from './useFonts';
+
+/** First family from a CSS font-family stack, unquoted. */
+function parseFamily(ff: string): string {
+  return ff.split(',')[0].trim().replace(/^["']|["']$/g, '');
+}
 
 export function PropertiesPanel() {
   const controller = useEditor((s) => s.controller);
   const active = useActiveLayer();
+  const fonts = useFonts();
   // Read the live layer for its style; re-renders on every store sync.
   const layer = controller && active ? controller.doc.layerById(active.id) : null;
   if (!controller) return null;
@@ -22,6 +30,7 @@ export function PropertiesPanel() {
           rows={2}
           className="w-full px-2 py-1.5 rounded-[var(--radius)] bg-[var(--input)] border border-[var(--border)] text-[12px] resize-none"
         />
+        <FontPicker fonts={fonts} value={st.fontFamily} onChange={(family) => set({ fontFamily: family })} />
         <Slider label="Schriftgröße" unit="px" min={8} max={400} value={st.fontSize} onChange={(v) => set({ fontSize: v })} />
         <div className="flex items-center justify-between">
           <PanelLabel>Stärke</PanelLabel>
@@ -99,13 +108,42 @@ export function PropertiesPanel() {
   }
 
   return (
-    <div className="p-4 text-xs text-[var(--muted-foreground)] leading-relaxed">
+    <div className="p-4 text-xs text-[var(--muted-foreground)] leading-relaxed" data-noprops>
       Keine bearbeitbaren Eigenschaften für diese Ebene.
       <br />
       Wähle eine <strong className="text-[var(--foreground)]/80">Text-</strong> oder{' '}
       <strong className="text-[var(--foreground)]/80">Form-Ebene</strong>, oder erstelle eine mit den
       Werkzeugen <strong className="text-[var(--foreground)]/80">T</strong> /{' '}
       <strong className="text-[var(--foreground)]/80">U</strong>.
+    </div>
+  );
+}
+
+function FontPicker({
+  fonts,
+  value,
+  onChange,
+}: {
+  fonts: string[];
+  value: string;
+  onChange: (fontFamily: string) => void;
+}) {
+  const current = parseFamily(value);
+  const families = Array.from(new Set([current, ...fonts])).filter(Boolean);
+  return (
+    <div className="flex flex-col gap-1">
+      <Select
+        label="Schriftart"
+        options={families.map((f) => ({ value: f, label: f }))}
+        value={current}
+        onChange={(e) => onChange(`"${e.target.value}"`)}
+        style={{ fontFamily: `"${current}"` }}
+      />
+      {fonts.length === 0 && (
+        <span className="text-[10px] text-[var(--muted-foreground)]">
+          Systemschriften sind nur in der Desktop-App verfügbar.
+        </span>
+      )}
     </div>
   );
 }

@@ -20,6 +20,9 @@ const api: JmgApi = {
     open: (kind: OpenKind) => ipcRenderer.invoke('file:open', kind) as Promise<OpenedFile | null>,
     saveBytes: (req: SaveBytesRequest) => ipcRenderer.invoke('file:saveBytes', req),
   },
+  fonts: {
+    list: () => ipcRenderer.invoke('fonts:list') as Promise<string[]>,
+  },
   shell: {
     reveal: (path) => ipcRenderer.invoke('shell:reveal', path) as Promise<void>,
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url) as Promise<void>,
