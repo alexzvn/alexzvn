@@ -9,9 +9,16 @@ export interface LayerBase {
   /** 0..1 */
   opacity: number;
   blendMode: BlendMode;
-  /** Placement offset in document space (cheap non-destructive transform). */
+  /** Translation in document space. */
   offsetX: number;
   offsetY: number;
+  /** Non-destructive scale (default 1) and rotation in radians (default 0). */
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
+  /** Scale/rotation pivot in local content space (center). */
+  pivotX: number;
+  pivotY: number;
   locked: boolean;
   /**
    * Optional alpha mask, document-sized. Its alpha channel hides/reveals the
@@ -53,6 +60,11 @@ const baseDefaults = (name: string): Omit<LayerBase, 'kind'> => ({
   blendMode: 'normal',
   offsetX: 0,
   offsetY: 0,
+  scaleX: 1,
+  scaleY: 1,
+  rotation: 0,
+  pivotX: 0,
+  pivotY: 0,
   locked: false,
   mask: null,
 });

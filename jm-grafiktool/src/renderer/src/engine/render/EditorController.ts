@@ -4,6 +4,7 @@ import type { ToolOptions, ToolContext, PointerInfo } from '../tools/Tool';
 import type { Layer, RasterLayer } from '../doc/Layer';
 import { Document } from '../doc/Document';
 import { createRasterLayer, newLayerId } from '../doc/Layer';
+import { layerMatrix } from '../doc/transform';
 import { Viewport } from '../viewport/Viewport';
 import { Canvas2DCompositor } from '../compositor/Canvas2DCompositor';
 import { History } from '../history/History';
@@ -555,7 +556,8 @@ export class EditorController {
     const lctx = l.canvas.getContext('2d')!;
     lctx.save();
     lctx.globalCompositeOperation = 'destination-in';
-    lctx.drawImage(prevMask, -l.offsetX, -l.offsetY);
+    // The mask is in the layer's local space, aligned with the canvas pixels.
+    lctx.drawImage(prevMask, 0, 0);
     lctx.restore();
     const after = createCanvas(l.canvas.width, l.canvas.height);
     after.ctx.drawImage(l.canvas, 0, 0);
@@ -642,10 +644,12 @@ export class EditorController {
     if (!layer || !sel || layer.locked) return;
     const before = createCanvas(layer.canvas.width, layer.canvas.height);
     before.ctx.drawImage(layer.canvas, 0, 0);
+    const inv = layerMatrix(layer).inverse();
     const lctx = layer.canvas.getContext('2d')!;
     lctx.save();
     lctx.globalCompositeOperation = 'destination-out';
-    lctx.drawImage(sel.toMaskCanvas(), -layer.offsetX, -layer.offsetY);
+    lctx.setTransform(inv.a, inv.b, inv.c, inv.d, inv.e, inv.f);
+    lctx.drawImage(sel.toMaskCanvas(), 0, 0);
     lctx.restore();
     const after = createCanvas(layer.canvas.width, layer.canvas.height);
     after.ctx.drawImage(layer.canvas, 0, 0);
@@ -877,6 +881,11 @@ function structuredCloneLayer(layer: Layer): Layer {
     copy.blendMode = layer.blendMode;
     copy.offsetX = layer.offsetX;
     copy.offsetY = layer.offsetY;
+    copy.scaleX = layer.scaleX;
+    copy.scaleY = layer.scaleY;
+    copy.rotation = layer.rotation;
+    copy.pivotX = layer.pivotX;
+    copy.pivotY = layer.pivotY;
     copy.visible = layer.visible;
     return copy;
   }

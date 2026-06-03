@@ -51,6 +51,7 @@ export type BlendMode =
 export type LayerKind = 'raster' | 'text' | 'shape';
 
 export type ToolId =
+  | 'transform'
   | 'move'
   | 'brush'
   | 'eraser'

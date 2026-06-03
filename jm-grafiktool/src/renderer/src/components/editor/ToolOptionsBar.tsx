@@ -87,6 +87,11 @@ export function ToolOptionsBar() {
         {toolId === 'text' && (
           <span className="text-[11px] text-[var(--muted-foreground)]">Klicken zum Platzieren · Eigenschaften rechts</span>
         )}
+        {toolId === 'transform' && (
+          <span className="text-[11px] text-[var(--muted-foreground)]">
+            Ecken = skalieren · Kanten = eine Achse · oben = drehen (Shift: 15°-Schritte) · innen = verschieben
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-2 shrink-0">

@@ -1,5 +1,6 @@
 import type { Rect } from '../types';
 import type { Selection } from '../selection/Selection';
+import { localToDoc, type Transformable } from '../doc/transform';
 
 /**
  * Restrict an already-painted stroke to the active selection. For every pixel
@@ -7,16 +8,15 @@ import type { Selection } from '../selection/Selection';
  * pixel from `beforeCanvas`. Handles both painting and erasing correctly, and
  * works with arbitrary (e.g. magic-wand) selections that have no outline path.
  *
- * Coordinates: layer canvas pixel (lx, ly) maps to document point
- * (lx + offsetX, ly + offsetY) where the selection is defined.
+ * Coordinates: layer canvas pixel (lx, ly) maps to a document point via the
+ * layer transform, where the selection is defined.
  */
 export function clipStrokeToSelection(
   layerCanvas: HTMLCanvasElement,
   beforeCanvas: HTMLCanvasElement,
   selection: Selection,
   dirty: Rect,
-  offsetX: number,
-  offsetY: number,
+  layer: Transformable,
 ): void {
   const x = Math.max(0, Math.floor(dirty.x));
   const y = Math.max(0, Math.floor(dirty.y));
@@ -32,7 +32,8 @@ export function clipStrokeToSelection(
   const b = before.data;
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
-      const inside = selection.contains(x + px + offsetX, y + py + offsetY);
+      const d = localToDoc(layer, { x: x + px, y: y + py });
+      const inside = selection.contains(d.x, d.y);
       if (!inside) {
         const i = (py * w + px) * 4;
         c[i] = b[i];

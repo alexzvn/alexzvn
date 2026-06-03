@@ -17,6 +17,11 @@ interface LayerMetaBase {
   blendMode: BlendMode;
   offsetX: number;
   offsetY: number;
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
+  pivotX: number;
+  pivotY: number;
   locked: boolean;
   hasMask: boolean;
 }
@@ -53,6 +58,11 @@ export async function docToJmgBytes(doc: Document): Promise<Uint8Array> {
       blendMode: l.blendMode,
       offsetX: l.offsetX,
       offsetY: l.offsetY,
+      scaleX: l.scaleX,
+      scaleY: l.scaleY,
+      rotation: l.rotation,
+      pivotX: l.pivotX,
+      pivotY: l.pivotY,
       locked: l.locked,
       hasMask: !!l.mask,
     };
@@ -108,6 +118,11 @@ export async function jmgToDoc(bytes: Uint8Array): Promise<Document> {
     layer.blendMode = meta.blendMode;
     layer.offsetX = meta.offsetX;
     layer.offsetY = meta.offsetY;
+    layer.scaleX = meta.scaleX ?? 1;
+    layer.scaleY = meta.scaleY ?? 1;
+    layer.rotation = meta.rotation ?? 0;
+    layer.pivotX = meta.pivotX ?? 0;
+    layer.pivotY = meta.pivotY ?? 0;
     layer.locked = meta.locked;
     doc.layers.push(layer);
   }

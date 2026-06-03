@@ -10,6 +10,7 @@ interface ToolDef {
 }
 
 const TOOLS: ToolDef[] = [
+  { id: 'transform', label: 'Transformieren · Skalieren / Drehen', key: 'Strg+T' },
   { id: 'move', label: 'Verschieben', key: 'V' },
   { id: 'brush', label: 'Pinsel', key: 'B' },
   { id: 'eraser', label: 'Radierer', key: 'E' },

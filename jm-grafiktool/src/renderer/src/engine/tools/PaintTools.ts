@@ -5,6 +5,7 @@ import type { RasterLayer } from '../doc/Layer';
 import { drawStampLine } from '../raster/brush';
 import { clipStrokeToSelection } from '../raster/strokeClip';
 import { rasterPatchCommand, snapshot } from '../history/commands';
+import { docToLocal } from '../doc/transform';
 
 /** Shared brush/eraser behavior; subclasses only differ by erase mode + label. */
 abstract class PaintTool implements Tool {
@@ -24,7 +25,7 @@ abstract class PaintTool implements Tool {
   }
 
   private toLocal(p: Point, layer: RasterLayer): Point {
-    return { x: p.x - layer.offsetX, y: p.y - layer.offsetY };
+    return docToLocal(layer, p);
   }
 
   private expandDirty(p: Point, size: number): void {
@@ -55,10 +56,9 @@ abstract class PaintTool implements Tool {
       const path = new Path2D();
       for (const poly of sel.outlines) {
         poly.forEach((pt, i) => {
-          const lx = pt.x - layer.offsetX;
-          const ly = pt.y - layer.offsetY;
-          if (i === 0) path.moveTo(lx, ly);
-          else path.lineTo(lx, ly);
+          const lp = docToLocal(layer, pt);
+          if (i === 0) path.moveTo(lp.x, lp.y);
+          else path.lineTo(lp.x, lp.y);
         });
         path.closePath();
       }
@@ -91,7 +91,7 @@ abstract class PaintTool implements Tool {
     const sel = ctx.doc.selection;
     // For outline-less selections (wand), the live clip didn't apply — correct now.
     if (sel && !sel.outlines) {
-      clipStrokeToSelection(layer.canvas, this.before, sel, this.dirty, layer.offsetX, layer.offsetY);
+      clipStrokeToSelection(layer.canvas, this.before, sel, this.dirty, layer);
     }
     const cmd = rasterPatchCommand(this.label, layer.canvas, this.before, this.dirty);
     if (cmd) ctx.history.push(cmd);

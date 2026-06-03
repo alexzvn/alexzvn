@@ -3,6 +3,7 @@ import type { Layer } from '../doc/Layer';
 import type { Viewport } from '../viewport/Viewport';
 import type { ShapeStyle, TextStyle } from '../types';
 import { blendToGCO } from '../doc/BlendMode';
+import { layerMatrix } from '../doc/transform';
 import { rgbaToCss } from '../color';
 import { createCanvas, type Canvas2D } from '../canvas';
 
@@ -105,16 +106,17 @@ export class Canvas2DCompositor {
     for (const layer of doc.layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
       scratch.ctx.clearRect(0, 0, doc.width, doc.height);
+      const m = layerMatrix(layer);
       scratch.ctx.save();
-      scratch.ctx.translate(layer.offsetX, layer.offsetY);
+      scratch.ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
       renderLayerContent(scratch.ctx, layer);
-      scratch.ctx.restore();
+      // The mask lives in the same local space as the content, so it scales and
+      // rotates together with the layer.
       if (layer.mask) {
-        scratch.ctx.save();
         scratch.ctx.globalCompositeOperation = 'destination-in';
         scratch.ctx.drawImage(layer.mask, 0, 0);
-        scratch.ctx.restore();
       }
+      scratch.ctx.restore();
       acc.ctx.save();
       acc.ctx.globalAlpha = layer.opacity;
       acc.ctx.globalCompositeOperation = blendToGCO(layer.blendMode);

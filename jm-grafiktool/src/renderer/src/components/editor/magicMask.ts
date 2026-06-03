@@ -1,5 +1,5 @@
 import type { EditorController } from '@/engine/render/EditorController';
-import { renderLayerToCanvas } from '@/engine/io/layerRender';
+import { renderLayerLocal } from '@/engine/io/layerRender';
 import { createCanvas } from '@/engine/canvas';
 
 const INPUT_SIZE = 320; // u2netp input resolution
@@ -17,8 +17,9 @@ export async function freistellen(controller: EditorController, layerId: string)
   const w = controller.doc.width;
   const h = controller.doc.height;
 
-  // Render the layer's appearance, then squash to the model's square input.
-  const full = renderLayerToCanvas(layer, w, h);
+  // Segment the layer's LOCAL (untransformed) content so the mask lives in the
+  // same space as the pixels and transforms together with the layer.
+  const full = renderLayerLocal(layer, w, h);
   const small = createCanvas(INPUT_SIZE, INPUT_SIZE);
   small.ctx.drawImage(full, 0, 0, INPUT_SIZE, INPUT_SIZE);
   const rgba = new Uint8Array(small.ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE).data);

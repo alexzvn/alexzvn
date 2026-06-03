@@ -5,6 +5,7 @@ import { createCanvas } from '../canvas';
 import { rgbaToCss } from '../color';
 import { floodFill, maskBounds } from '../raster/PixelOps';
 import { rasterPatchCommand, snapshot } from '../history/commands';
+import { docToLocal, layerMatrix } from '../doc/transform';
 
 /**
  * Fill bucket — the primary way to make color areas ("Farbflächen"). With an
@@ -40,8 +41,13 @@ export class FillTool implements Tool {
     tmp.ctx.fillRect(0, 0, w, h);
     tmp.ctx.globalCompositeOperation = 'destination-in';
     tmp.ctx.drawImage(maskCanvas, 0, 0);
+    // The selection is in document space; map it into the layer's local space.
+    const inv = layerMatrix(layer).inverse();
     const lctx = layer.canvas.getContext('2d')!;
-    lctx.drawImage(tmp.canvas, -layer.offsetX, -layer.offsetY);
+    lctx.save();
+    lctx.setTransform(inv.a, inv.b, inv.c, inv.d, inv.e, inv.f);
+    lctx.drawImage(tmp.canvas, 0, 0);
+    lctx.restore();
     return { x: 0, y: 0, width: w, height: h };
   }
 
@@ -49,8 +55,9 @@ export class FillTool implements Tool {
   private floodAt(layer: RasterLayer, e: PointerInfo, ctx: ToolContext): Rect | null {
     const lctx = layer.canvas.getContext('2d')!;
     const img = lctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
-    const sx = Math.floor(e.doc.x - layer.offsetX);
-    const sy = Math.floor(e.doc.y - layer.offsetY);
+    const local = docToLocal(layer, e.doc);
+    const sx = Math.floor(local.x);
+    const sy = Math.floor(local.y);
     if (sx < 0 || sy < 0 || sx >= img.width || sy >= img.height) return null;
     const mask = floodFill(img, sx, sy, ctx.options.tolerance, ctx.options.contiguous);
     const bounds = maskBounds(mask, img.width, img.height);

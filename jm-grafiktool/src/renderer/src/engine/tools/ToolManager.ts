@@ -1,6 +1,7 @@
 import type { ToolId } from '../types';
 import type { Tool, ToolContext, PointerInfo } from './Tool';
 import { BrushTool, EraserTool } from './PaintTools';
+import { TransformTool } from './TransformTool';
 import { MoveTool } from './MoveTool';
 import { HandTool, ZoomTool, EyedropperTool } from './NavTools';
 import { MarqueeTool, LassoTool, MagicWandTool } from './SelectionTools';
@@ -18,6 +19,7 @@ export class ToolManager {
 
   constructor() {
     for (const tool of [
+      new TransformTool(),
       new MoveTool(),
       new BrushTool(),
       new EraserTool(),

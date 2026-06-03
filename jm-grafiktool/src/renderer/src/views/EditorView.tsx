@@ -74,6 +74,9 @@ export function EditorView() {
         } else if (k === 'i') {
           e.preventDefault();
           c.invertSelection();
+        } else if (k === 't') {
+          e.preventDefault();
+          c.setTool('transform');
         }
         return;
       }

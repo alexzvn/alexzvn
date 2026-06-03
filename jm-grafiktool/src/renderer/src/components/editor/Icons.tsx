@@ -23,6 +23,7 @@ function svg(path: React.ReactNode, size = 18) {
 }
 
 export const TOOL_ICONS: Record<ToolId, (p: IconProps) => JSX.Element> = {
+  transform: ({ size }) => svg(<><rect x="6" y="6" width="12" height="12" /><rect x="3" y="3" width="3.5" height="3.5" /><rect x="17.5" y="3" width="3.5" height="3.5" /><rect x="3" y="17.5" width="3.5" height="3.5" /><rect x="17.5" y="17.5" width="3.5" height="3.5" /></>, size),
   move: ({ size }) => svg(<><path d="M12 3v18M3 12h18" /><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" /></>, size),
   brush: ({ size }) => svg(<><path d="M4 20s1-4 4-4 3 3 6 0c2.5-2.5-1-6-1-6L18 4l2 2-6 5" /><path d="M9.5 14.5 4 20" /></>, size),
   eraser: ({ size }) => svg(<><path d="M5 15 14 6l4 4-9 9H7z" /><path d="M5 19h14" /></>, size),

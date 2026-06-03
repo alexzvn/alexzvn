@@ -1,7 +1,6 @@
 import type { Point, Rect, ToolId } from '../types';
 import type { Tool, ToolContext, PointerInfo } from './Tool';
 import { rectFromPoints, snapRectToDoc } from '../geometry';
-import { createCanvas } from '../canvas';
 import { makeCommand } from '../history/commands';
 
 /** Drag a rectangle, release to crop the document (and reposition all layers). */
@@ -39,39 +38,18 @@ export class CropTool implements Tool {
     const prevW = doc.width;
     const prevH = doc.height;
 
-    // Precompute per-layer before/after geometry so undo/redo are O(1).
-    const ops = doc.layers.map((layer) => {
-      if (layer.kind === 'raster') {
-        const oldCanvas = layer.canvas;
-        const cropped = createCanvas(rect.width, rect.height);
-        cropped.ctx.drawImage(oldCanvas, layer.offsetX - rect.x, layer.offsetY - rect.y);
-        return {
-          layer,
-          oldCanvas,
-          newCanvas: cropped.canvas,
-          oldOffset: { x: layer.offsetX, y: layer.offsetY },
-        };
-      }
-      return {
-        layer,
-        oldCanvas: null as HTMLCanvasElement | null,
-        newCanvas: null as HTMLCanvasElement | null,
-        oldOffset: { x: layer.offsetX, y: layer.offsetY },
-      };
-    });
+    // Crop is non-destructive: offset is a pure translation, so shifting every
+    // layer by -rect and resizing the document is correct even for scaled or
+    // rotated layers. Layer pixel buffers keep their data (clipped to the new
+    // bounds visually), so undo just restores the offsets and size.
+    const ops = doc.layers.map((layer) => ({ layer, ox: layer.offsetX, oy: layer.offsetY }));
 
     const apply = (): void => {
       doc.width = rect.width;
       doc.height = rect.height;
       for (const op of ops) {
-        if (op.layer.kind === 'raster' && op.newCanvas) {
-          op.layer.canvas = op.newCanvas;
-          op.layer.offsetX = 0;
-          op.layer.offsetY = 0;
-        } else {
-          op.layer.offsetX = op.oldOffset.x - rect.x;
-          op.layer.offsetY = op.oldOffset.y - rect.y;
-        }
+        op.layer.offsetX = op.ox - rect.x;
+        op.layer.offsetY = op.oy - rect.y;
       }
       doc.selection = null;
     };
@@ -79,11 +57,8 @@ export class CropTool implements Tool {
       doc.width = prevW;
       doc.height = prevH;
       for (const op of ops) {
-        if (op.layer.kind === 'raster' && op.oldCanvas) {
-          op.layer.canvas = op.oldCanvas;
-        }
-        op.layer.offsetX = op.oldOffset.x;
-        op.layer.offsetY = op.oldOffset.y;
+        op.layer.offsetX = op.ox;
+        op.layer.offsetY = op.oy;
       }
     };
 

@@ -108,6 +108,63 @@ export class OverlayRenderer {
     c.restore();
   }
 
+  /**
+   * Free-transform gizmo: the (possibly rotated) bounding box, square scale
+   * handles, and a round rotation handle above the top edge. All points are in
+   * document space.
+   */
+  gizmo(corners: Point[], handles: Point[], rotate: Point | null): void {
+    if (corners.length < 4) return;
+    const c = this.ctx;
+    c.save();
+    c.setLineDash([]);
+    // Box outline.
+    c.beginPath();
+    corners.forEach((p, i) => {
+      const s = this.s(p);
+      if (i === 0) c.moveTo(s.x, s.y);
+      else c.lineTo(s.x, s.y);
+    });
+    c.closePath();
+    c.strokeStyle = 'rgba(255,229,74,0.9)';
+    c.lineWidth = 1.5;
+    c.stroke();
+
+    // Line to the rotation handle.
+    if (rotate) {
+      const topMid = this.s({ x: (corners[0].x + corners[1].x) / 2, y: (corners[0].y + corners[1].y) / 2 });
+      const rs = this.s(rotate);
+      c.beginPath();
+      c.moveTo(topMid.x, topMid.y);
+      c.lineTo(rs.x, rs.y);
+      c.stroke();
+    }
+
+    // Square scale handles.
+    for (const h of handles) {
+      const s = this.s(h);
+      c.beginPath();
+      c.rect(s.x - 4, s.y - 4, 8, 8);
+      c.fillStyle = '#1a1a1a';
+      c.fill();
+      c.strokeStyle = '#ffe54a';
+      c.lineWidth = 1.5;
+      c.stroke();
+    }
+
+    // Round rotation handle.
+    if (rotate) {
+      const rs = this.s(rotate);
+      c.beginPath();
+      c.arc(rs.x, rs.y, 5, 0, Math.PI * 2);
+      c.fillStyle = '#1a1a1a';
+      c.fill();
+      c.strokeStyle = '#ffe54a';
+      c.stroke();
+    }
+    c.restore();
+  }
+
   /** Document border so the canvas bounds are visible against the checker. */
   documentBorder(docW: number, docH: number): void {
     const s = this.rectScreen({ x: 0, y: 0, width: docW, height: docH });
