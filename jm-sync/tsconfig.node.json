@@ -22,7 +22,6 @@
     "vite.web.config.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/shared/**/*.ts",
-    "tools/**/*.ts"
+    "src/shared/**/*.ts"
   ]
 }

@@ -40,12 +40,29 @@ die Mess-Engine liegt framework-neutral unter [`src/renderer/src/core/`](src/ren
 | `npm run dist:win` / `dist:mac` | Installer bauen |
 | `npm run start:codespace` | Headless-Start unter xvfb |
 
+## Mess-Engine
+
+Framework-neutral unter [`src/renderer/src/core/`](src/renderer/src/core/):
+
+- [edge.ts](src/renderer/src/core/edge.ts) — adaptive Anstiegsflanke mit Sub-Frame-Interpolation.
+- [video-flash.ts](src/renderer/src/core/video-flash.ts) — `requestVideoFrameCallback` → ROI-Luminanz → Flanke.
+- [audio-onset-core.ts](src/renderer/src/core/audio-onset-core.ts) / [audio-onset.worklet.js](src/renderer/src/core/audio-onset.worklet.js) — Goertzel-Onset auf dem Audio-Thread (Twin: Core ist testbar, Worklet läuft im AudioWorklet).
+- [audio-onset.ts](src/renderer/src/core/audio-onset.ts) — Worklet-Wrapper, rechnet auf die `performance`-Uhr um.
+- [correlator.ts](src/renderer/src/core/correlator.ts) + [stats.ts](src/renderer/src/core/stats.ts) — Paarung + Median/MAD mit Ausreißer-Verwerfung.
+- [sync-meter.ts](src/renderer/src/core/sync-meter.ts) — Orchestrator (Stream → beide Detektoren → Korrelator → Live-Update).
+
+Reine Mathematik per `npm run selftest` gegen synthetische Signale verifiziert.
+
 ## Status
 
-**Phase 0 — Scaffold (fertig):** lauffähige Hülle in Suite-Optik, Tabs
-*Messung · Generator · Kalibrierung* (Platzhalter), Plattform-Adapter, beide
-Build-Ziele grün.
+**Phase 0 — Scaffold (fertig).** Hülle, Tabs, Plattform-Adapter, beide Builds grün.
 
-Nächste Phasen: **1** Mess-Engine (Blitz-/Piep-Erkennung + Korrelator) ·
-**2** Generator + Null-Abgleich + Statistik · **3** Geräteauswahl, Politur,
-Installer + PWA-Hosting.
+**Phase 1 — Mess-Engine (fertig):** Blitz-/Piep-Erkennung + Korrelator + robuste
+Statistik, in [MeasureView](src/renderer/src/views/MeasureView.tsx) verdrahtet
+(Quellenwahl, Start/Stopp, Live-Ablesung „Audio/Video führt X ms"). Selbsttest
+grün (11 Checks), Typecheck + beide Builds grün, Headless-Start ok. Eine echte
+Live-Loopback-Messung braucht Browser + Kamera/Mikro und ein Referenzsignal
+(Phase 2 Generator oder externer Klatsch).
+
+Nächste Phasen: **2** Generator + Null-Abgleich + Verlaufsgraph ·
+**3** Geräte-Feinschliff, Politur, Installer + PWA-Hosting.
