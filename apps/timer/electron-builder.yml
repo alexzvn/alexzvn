@@ -58,4 +58,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   shortcutName: JM Timer
 
-publish: null
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true

@@ -41,10 +41,6 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  # Skip rcedit/signing (needs wine, which is unstable in this Linux CI/dev box).
-  # The NSIS shortcut still uses icon.ico; the window/taskbar icon is set at
-  # runtime via BrowserWindow. Re-enable when building on Windows or stable wine.
-  signAndEditExecutable: false
 
 nsis:
   oneClick: false
@@ -52,4 +48,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   shortcutName: JM Grafiktool
 
-publish: null
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true

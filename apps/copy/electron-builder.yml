@@ -36,9 +36,6 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  # Skip rcedit/signing (needs wine, unstable in this Linux dev box). The window
-  # and taskbar icon are set at runtime via BrowserWindow. Re-enable on Windows.
-  signAndEditExecutable: false
 
 nsis:
   oneClick: false
@@ -46,4 +43,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   shortcutName: JM Copy
 
-publish: null
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true
