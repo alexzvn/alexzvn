@@ -40,9 +40,14 @@ jobs:
       - name: Build renderer/main (electron-vite)
         run: npm run build -w @jm/${{ steps.app.outputs.name }}
 
+      - name: Resolve electron version
+        id: ev
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Package + publish (electron-builder)
         working-directory: apps/${{ steps.app.outputs.name }}
-        run: npx electron-builder --publish always
+        run: npx electron-builder --publish always -c.electronVersion=${{ steps.ev.outputs.version }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
