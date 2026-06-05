@@ -1,0 +1,48 @@
+name: Suite Build (artifacts)
+
+# Manuell auslösbar: baut ein Workspace-Tool für macOS + Windows und lädt die
+# Installer als herunterladbare Artefakte hoch (kein Release, keine Signatur).
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Workspace-Tool (Ordnername unter apps/, z. B. launcher, media-converter, copy)"
+        default: "launcher"
+        type: string
+
+jobs:
+  build:
+    name: ${{ matrix.os }} · ${{ inputs.app }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install (workspaces)
+        run: npm ci
+
+      - name: Build renderer/main (electron-vite)
+        run: npm run build -w @jm/${{ inputs.app }}
+
+      - name: Package (electron-builder, unsigniert)
+        working-directory: apps/${{ inputs.app }}
+        run: npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: jm-${{ inputs.app }}-${{ matrix.os }}
+          if-no-files-found: warn
+          path: |
+            apps/${{ inputs.app }}/release/*.dmg
+            apps/${{ inputs.app }}/release/*.exe

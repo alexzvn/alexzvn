@@ -1,0 +1,48 @@
+name: Suite Release
+
+# Auf Tag-Push `<app>-v<version>` (z. B. launcher-v0.1.0, copy-v0.2.1): baut das
+# Tool für macOS + Windows und veröffentlicht es als privates GitHub-Release.
+# Der Launcher liest diese Releases als Update-Quelle (electron-updater).
+on:
+  push:
+    tags:
+      - "*-v*.*.*"
+
+jobs:
+  release:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Resolve app from tag
+        id: app
+        shell: bash
+        run: |
+          # Tag = "<app>-v<version>" → app = alles vor "-v"
+          tag="${GITHUB_REF_NAME}"
+          echo "name=${tag%-v*}" >> "$GITHUB_OUTPUT"
+
+      - name: Install (workspaces)
+        run: npm ci
+
+      - name: Build renderer/main (electron-vite)
+        run: npm run build -w @jm/${{ steps.app.outputs.name }}
+
+      - name: Package + publish (electron-builder)
+        working-directory: apps/${{ steps.app.outputs.name }}
+        run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
