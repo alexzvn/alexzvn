@@ -1,7 +1,9 @@
 name: Suite Build (artifacts)
 
-# Manuell auslösbar: baut ein Workspace-Tool für macOS + Windows und lädt die
-# Installer als herunterladbare Artefakte hoch (kein Release, keine Signatur).
+# Baut ein Workspace-Tool für macOS + Windows und lädt die Installer als
+# herunterladbare Artefakte hoch (kein Release, keine Signatur).
+# - workflow_dispatch: beliebiges Tool über die Eingabe `app`
+# - push auf den Feature-Branch: baut automatisch den Launcher (zum Testen)
 on:
   workflow_dispatch:
     inputs:
@@ -9,10 +11,16 @@ on:
         description: "Workspace-Tool (Ordnername unter apps/, z. B. launcher, media-converter, copy)"
         default: "launcher"
         type: string
+  push:
+    branches: ["feat/jm-production-suite"]
+    paths-ignore:
+      - "**/*.md"
 
 jobs:
   build:
-    name: ${{ matrix.os }} · ${{ inputs.app }}
+    name: ${{ matrix.os }}
+    env:
+      APP: ${{ github.event.inputs.app || 'launcher' }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,10 +38,10 @@ jobs:
         run: npm ci
 
       - name: Build renderer/main (electron-vite)
-        run: npm run build -w @jm/${{ inputs.app }}
+        run: npm run build -w @jm/${{ env.APP }}
 
       - name: Package (electron-builder, unsigniert)
-        working-directory: apps/${{ inputs.app }}
+        working-directory: apps/${{ env.APP }}
         run: npx electron-builder --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -41,8 +49,8 @@ jobs:
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: jm-${{ inputs.app }}-${{ matrix.os }}
+          name: jm-${{ env.APP }}-${{ matrix.os }}
           if-no-files-found: warn
           path: |
-            apps/${{ inputs.app }}/release/*.dmg
-            apps/${{ inputs.app }}/release/*.exe
+            apps/${{ env.APP }}/release/*.dmg
+            apps/${{ env.APP }}/release/*.exe
