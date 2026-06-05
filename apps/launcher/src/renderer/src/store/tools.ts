@@ -70,6 +70,17 @@ export const useTools = create<ToolsStore>((set) => {
         window.jmps.onProgress((p) => {
           set((s) => ({ progress: { ...s.progress, [p.id]: p } }));
         });
+        window.jmps.onAppEvent(async (e) => {
+          if (e.type === 'notice') {
+            set({ notice: e.message });
+          } else if (e.type === 'manifest-changed') {
+            const [tools, states] = await Promise.all([
+              window.jmps.listTools(),
+              window.jmps.getState(),
+            ]);
+            set({ tools, states: byId(states) });
+          }
+        });
       }
       const [tools, states, settings] = await Promise.all([
         window.jmps.listTools(),

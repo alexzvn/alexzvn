@@ -43,10 +43,10 @@ nsis:
   allowToChangeInstallationDirectory: true
   shortcutName: JM Production Suite
 
-# Phase 3: privates GitHub-Release als Auto-Update-Quelle aktivieren.
-# publish:
-#   provider: github
-#   owner: jakobsmedien
-#   repo: jm-production-suite
-#   private: true
-publish: null
+# Auto-Update-Quelle (electron-updater). Erzeugt app-update.yml im Build.
+# owner/repo ggf. auf das künftige dedizierte Suite-Repo umstellen.
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true

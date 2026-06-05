@@ -35,6 +35,11 @@ export interface SuiteSettingsView {
   fromEnv: boolean;
 }
 
+/** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */
+export type AppEvent =
+  | { type: 'notice'; message: string }
+  | { type: 'manifest-changed' };
+
 /** Die unter `window.jmps` bereitgestellte Launcher-API. */
 export interface JmpsApi {
   platform: NodeJS.Platform;
@@ -47,4 +52,5 @@ export interface JmpsApi {
   getSettings: () => Promise<SuiteSettingsView>;
   setSettings: (settings: SuiteSettingsInput) => Promise<SuiteSettingsView>;
   onProgress: (cb: (p: InstallProgress) => void) => () => void;
+  onAppEvent: (cb: (e: AppEvent) => void) => () => void;
 }

@@ -1,6 +1,7 @@
 import { exposeApi, invoke, listen } from '@jm/electron-kit/preload';
 import type {
   ActionResult,
+  AppEvent,
   InstallProgress,
   JmpsApi,
   SuiteSettingsInput,
@@ -20,6 +21,7 @@ const api: JmpsApi = {
   getSettings: () => invoke<SuiteSettingsView>('settings:get'),
   setSettings: (settings: SuiteSettingsInput) => invoke<SuiteSettingsView>('settings:set', settings),
   onProgress: (cb) => listen<InstallProgress>('suite:progress', cb),
+  onAppEvent: (cb) => listen<AppEvent>('app:event', cb),
 };
 
 exposeApi('jmps', api);
