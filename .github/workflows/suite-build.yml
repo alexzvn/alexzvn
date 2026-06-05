@@ -1,9 +1,10 @@
 name: Suite Build (artifacts)
 
-# Baut ein Workspace-Tool für macOS + Windows und lädt die Installer als
+# Baut Workspace-Tools für macOS + Windows und lädt die Installer als
 # herunterladbare Artefakte hoch (kein Release, keine Signatur).
-# - workflow_dispatch: beliebiges Tool über die Eingabe `app`
-# - push auf den Feature-Branch: baut automatisch den Launcher (zum Testen)
+# - workflow_dispatch: genau EIN Tool über die Eingabe `app`
+# - push auf den Feature-Branch: baut ALLE Tools (Matrix) zum Testen
+#   (temporär — vor dem Merge nach main wieder eindampfen).
 on:
   workflow_dispatch:
     inputs:
@@ -18,13 +19,13 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.os }}
-    env:
-      APP: ${{ github.event.inputs.app || 'launcher' }}
+    name: ${{ matrix.app }} · ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
+        # Bei Dispatch genau das eingegebene Tool; bei Push die ganze Suite.
+        app: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', github.event.inputs.app) || '["launcher","copy","sync","grafiktool","studio-control","timer","media-converter"]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +38,7 @@ jobs:
         run: npm ci
 
       - name: Build renderer/main (electron-vite)
-        run: npm run build -w @jm/${{ env.APP }}
+        run: npm run build -w @jm/${{ matrix.app }}
 
       # electron ist im Workspace ans Root gehoistet → Version in die Config
       # schreiben (shell-sicher, statt -c.electronVersion am CLI; pwsh zerlegt das).
@@ -45,11 +46,11 @@ jobs:
         shell: bash
         run: |
           ver=$(node -p "require('electron/package.json').version")
-          printf '\nelectronVersion: %s\n' "$ver" >> "apps/${APP}/electron-builder.yml"
+          printf '\nelectronVersion: %s\n' "$ver" >> "apps/${{ matrix.app }}/electron-builder.yml"
           echo "electronVersion=$ver"
 
       - name: Package (electron-builder, unsigniert)
-        working-directory: apps/${{ env.APP }}
+        working-directory: apps/${{ matrix.app }}
         run: npx electron-builder --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -57,8 +58,8 @@ jobs:
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: jm-${{ env.APP }}-${{ matrix.os }}
+          name: jm-${{ matrix.app }}-${{ matrix.os }}
           if-no-files-found: warn
           path: |
-            apps/${{ env.APP }}/release/*.dmg
-            apps/${{ env.APP }}/release/*.exe
+            apps/${{ matrix.app }}/release/*.dmg
+            apps/${{ matrix.app }}/release/*.exe
