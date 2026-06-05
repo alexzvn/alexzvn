@@ -91,11 +91,22 @@ class GithubReleaseSource implements ReleaseSource {
     if (!candidate) return null;
 
     const { release, version } = candidate;
+    const key = platformKey();
+    const ext = key === 'mac' ? '.dmg' : '.exe';
+    const arch = archToken();
     const wanted = resolveArtifactName(tool, version);
-    const ext = platformKey() === 'mac' ? '.dmg' : '.exe';
+    // GitHub ersetzt Leerzeichen in Asset-Namen durch Punkte ("JM Copy" → "JM.Copy").
+    const wantedDot = wanted?.replace(/ /g, '.');
     const asset =
-      (wanted && release.assets.find((a) => a.name === wanted)) ||
-      release.assets.find((a) => a.name.endsWith(ext) && a.name.includes(version));
+      (wanted && release.assets.find((a) => a.name === wanted || a.name === wantedDot)) ||
+      // Fallback: passende Endung + Version, auf macOS zusätzlich die Architektur
+      // (sonst würde bei arm64+x64 versehentlich das falsche DMG gewählt).
+      release.assets.find(
+        (a) =>
+          a.name.endsWith(ext) &&
+          a.name.includes(version) &&
+          (key === 'mac' ? a.name.includes(arch) : true),
+      );
     if (!asset) return null;
 
     return {
