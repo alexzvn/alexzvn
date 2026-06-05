@@ -1,0 +1,17 @@
+{
+  "name": "jm-production-suite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JM Production Suite — Werkzeugkasten-Launcher und geteilte Pakete für die Jakobs-Medien-Tools",
+  "author": "Jakobs Medien GmbH",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "launcher:dev": "npm run dev -w @jm/launcher",
+    "launcher:build": "npm run build -w @jm/launcher",
+    "launcher:dist": "npm run dist -w @jm/launcher",
+    "typecheck": "npm run typecheck -w @jm/launcher"
+  }
+}

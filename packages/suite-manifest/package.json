@@ -1,0 +1,11 @@
+{
+  "name": "@jm/suite-manifest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tool-Registry der JM Production Suite: Typen + suite.json",
+  "exports": {
+    ".": "./src/index.ts",
+    "./suite.json": "./suite.json"
+  }
+}

@@ -1,0 +1,52 @@
+appId: gmbh.jakobs.production-suite
+productName: JM Production Suite
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.productivity
+  icon: build/icon.png
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Production Suite
+
+# Phase 3: privates GitHub-Release als Auto-Update-Quelle aktivieren.
+# publish:
+#   provider: github
+#   owner: jakobsmedien
+#   repo: jm-production-suite
+#   private: true
+publish: null

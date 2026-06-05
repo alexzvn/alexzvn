@@ -1,0 +1,10 @@
+node_modules
+
+# Build-Outputs (gilt auch für apps/* die keine eigene .gitignore haben)
+out
+dist
+release
+
+# Logs / OS
+*.log
+.DS_Store
