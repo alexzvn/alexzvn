@@ -24,8 +24,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
-        # Bei Dispatch genau das eingegebene Tool; bei Push die ganze Suite.
-        app: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', github.event.inputs.app) || '["launcher","copy","sync","grafiktool","studio-control","timer","media-converter"]') }}
+        # Bei Dispatch genau das eingegebene Tool; bei Push nur der Launcher
+        # (zum schnellen Testen). Die ganze Suite wurde mit Lauf 27010978032
+        # einmalig grün gebaut — für erneute Vollbauten dispatch je Tool.
+        app: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', github.event.inputs.app) || '["launcher"]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
