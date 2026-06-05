@@ -3,6 +3,7 @@ import type { ToolCategory } from '@shared/types';
 import { Header } from '@/components/Header';
 import { CategoryChips, type CategoryFilter } from '@/components/CategoryChips';
 import { ToolCard } from '@/components/ToolCard';
+import { SettingsModal } from '@/components/SettingsModal';
 import { useTools } from '@/store/tools';
 
 const CATEGORY_ORDER: ToolCategory[] = ['Ingest', 'Grafik', 'Studio', 'Utilities'];
@@ -81,6 +82,8 @@ export function App() {
           </div>
         </div>
       )}
+
+      <SettingsModal />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Badge, Button, Card } from '@jm/ui';
+import { Badge, Button, Card, cn } from '@jm/ui';
 import type { ToolManifest, ToolState } from '@shared/types';
 import { monogram } from '@/lib/monogram';
 import { useTools } from '@/store/tools';
@@ -11,9 +11,11 @@ interface Props {
 export function ToolCard({ tool, state }: Props) {
   const status = state?.status ?? 'not-installed';
   const busy = useTools((s) => s.busy[tool.id] ?? false);
+  const progress = useTools((s) => s.progress[tool.id]);
   const open = useTools((s) => s.open);
   const install = useTools((s) => s.install);
   const update = useTools((s) => s.update);
+  const showProgress = busy && progress && progress.phase !== 'done' && progress.phase !== 'error';
 
   return (
     <Card className="h-full p-5 flex flex-col gap-4 jm-fade-in">
@@ -39,19 +41,57 @@ export function ToolCard({ tool, state }: Props) {
         {tool.description}
       </p>
 
-      <div className="flex items-center justify-between gap-3 pt-1">
-        <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-          v{tool.latestVersion} · {tool.category}
-        </span>
-        <Actions
-          status={status}
-          busy={busy}
-          onOpen={() => open(tool.id)}
-          onInstall={() => install(tool.id)}
-          onUpdate={() => update(tool.id)}
+      {showProgress ? (
+        <ProgressStrip
+          phase={progress.phase}
+          pct={progress.pct}
+          message={progress.message}
+        />
+      ) : (
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+            v{tool.latestVersion} · {tool.category}
+            {state?.installedVersion && state.installedVersion !== tool.latestVersion
+              ? ` · installiert ${state.installedVersion}`
+              : ''}
+          </span>
+          <Actions
+            status={status}
+            busy={busy}
+            onOpen={() => open(tool.id)}
+            onInstall={() => install(tool.id)}
+            onUpdate={() => update(tool.id)}
+          />
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function ProgressStrip({
+  phase,
+  pct,
+  message,
+}: {
+  phase: 'download' | 'install' | 'done' | 'error';
+  pct?: number;
+  message?: string;
+}) {
+  const label = message ?? (phase === 'download' ? 'Lade herunter…' : 'Installiere…');
+  const indeterminate = pct === undefined;
+  return (
+    <div className="pt-1">
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)] mb-1.5">
+        <span>{label}</span>
+        {pct !== undefined && <span className="tabular">{pct}%</span>}
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-[var(--radius-full)] bg-[var(--muted)]">
+        <div
+          className={cn('h-full rounded-[var(--radius-full)] bg-[var(--primary)]', indeterminate && 'w-1/3 animate-pulse')}
+          style={indeterminate ? undefined : { width: `${pct}%` }}
         />
       </div>
-    </Card>
+    </div>
   );
 }
 

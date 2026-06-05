@@ -5,6 +5,9 @@ out
 dist
 release
 
+# TS incremental build info
+*.tsbuildinfo
+
 # Logs / OS
 *.log
 .DS_Store

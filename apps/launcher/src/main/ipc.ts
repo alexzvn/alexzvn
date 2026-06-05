@@ -1,34 +1,39 @@
 import { ipcMain, shell } from 'electron';
-import type { ActionResult } from '@shared/types';
+import type { IpcMainInvokeEvent } from 'electron';
+import type { ActionResult, InstallProgress, SuiteSettingsInput } from '@shared/types';
+import type { ToolManifest } from '@jm/suite-manifest';
 import { getTool, getTools } from './manifest';
 import { getAllStates } from './install-state';
-import { openTool, releasesUrl } from './launch';
+import { openTool } from './launch';
+import { installTool } from './installer';
+import { getSettingsView, setSettings } from './settings';
+
+function withTool(
+  id: string,
+  fn: (tool: ToolManifest) => Promise<ActionResult>,
+): Promise<ActionResult> {
+  const tool = getTool(id);
+  if (!tool) return Promise.resolve({ ok: false, message: 'Unbekanntes Tool.' });
+  return fn(tool);
+}
 
 export function registerIpc(): void {
   ipcMain.handle('suite:list', () => getTools());
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
 
-  ipcMain.handle('tool:open', async (_e, id: string): Promise<ActionResult> => {
-    const tool = getTool(id);
-    if (!tool) return { ok: false, message: 'Unbekanntes Tool.' };
-    return openTool(tool);
-  });
+  ipcMain.handle('tool:open', (_e, id: string) => withTool(id, openTool));
 
-  // Phase 1: öffnet die Release-Seite. Phase 2 ersetzt dies durch echten
-  // Download + Installation aus dem privaten GitHub-Release.
-  ipcMain.handle('tool:install', async (_e, id: string): Promise<ActionResult> => {
-    const tool = getTool(id);
-    if (!tool) return { ok: false, message: 'Unbekanntes Tool.' };
-    await shell.openExternal(releasesUrl(tool));
-    return { ok: true, message: 'Download-Seite geöffnet. Automatische Installation folgt in Phase 2.' };
-  });
+  // Download + Installation aus der konfigurierten Release-Quelle, mit
+  // Fortschritt an das aufrufende Fenster. Update == Install der neuesten Version.
+  const runInstall = (e: IpcMainInvokeEvent, id: string) =>
+    withTool(id, (tool) =>
+      installTool(tool, (p: InstallProgress) => e.sender.send('suite:progress', p)),
+    );
+  ipcMain.handle('tool:install', runInstall);
+  ipcMain.handle('tool:update', runInstall);
 
-  ipcMain.handle('tool:update', async (_e, id: string): Promise<ActionResult> => {
-    const tool = getTool(id);
-    if (!tool) return { ok: false, message: 'Unbekanntes Tool.' };
-    await shell.openExternal(releasesUrl(tool));
-    return { ok: true, message: 'Release-Seite geöffnet. Automatische Updates folgen in Phase 2.' };
-  });
+  ipcMain.handle('settings:get', () => getSettingsView());
+  ipcMain.handle('settings:set', (_e, input: SuiteSettingsInput) => setSettings(input));
 
   ipcMain.handle('shell:openExternal', (_e, url: string) => shell.openExternal(url));
 }

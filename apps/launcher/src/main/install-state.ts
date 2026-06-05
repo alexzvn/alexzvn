@@ -1,4 +1,6 @@
-import { existsSync } from 'node:fs';
+import { app } from 'electron';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Platform, ToolManifest, ToolState } from '@jm/suite-manifest';
 
 function currentPlatform(): Platform | null {
@@ -22,16 +24,50 @@ export function installPathFor(tool: ToolManifest): string | null {
   return info.exePath ? expandEnv(info.exePath) : null;
 }
 
+// --- Versionsregister der vom Launcher installierten Tools ----------------------
+
+function recordsFile(): string {
+  return join(app.getPath('userData'), 'installed.json');
+}
+
+function readRecords(): Record<string, string> {
+  try {
+    if (existsSync(recordsFile())) {
+      return JSON.parse(readFileSync(recordsFile(), 'utf8')) as Record<string, string>;
+    }
+  } catch {
+    // korrupte Datei ignorieren
+  }
+  return {};
+}
+
+/** Hält fest, welche Version der Launcher zuletzt für ein Tool installiert hat. */
+export function recordInstalled(id: string, version: string): void {
+  const records = readRecords();
+  records[id] = version;
+  mkdirSync(app.getPath('userData'), { recursive: true });
+  writeFileSync(recordsFile(), JSON.stringify(records, null, 2));
+}
+
 /**
- * Ermittelt den Installationsstatus per Dateisystem-Probe.
- * Phase 2 ergänzt hier den Versionsvergleich (installedVersion vs. latestVersion).
+ * Installationsstatus: bevorzugt die vom Launcher gemerkte Version (echter
+ * Versionsvergleich), sonst Dateisystem-Probe (installiert, Version unbekannt).
  */
 export function getToolState(tool: ToolManifest): ToolState {
+  const records = readRecords();
+  const recorded = records[tool.id] ?? null;
+  if (recorded) {
+    return {
+      id: tool.id,
+      status: recorded === tool.latestVersion ? 'installed' : 'update-available',
+      installedVersion: recorded,
+    };
+  }
   const path = installPathFor(tool);
-  const installed = path ? existsSync(path) : false;
+  const exists = path ? existsSync(path) : false;
   return {
     id: tool.id,
-    status: installed ? 'installed' : 'not-installed',
+    status: exists ? 'installed' : 'not-installed',
     installedVersion: null,
   };
 }
