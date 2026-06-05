@@ -41,12 +41,35 @@ function resolveArtifactName(tool: ToolManifest, version: string): string | null
 
 const USER_AGENT = 'JM-Production-Suite';
 
-/** GitHub-Releases einer privaten Repo via fine-grained PAT (read-only contents). */
+/** Vergleicht zwei Dotted-Versions numerisch; >0 wenn `a` neuer als `b`. */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+interface GithubRelease {
+  tag_name: string;
+  draft: boolean;
+  assets: Array<{ id: number; name: string; size: number }>;
+}
+
+/**
+ * GitHub-Releases im gemeinsamen Monorepo via fine-grained PAT (read-only
+ * contents). Tools teilen sich `repo` und werden über das Tag-Präfix
+ * `<app>-v<version>` unterschieden — es wird das höchstversionierte passende
+ * Release gewählt (`/releases/latest` taugt im Monorepo nicht, da es nur das
+ * eine neueste Release der ganzen Repo liefert).
+ */
 class GithubReleaseSource implements ReleaseSource {
   constructor(private readonly token: string) {}
 
   async latest(tool: ToolManifest): Promise<ResolvedAsset | null> {
-    const api = `https://api.github.com/repos/${tool.repo}/releases/latest`;
+    const api = `https://api.github.com/repos/${tool.repo}/releases?per_page=100`;
     const res = await fetch(api, {
       headers: {
         Accept: 'application/vnd.github+json',
@@ -58,16 +81,21 @@ class GithubReleaseSource implements ReleaseSource {
     if (!res.ok) {
       throw new Error(`GitHub API ${res.status} ${res.statusText}`);
     }
-    const json = (await res.json()) as {
-      tag_name: string;
-      assets: Array<{ id: number; name: string; size: number }>;
-    };
-    const version = json.tag_name.replace(/^v/, '');
+    const releases = (await res.json()) as GithubRelease[];
+
+    const prefix = `${tool.app}-v`;
+    const candidate = releases
+      .filter((r) => !r.draft && r.tag_name.startsWith(prefix))
+      .map((r) => ({ release: r, version: r.tag_name.slice(prefix.length) }))
+      .sort((x, y) => compareVersions(y.version, x.version))[0];
+    if (!candidate) return null;
+
+    const { release, version } = candidate;
     const wanted = resolveArtifactName(tool, version);
     const ext = platformKey() === 'mac' ? '.dmg' : '.exe';
     const asset =
-      (wanted && json.assets.find((a) => a.name === wanted)) ||
-      json.assets.find((a) => a.name.endsWith(ext) && a.name.includes(version));
+      (wanted && release.assets.find((a) => a.name === wanted)) ||
+      release.assets.find((a) => a.name.endsWith(ext) && a.name.includes(version));
     if (!asset) return null;
 
     return {

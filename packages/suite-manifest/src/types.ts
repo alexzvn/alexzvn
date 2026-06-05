@@ -29,6 +29,12 @@ export interface ToolManifest {
   appId: string;
   /** owner/repo der privaten GitHub-Release-Quelle (genutzt ab Phase 2). */
   repo: string;
+  /**
+   * Ordnername unter `apps/` und zugleich Präfix des Release-Tags
+   * `<app>-v<version>` (z. B. "copy" → Tag "copy-v0.1.0"). Im Monorepo teilen
+   * sich alle Tools `repo`, werden aber über dieses Tag-Präfix unterschieden.
+   */
+  app: string;
   /** Neueste verfügbare Version laut Registry. */
   latestVersion: string;
   platforms: Partial<Record<Platform, PlatformInfo>>;

@@ -9,12 +9,19 @@
       "description": "Kopier-Verifikation per xxHash64, MHL-Sidecar und Baukasten-Masterordner. Sicheres Offloading von Drehmaterial auf mehrere Ziele.",
       "category": "Ingest",
       "appId": "gmbh.jakobs.copy",
-      "repo": "jakobsmedien/jm-copy",
+      "repo": "AlexmachtCode/alexzvn",
       "latestVersion": "0.1.0",
       "platforms": {
-        "mac": { "artifact": "JM Copy-${version}-mac-${arch}.dmg", "appPath": "/Applications/JM Copy.app" },
-        "win": { "artifact": "JM Copy-${version}-win-x64.exe", "exePath": "%LOCALAPPDATA%\\Programs\\jm-copy\\JM Copy.exe" }
-      }
+        "mac": {
+          "artifact": "JM Copy-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Copy.app"
+        },
+        "win": {
+          "artifact": "JM Copy-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\jm-copy\\JM Copy.exe"
+        }
+      },
+      "app": "copy"
     },
     {
       "id": "jm-grafiktool",
@@ -23,12 +30,19 @@
       "description": "Photoshop-/GIMP-artiger Editor für Bauchbinden und Freistellen via lokaler Magic-Mask-KI. PSD-Lesen und -Schreiben mit Ebenen.",
       "category": "Grafik",
       "appId": "gmbh.jakobs.grafiktool",
-      "repo": "jakobsmedien/jm-grafiktool",
+      "repo": "AlexmachtCode/alexzvn",
       "latestVersion": "0.1.0",
       "platforms": {
-        "mac": { "artifact": "JM Grafiktool-${version}-mac-${arch}.dmg", "appPath": "/Applications/JM Grafiktool.app" },
-        "win": { "artifact": "JM Grafiktool-${version}-win-x64.exe", "exePath": "%LOCALAPPDATA%\\Programs\\jm-grafiktool\\JM Grafiktool.exe" }
-      }
+        "mac": {
+          "artifact": "JM Grafiktool-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Grafiktool.app"
+        },
+        "win": {
+          "artifact": "JM Grafiktool-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\jm-grafiktool\\JM Grafiktool.exe"
+        }
+      },
+      "app": "grafiktool"
     },
     {
       "id": "jm-studio-control",
@@ -37,12 +51,19 @@
       "description": "Zentrale Steuerung der Studioumgebung inkl. TriCaster, Nutzerverwaltung mit Rollen und geplanter NDI-PGM-Vorschau.",
       "category": "Studio",
       "appId": "gmbh.jakobs.studio-control",
-      "repo": "jakobsmedien/jm-studio-control",
+      "repo": "AlexmachtCode/alexzvn",
       "latestVersion": "0.1.0",
       "platforms": {
-        "mac": { "artifact": "JM Studio Control-${version}-mac-${arch}.dmg", "appPath": "/Applications/JM Studio Control.app" },
-        "win": { "artifact": "JM Studio Control-${version}-win-x64.exe", "exePath": "%LOCALAPPDATA%\\Programs\\jm-studio-control\\JM Studio Control.exe" }
-      }
+        "mac": {
+          "artifact": "JM Studio Control-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Studio Control.app"
+        },
+        "win": {
+          "artifact": "JM Studio Control-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\jm-studio-control\\JM Studio Control.exe"
+        }
+      },
+      "app": "studio-control"
     },
     {
       "id": "jm-media-converter",
@@ -51,12 +72,19 @@
       "description": "FFmpeg-basierte Video-Codec-Konvertierung und Office-zu-PDF-Umwandlung für gleichbleibende Lieferformate.",
       "category": "Utilities",
       "appId": "gmbh.jakobs.media-converter",
-      "repo": "jakobsmedien/jm-media-converter",
+      "repo": "AlexmachtCode/alexzvn",
       "latestVersion": "0.1.0",
       "platforms": {
-        "mac": { "artifact": "JM Media Converter-${version}-mac-${arch}.dmg", "appPath": "/Applications/JM Media Converter.app" },
-        "win": { "artifact": "JM Media Converter-${version}-win-x64.exe", "exePath": "%LOCALAPPDATA%\\Programs\\jm-media-converter\\JM Media Converter.exe" }
-      }
+        "mac": {
+          "artifact": "JM Media Converter-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Media Converter.app"
+        },
+        "win": {
+          "artifact": "JM Media Converter-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\jm-media-converter\\JM Media Converter.exe"
+        }
+      },
+      "app": "media-converter"
     },
     {
       "id": "jm-sync",
@@ -65,12 +93,19 @@
       "description": "Softwarebasierte Messung des Audio-/Video-Versatzes (Lipsync) — Ersatz für Sync-It-Plus. Generator mit Blitz und Beep, Ein-Takt-Messung.",
       "category": "Utilities",
       "appId": "gmbh.jakobs.sync",
-      "repo": "jakobsmedien/jm-sync",
+      "repo": "AlexmachtCode/alexzvn",
       "latestVersion": "0.1.0",
       "platforms": {
-        "mac": { "artifact": "JM Sync-${version}-mac-${arch}.dmg", "appPath": "/Applications/JM Sync.app" },
-        "win": { "artifact": "JM Sync-${version}-win-x64.exe", "exePath": "%LOCALAPPDATA%\\Programs\\jm-sync\\JM Sync.exe" }
-      }
+        "mac": {
+          "artifact": "JM Sync-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Sync.app"
+        },
+        "win": {
+          "artifact": "JM Sync-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\jm-sync\\JM Sync.exe"
+        }
+      },
+      "app": "sync"
     },
     {
       "id": "jm-timer",
@@ -79,12 +114,19 @@
       "description": "Countdown- und Produktions-Timer mit Sprecherfenster und Fernsteuerung für Live-Events.",
       "category": "Utilities",
       "appId": "gmbh.jakobs.timer",
-      "repo": "jakobsmedien/jm-timer",
+      "repo": "AlexmachtCode/alexzvn",
       "latestVersion": "0.1.0",
       "platforms": {
-        "mac": { "artifact": "JM Timer-${version}-mac-${arch}.dmg", "appPath": "/Applications/JM Timer.app" },
-        "win": { "artifact": "JM Timer-${version}-win-x64.exe", "exePath": "%LOCALAPPDATA%\\Programs\\jm-timer\\JM Timer.exe" }
-      }
+        "mac": {
+          "artifact": "JM Timer-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Timer.app"
+        },
+        "win": {
+          "artifact": "JM Timer-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\jm-timer\\JM Timer.exe"
+        }
+      },
+      "app": "timer"
     }
   ]
 }

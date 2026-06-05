@@ -1,8 +1,12 @@
 name: Suite Release
 
-# Auf Tag-Push `<app>-v<version>` (z. B. launcher-v0.1.0, copy-v0.2.1): baut das
-# Tool für macOS + Windows und veröffentlicht es als privates GitHub-Release.
-# Der Launcher liest diese Releases als Update-Quelle (electron-updater).
+# Auf Tag-Push `<app>-v<version>` (z. B. copy-v0.1.0, studio-control-v0.2.1):
+# baut das Tool für macOS + Windows und veröffentlicht die Installer in EIN
+# GitHub-Release unter genau diesem Tag. Im Monorepo unterscheiden sich die Tools
+# über das Tag-Präfix `<app>-v` — electron-builder selbst würde immer `v<version>`
+# anlegen und die Tools kollidieren lassen, daher legen wir das Release per gh an
+# und lassen electron-builder nur bauen (`--publish never`).
+# Der Launcher liest diese Releases als Update-Quelle (GithubReleaseSource).
 on:
   push:
     tags:
@@ -39,6 +43,8 @@ jobs:
       - name: Build renderer/main (electron-vite)
         run: npm run build -w @jm/${{ steps.app.outputs.name }}
 
+      # electron ist im Workspace ans Root gehoistet → Version in die Config
+      # schreiben (shell-sicher, statt -c.electronVersion am CLI; pwsh zerlegt das).
       - name: Inject electron version into config
         shell: bash
         run: |
@@ -46,9 +52,31 @@ jobs:
           printf '\nelectronVersion: %s\n' "$ver" >> "apps/${{ steps.app.outputs.name }}/electron-builder.yml"
           echo "electronVersion=$ver"
 
-      - name: Package + publish (electron-builder)
+      - name: Package (electron-builder, unsigniert)
         working-directory: apps/${{ steps.app.outputs.name }}
-        run: npx electron-builder --publish always
+        run: npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      # Release unter dem Trigger-Tag anlegen (idempotent — der andere Matrix-Job
+      # kann zuvorkommen) und die plattformspezifischen Installer hochladen.
+      - name: Create release + upload installers
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          app="${{ steps.app.outputs.name }}"
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+                 --title "$app $tag" \
+                 --notes "Automatisches Release für $app ($tag)." \
+                 --prerelease \
+            || true
+          shopt -s nullglob
+          files=(apps/$app/release/*.dmg apps/$app/release/*.exe)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Keine Installer gefunden unter apps/$app/release/"; exit 1
+          fi
+          echo "Lade hoch: ${files[*]}"
+          gh release upload "$tag" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
