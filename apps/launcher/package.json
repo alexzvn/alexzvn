@@ -20,11 +20,10 @@
     "dist:win": "electron-vite build && electron-builder --win",
     "dist:mac": "electron-vite build && electron-builder --mac"
   },
-  "dependencies": {
-    "electron-updater": "^6.3.9"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "electron-updater": "^6.3.9",
     "@jm/electron-kit": "*",
     "@jm/suite-manifest": "*",
     "@jm/ui": "*",

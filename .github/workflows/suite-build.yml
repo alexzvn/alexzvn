@@ -40,16 +40,18 @@ jobs:
       - name: Build renderer/main (electron-vite)
         run: npm run build -w @jm/${{ env.APP }}
 
-      # electron ist im Workspace ans Root gehoistet → Version explizit auflösen,
-      # damit electron-builder sie nicht im App-Ordner sucht (range ^33 reicht ihm nicht).
-      - name: Resolve electron version
-        id: ev
+      # electron ist im Workspace ans Root gehoistet → Version in die Config
+      # schreiben (shell-sicher, statt -c.electronVersion am CLI; pwsh zerlegt das).
+      - name: Inject electron version into config
         shell: bash
-        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          ver=$(node -p "require('electron/package.json').version")
+          printf '\nelectronVersion: %s\n' "$ver" >> "apps/${APP}/electron-builder.yml"
+          echo "electronVersion=$ver"
 
       - name: Package (electron-builder, unsigniert)
         working-directory: apps/${{ env.APP }}
-        run: npx electron-builder --publish never -c.electronVersion=${{ steps.ev.outputs.version }}
+        run: npx electron-builder --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
