@@ -18,7 +18,7 @@
         },
         "win": {
           "artifact": "JM Copy-${version}-win-x64.exe",
-          "exePath": "%LOCALAPPDATA%\\Programs\\jm-copy\\JM Copy.exe"
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Copy\\JM Copy.exe"
         }
       },
       "app": "copy"
@@ -39,7 +39,7 @@
         },
         "win": {
           "artifact": "JM Grafiktool-${version}-win-x64.exe",
-          "exePath": "%LOCALAPPDATA%\\Programs\\jm-grafiktool\\JM Grafiktool.exe"
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Grafiktool\\JM Grafiktool.exe"
         }
       },
       "app": "grafiktool"
@@ -60,7 +60,7 @@
         },
         "win": {
           "artifact": "JM Studio Control-${version}-win-x64.exe",
-          "exePath": "%LOCALAPPDATA%\\Programs\\jm-studio-control\\JM Studio Control.exe"
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Studio Control\\JM Studio Control.exe"
         }
       },
       "app": "studio-control"
@@ -81,7 +81,7 @@
         },
         "win": {
           "artifact": "JM Media Converter-${version}-win-x64.exe",
-          "exePath": "%LOCALAPPDATA%\\Programs\\jm-media-converter\\JM Media Converter.exe"
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Media Converter\\JM Media Converter.exe"
         }
       },
       "app": "media-converter"
@@ -102,7 +102,7 @@
         },
         "win": {
           "artifact": "JM Sync-${version}-win-x64.exe",
-          "exePath": "%LOCALAPPDATA%\\Programs\\jm-sync\\JM Sync.exe"
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Sync\\JM Sync.exe"
         }
       },
       "app": "sync"
@@ -123,7 +123,7 @@
         },
         "win": {
           "artifact": "JM Timer-${version}-win-x64.exe",
-          "exePath": "%LOCALAPPDATA%\\Programs\\jm-timer\\JM Timer.exe"
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Timer\\JM Timer.exe"
         }
       },
       "app": "timer"

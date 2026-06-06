@@ -1,5 +1,4 @@
 import { app, shell } from 'electron';
-import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -79,12 +78,12 @@ export async function installTool(tool: ToolManifest, emit: Emit): Promise<Actio
 
   emit({ id: tool.id, phase: 'install', message: 'Installer wird gestartet…' });
   try {
-    if (process.platform === 'win32') {
-      spawn(dest, [], { detached: true, stdio: 'ignore' }).unref();
-    } else {
-      const err = await shell.openPath(dest);
-      if (err) throw new Error(err);
-    }
+    // shell.openPath = Doppelklick-Verhalten: Windows zeigt den NSIS-Assistenten
+    // (und bei unsigniert den SmartScreen-Dialog zum Bestätigen), macOS mountet
+    // das DMG. Ein detached `spawn` der unsignierten EXE wurde von SmartScreen
+    // still geblockt — es erschien gar kein Installer-Fenster.
+    const err = await shell.openPath(dest);
+    if (err) throw new Error(err);
   } catch (e) {
     const message = `Installer-Start fehlgeschlagen: ${(e as Error).message}`;
     emit({ id: tool.id, phase: 'error', message });

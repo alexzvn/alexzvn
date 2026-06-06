@@ -81,6 +81,13 @@ export const useTools = create<ToolsStore>((set) => {
             set({ tools, states: byId(states) });
           }
         });
+        // Nach Rückkehr zum Launcher (z. B. wenn der NSIS-Installer durch ist)
+        // den Status neu prüfen — sonst bliebe die Karte bis zum Reload „nicht
+        // installiert", obwohl die App jetzt auf der Platte liegt.
+        window.addEventListener('focus', async () => {
+          const states = await window.jmps.getState();
+          set({ states: byId(states) });
+        });
       }
       const [tools, states, settings] = await Promise.all([
         window.jmps.listTools(),

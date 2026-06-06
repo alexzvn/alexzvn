@@ -50,12 +50,20 @@ export function recordInstalled(id: string, version: string): void {
 }
 
 /**
- * Installationsstatus: bevorzugt die vom Launcher gemerkte Version (echter
- * Versionsvergleich), sonst Dateisystem-Probe (installiert, Version unbekannt).
+ * Installationsstatus: maßgeblich ist immer, ob die App-Datei wirklich auf der
+ * Platte liegt (sonst meldete der Launcher „installiert", sobald der Installer
+ * nur GESTARTET wurde — auch wenn SmartScreen ihn blockt oder der User abbricht).
+ * Liegt die Datei UND kennen wir die installierte Version, vergleichen wir sie
+ * fürs Update; liegt sie ohne bekannte Version, gilt „installiert" (Version
+ * unbekannt).
  */
 export function getToolState(tool: ToolManifest): ToolState {
-  const records = readRecords();
-  const recorded = records[tool.id] ?? null;
+  const path = installPathFor(tool);
+  const exists = path ? existsSync(path) : false;
+  if (!exists) {
+    return { id: tool.id, status: 'not-installed', installedVersion: null };
+  }
+  const recorded = readRecords()[tool.id] ?? null;
   if (recorded) {
     return {
       id: tool.id,
@@ -63,13 +71,7 @@ export function getToolState(tool: ToolManifest): ToolState {
       installedVersion: recorded,
     };
   }
-  const path = installPathFor(tool);
-  const exists = path ? existsSync(path) : false;
-  return {
-    id: tool.id,
-    status: exists ? 'installed' : 'not-installed',
-    installedVersion: null,
-  };
+  return { id: tool.id, status: 'installed', installedVersion: null };
 }
 
 export function getAllStates(tools: ToolManifest[]): ToolState[] {
