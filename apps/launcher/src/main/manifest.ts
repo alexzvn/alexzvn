@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SUITE } from '@jm/suite-manifest';
 import type { SuiteManifest, ToolManifest } from '@jm/suite-manifest';
+import { resolveManifestUrl } from './settings';
 
 // In-memory-Registry. Default = gebündeltes suite.json; beim Start wird ein
 // lokaler Cache geladen und optional eine remote suite.json (JMPS_MANIFEST_URL).
@@ -13,7 +14,10 @@ function cacheFile(): string {
 }
 
 function manifestUrl(): string | undefined {
-  return process.env['JMPS_MANIFEST_URL'] || undefined;
+  // Env (JMPS_MANIFEST_URL) hat Vorrang, sonst der in den Settings hinterlegte
+  // Wert — so lässt sich der Katalog (neue Tools, Texte) ohne Launcher-Rebuild
+  // zentral aktualisieren.
+  return resolveManifestUrl();
 }
 
 function isValid(value: unknown): value is SuiteManifest {

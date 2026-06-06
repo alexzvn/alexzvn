@@ -10,10 +10,12 @@ export function SettingsModal() {
 
   const [token, setToken] = useState('');
   const [proxy, setProxy] = useState(settings?.proxyUrl ?? '');
+  const [manifestUrl, setManifestUrl] = useState(settings?.manifestUrl ?? '');
 
   if (!open) return null;
 
   const fromEnv = settings?.fromEnv ?? false;
+  const manifestFromEnv = settings?.manifestFromEnv ?? false;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm px-6">
@@ -50,14 +52,39 @@ export function SettingsModal() {
           />
         </div>
 
+        <div className="mt-5 border-t border-[var(--border)] pt-5">
+          <p className="text-xs text-[var(--muted-foreground)] mb-3">
+            Remote-Katalog (suite.json): zentrale Liste der Tools/Texte. Leer = gebündelter
+            Katalog. Änderung wirkt beim nächsten Start.
+          </p>
+          {manifestFromEnv && (
+            <p className="mb-3 text-xs rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-[var(--muted-foreground)]">
+              Katalog-URL wird per Umgebungsvariable gesetzt und kann hier nicht überschrieben
+              werden.
+            </p>
+          )}
+          <div className={cn(manifestFromEnv && 'opacity-50 pointer-events-none')}>
+            <Field
+              label="Katalog-URL (optional)"
+              placeholder="https://suite.intern.jakobsmedien.de/suite.json"
+              value={manifestUrl}
+              onChange={setManifestUrl}
+            />
+          </div>
+        </div>
+
         <div className="mt-6 flex items-center justify-end gap-3">
           <Button variant="ghost" onClick={close}>
             Abbrechen
           </Button>
           <Button
             variant="primary"
-            disabled={fromEnv}
-            onClick={() => save({ githubToken: token, proxyUrl: proxy })}
+            onClick={() =>
+              save({
+                ...(fromEnv ? {} : { githubToken: token, proxyUrl: proxy }),
+                ...(manifestFromEnv ? {} : { manifestUrl }),
+              })
+            }
           >
             Speichern
           </Button>

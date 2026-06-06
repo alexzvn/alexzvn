@@ -23,6 +23,8 @@ export interface InstallProgress {
 export interface SuiteSettingsInput {
   githubToken?: string;
   proxyUrl?: string;
+  /** Remote-Katalog (suite.json) — leer = gebündelten Katalog nutzen. */
+  manifestUrl?: string;
 }
 
 /** Für die UI sichtbarer Einstellungs-Zustand (ohne Klartext-Token). */
@@ -31,8 +33,12 @@ export interface SuiteSettingsView {
   proxyUrl?: string;
   /** Welche Release-Quelle aktuell aktiv ist. */
   source: 'github' | 'proxy' | 'none';
-  /** Quelle stammt aus Umgebungsvariable (read-only in der UI). */
+  /** Quelle (Token/Proxy) stammt aus Umgebungsvariable (read-only in der UI). */
   fromEnv: boolean;
+  /** Aktive Remote-Katalog-URL (suite.json), falls gesetzt. */
+  manifestUrl?: string;
+  /** Manifest-URL stammt aus Umgebungsvariable (read-only in der UI). */
+  manifestFromEnv: boolean;
 }
 
 /** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */

@@ -6,6 +6,7 @@ import type { SuiteSettingsInput, SuiteSettingsView } from '@shared/types';
 interface StoredSettings {
   githubToken?: string;
   proxyUrl?: string;
+  manifestUrl?: string;
 }
 
 function settingsFile(): string {
@@ -38,6 +39,11 @@ export function resolveProxy(): string | undefined {
   return process.env['JMPS_RELEASE_PROXY'] || read().proxyUrl || undefined;
 }
 
+/** Effektive Remote-Manifest-URL (suite.json): Umgebungsvariable hat Vorrang. */
+export function resolveManifestUrl(): string | undefined {
+  return process.env['JMPS_MANIFEST_URL'] || read().manifestUrl || undefined;
+}
+
 function envControlled(): boolean {
   return Boolean(process.env['JMPS_GITHUB_TOKEN'] || process.env['JMPS_RELEASE_PROXY']);
 }
@@ -51,6 +57,8 @@ export function getSettingsView(): SuiteSettingsView {
     proxyUrl: proxy,
     source,
     fromEnv: envControlled(),
+    manifestUrl: resolveManifestUrl(),
+    manifestFromEnv: Boolean(process.env['JMPS_MANIFEST_URL']),
   };
 }
 
@@ -63,6 +71,9 @@ export function setSettings(input: SuiteSettingsInput): SuiteSettingsView {
   }
   if (input.proxyUrl !== undefined) {
     next.proxyUrl = input.proxyUrl.trim() || undefined;
+  }
+  if (input.manifestUrl !== undefined) {
+    next.manifestUrl = input.manifestUrl.trim() || undefined;
   }
   write(next);
   return getSettingsView();
