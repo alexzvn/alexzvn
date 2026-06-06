@@ -100,16 +100,14 @@ function drawImageOverlay(ctx: CanvasRenderingContext2D, o: Overlay, W: number, 
   ctx.drawImage(bmp, (pw - dw) / 2, (ph - dh) / 2, dw, dh);
 }
 
-/** Paint base + overlays into the target context, sized WxH. */
-export function paintSlide(
+/** Paint just the overlays (no base) into the target context, sized WxH. Used by
+ *  the vector PDF export to stamp overlays over a vector page background. */
+export function paintOverlays(
   ctx: CanvasRenderingContext2D,
-  base: CanvasImageSource,
   slide: Slide,
   W: number,
   H: number,
 ): void {
-  ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(base, 0, 0, W, H);
   for (const o of slide.overlays) {
     ctx.save();
     ctx.translate(o.x * W, o.y * H);
@@ -124,4 +122,17 @@ export function paintSlide(
     else drawImageOverlay(ctx, o, W, H);
     ctx.restore();
   }
+}
+
+/** Paint base + overlays into the target context, sized WxH. */
+export function paintSlide(
+  ctx: CanvasRenderingContext2D,
+  base: CanvasImageSource,
+  slide: Slide,
+  W: number,
+  H: number,
+): void {
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(base, 0, 0, W, H);
+  paintOverlays(ctx, slide, W, H);
 }
