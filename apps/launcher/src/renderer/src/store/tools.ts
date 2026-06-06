@@ -94,6 +94,7 @@ export const useTools = create<ToolsStore>((set) => {
         // sonst bliebe die Karte bis zum Reload veraltet.
         window.addEventListener('focus', () => {
           void useTools.getState().checkUpdates();
+          void useTools.getState().loadLauncherUpdate();
         });
       }
       const [tools, states, settings] = await Promise.all([

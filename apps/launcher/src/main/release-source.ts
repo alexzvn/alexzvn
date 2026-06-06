@@ -92,21 +92,6 @@ function pickHighestRelease(
 }
 
 /**
- * Höchste verfügbare Version für ein Tag-Präfix in einer Repo — auch für Dinge,
- * die kein `ToolManifest` haben (z. B. der Launcher selbst: `launcher-v`).
- * Nutzt das konfigurierte GitHub-Token; null wenn kein Token/offline/keins da.
- */
-export async function latestVersionForPrefix(
-  repo: string,
-  prefix: string,
-): Promise<string | null> {
-  const token = resolveToken();
-  if (!token) return null;
-  const releases = await listGithubReleases(repo, token);
-  return pickHighestRelease(releases, prefix)?.version ?? null;
-}
-
-/**
  * GitHub-Releases im gemeinsamen Monorepo via fine-grained PAT (read-only
  * contents). Tools teilen sich `repo` und werden über das Tag-Präfix
  * `<app>-v<version>` unterschieden — es wird das höchstversionierte passende
