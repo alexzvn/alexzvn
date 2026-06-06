@@ -1,7 +1,7 @@
 import { app, shell } from 'electron';
 import { createWriteStream } from 'node:fs';
 import { join } from 'node:path';
-import { Readable } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ToolManifest } from '@jm/suite-manifest';
 import type { ActionResult, InstallProgress } from '@shared/types';
@@ -14,21 +14,36 @@ async function download(
   url: string,
   headers: Record<string, string>,
   dest: string,
+  expectedSize: number,
   onProgress: (received: number, total: number) => void,
 ): Promise<void> {
   const res = await fetch(url, { headers });
   if (!res.ok || !res.body) {
     throw new Error(`HTTP ${res.status} ${res.statusText}`);
   }
-  const total = Number(res.headers.get('content-length')) || 0;
+  const total = Number(res.headers.get('content-length')) || expectedSize || 0;
   let received = 0;
 
-  const source = Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]);
-  source.on('data', (chunk: Buffer) => {
-    received += chunk.length;
-    onProgress(received, total);
+  // Bytes IN der Pipeline zählen (Transform), nicht über einen separaten
+  // `data`-Listener: letzterer schaltet den Stream in den flowing mode, wodurch
+  // je nach Timing die ersten Chunks verloren gehen können, bevor `pipeline` die
+  // Pipe verdrahtet → abgeschnittenes File und „NSIS integrity check failed".
+  const counter = new Transform({
+    transform(chunk: Buffer, _enc, cb) {
+      received += chunk.length;
+      onProgress(received, total);
+      cb(null, chunk);
+    },
   });
-  await pipeline(source, createWriteStream(dest));
+
+  const source = Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]);
+  await pipeline(source, counter, createWriteStream(dest));
+
+  // Unvollständige Downloads früh und klar abfangen, statt einen kaputten
+  // Installer zu starten (der dann mit kryptischem NSIS-Fehler abbricht).
+  if (expectedSize && received !== expectedSize) {
+    throw new Error(`unvollständiger Download: ${received}/${expectedSize} Bytes`);
+  }
 }
 
 /**
@@ -61,7 +76,7 @@ export async function installTool(tool: ToolManifest, emit: Emit): Promise<Actio
   const dest = join(app.getPath('temp'), asset.fileName);
   try {
     emit({ id: tool.id, phase: 'download', received: 0, total: asset.size, pct: 0 });
-    await download(asset.assetUrl, asset.downloadHeaders, dest, (received, total) => {
+    await download(asset.assetUrl, asset.downloadHeaders, dest, asset.size, (received, total) => {
       emit({
         id: tool.id,
         phase: 'download',
