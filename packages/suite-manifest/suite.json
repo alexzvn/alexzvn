@@ -127,6 +127,27 @@
         }
       },
       "app": "timer"
+    },
+    {
+      "id": "jm-presenter",
+      "name": "JM Presenter",
+      "tagline": "PDF-Presenter & Folien-Editor",
+      "description": "PDFs, Bilder und Office-Dokumente zu Folien aufbereiten, neu anordnen und mit Overlays versehen. Präsentationsmodus mit Referenten- und Publikumsansicht auf zwei Bildschirmen inkl. Notizen, Uhr/Timer und Folienübersicht.",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.presenter",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Presenter-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Presenter.app"
+        },
+        "win": {
+          "artifact": "JM Presenter-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Presenter\\JM Presenter.exe"
+        }
+      },
+      "app": "presenter"
     }
   ]
 }

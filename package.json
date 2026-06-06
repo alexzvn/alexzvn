@@ -12,6 +12,9 @@
     "launcher:dev": "npm run dev -w @jm/launcher",
     "launcher:build": "npm run build -w @jm/launcher",
     "launcher:dist": "npm run dist -w @jm/launcher",
+    "presenter:dev": "npm run dev -w @jm/presenter",
+    "presenter:build": "npm run build -w @jm/presenter",
+    "presenter:dist": "npm run dist -w @jm/presenter",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }
