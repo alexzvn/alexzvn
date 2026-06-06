@@ -10,6 +10,7 @@ import type {
   SourceKind,
 } from '@shared/types';
 import { convertOfficeToPdf } from './office/convert';
+import { analyzePptxAnimations } from './office/pptx-animations';
 import {
   broadcastAll,
   getDisplays,
@@ -103,7 +104,19 @@ export function registerIpc(): void {
     if (result.canceled || result.filePaths.length === 0) {
       return { ok: false, error: 'Abgebrochen.' };
     }
-    return convertOfficeToPdf(result.filePaths[0]);
+    const inputPath = result.filePaths[0];
+    const converted = await convertOfficeToPdf(inputPath);
+    // Read the original deck's on-click build animations (LibreOffice flattens
+    // them when it makes the PDF). Read-only — never affects the conversion.
+    if (converted.ok && /\.pptx$/i.test(inputPath)) {
+      try {
+        const animations = analyzePptxAnimations(new Uint8Array(await readFile(inputPath)));
+        if (animations && animations.animatedSlides > 0) converted.animations = animations;
+      } catch {
+        // ignore — animation info is a nice-to-have, not required
+      }
+    }
+    return converted;
   });
 
   ipcMain.handle('files:openProject', async () => {

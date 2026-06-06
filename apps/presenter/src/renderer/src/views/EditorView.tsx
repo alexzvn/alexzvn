@@ -9,6 +9,8 @@ export function EditorView() {
   const selectedId = useProject((s) => s.selectedId);
   const error = useProject((s) => s.error);
   const setError = useProject((s) => s.setError);
+  const notice = useProject((s) => s.notice);
+  const setNotice = useProject((s) => s.setNotice);
   const importDocs = useProject((s) => s.importDocs);
   const importOffice = useProject((s) => s.importOffice);
   const selected = slides.find((s) => s.id === selectedId) ?? null;
@@ -21,6 +23,15 @@ export function EditorView() {
         <div className="flex items-center justify-between gap-4 px-4 py-2 bg-[var(--destructive)]/15 border-b border-[var(--destructive)]/40 text-sm">
           <span className="text-[var(--destructive)]">{error}</span>
           <button type="button" onClick={() => setError(null)} className="text-xs opacity-70 hover:opacity-100">
+            schließen
+          </button>
+        </div>
+      )}
+
+      {notice && (
+        <div className="flex items-center justify-between gap-4 px-4 py-2 bg-[var(--primary)]/10 border-b border-[var(--primary)]/30 text-sm">
+          <span className="text-[var(--foreground)]">▸ {notice}</span>
+          <button type="button" onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100">
             schließen
           </button>
         </div>

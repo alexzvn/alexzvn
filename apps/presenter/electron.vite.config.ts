@@ -7,7 +7,11 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    // Bundle fflate INTO the main bundle instead of externalizing it: the main
+    // process reads pptx animations with it, and the packaged app ships only
+    // out/** + package.json (no node_modules), so an externalized require could
+    // fail at runtime. fflate is pure JS and bundles cleanly.
+    plugins: [externalizeDepsPlugin({ exclude: ['fflate'] })],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {

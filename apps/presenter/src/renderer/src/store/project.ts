@@ -38,6 +38,8 @@ interface ProjectState {
   dirty: boolean;
   busy: Busy;
   error: string | null;
+  /** Neutral, dismissible info message (distinct from the red error banner). */
+  notice: string | null;
 
   // selection
   select: (id: string | null) => void;
@@ -51,6 +53,7 @@ interface ProjectState {
   saveProject: () => Promise<void>;
   exportPdf: () => Promise<void>;
   setError: (msg: string | null) => void;
+  setNotice: (msg: string | null) => void;
 
   // slide ops
   move: (id: string, dir: -1 | 1) => void;
@@ -82,10 +85,12 @@ export const useProject = create<ProjectState>((set, get) => ({
   dirty: false,
   busy: { active: false, label: '' },
   error: null,
+  notice: null,
 
   select: (id) => set({ selectedId: id, selectedOverlayId: null }),
   selectOverlay: (id) => set({ selectedOverlayId: id }),
   setError: (msg) => set({ error: msg }),
+  setNotice: (msg) => set({ notice: msg }),
 
   importDocs: async () => {
     set({ busy: { active: true, label: 'Importiere…' }, error: null });
@@ -127,7 +132,7 @@ export const useProject = create<ProjectState>((set, get) => ({
   },
 
   importOffice: async () => {
-    set({ busy: { active: true, label: 'Konvertiere mit LibreOffice…' }, error: null });
+    set({ busy: { active: true, label: 'Konvertiere mit LibreOffice…' }, error: null, notice: null });
     try {
       const res = await window.jmpr.files.importOffice();
       if (!res.ok || !res.bytes) {
@@ -139,8 +144,17 @@ export const useProject = create<ProjectState>((set, get) => ({
       const count = await pdfPageCount(sourceId, res.bytes);
       const doc = get().doc;
       const newSlides: Slide[] = [];
+      // Map the original deck's on-click builds onto the flattened slides. The
+      // mapping is 1 PDF page per PPTX slide, so only annotate when the counts
+      // line up — otherwise we'd risk tagging the wrong slide.
+      const anim = res.animations;
+      const builds = anim && anim.perSlide.length === count ? anim.perSlide : null;
       for (let p = 0; p < count; p += 1) {
-        newSlides.push(makeSlide(sourceId, p, count > 1 ? `${base} ${p + 1}` : base));
+        const slide = makeSlide(sourceId, p, count > 1 ? `${base} ${p + 1}` : base);
+        if (builds && builds[p] > 0) {
+          slide.notes = `▸ Original-Animation: ${builds[p]} Aufbau-Klick(s) auf dieser Folie.`;
+        }
+        newSlides.push(slide);
       }
       set({
         doc: {
@@ -150,6 +164,10 @@ export const useProject = create<ProjectState>((set, get) => ({
         },
         dirty: true,
         selectedId: get().selectedId ?? newSlides[0]?.id ?? null,
+        notice:
+          anim && anim.animatedSlides > 0
+            ? `${anim.animatedSlides} Folie(n) hatten Aufbau-Animationen (${anim.totalBuilds} Klicks) — als Notiz vermerkt. Schrittweises Einblenden folgt.`
+            : null,
       });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : String(err) });

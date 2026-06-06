@@ -94,11 +94,21 @@ export interface ImportedFile {
   bytes: Uint8Array;
 }
 
+/** On-click build animations read from a .pptx (LibreOffice flattens them away). */
+export interface OfficeAnimations {
+  /** Click-build count per slide, in presentation order. */
+  perSlide: number[];
+  animatedSlides: number;
+  totalBuilds: number;
+}
+
 export interface OfficeImportResult {
   ok: boolean;
   name?: string;
   bytes?: Uint8Array; // converted PDF bytes
   error?: string;
+  /** Present for .pptx imports that carry on-click build animations. */
+  animations?: OfficeAnimations;
 }
 
 // ---- Network remote (phone clicker over LAN) ----
