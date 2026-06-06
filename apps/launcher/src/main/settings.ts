@@ -16,6 +16,16 @@ interface StoredSettings {
 const DEFAULT_PROXY_URL = 'https://jm-suite-proxy.jm-production-suite.workers.dev';
 const BAKED_PROXY_KEY = typeof __JMPS_PROXY_KEY__ !== 'undefined' ? __JMPS_PROXY_KEY__ : '';
 
+// Standard-Katalogquelle: derselbe Proxy liefert die suite.json LIVE aus dem
+// Repo (Route /suite.json). So erscheinen neue Tools ohne Launcher-Release —
+// der Katalog wird zentral in git gepflegt. Überschreibbar per Setting/ENV.
+const DEFAULT_MANIFEST_URL = `${DEFAULT_PROXY_URL}/suite.json`;
+
+/** Eingebackene Standard-Katalog-URL (für den Fetch-Fallback in manifest.ts). */
+export function defaultManifestUrl(): string {
+  return DEFAULT_MANIFEST_URL;
+}
+
 function settingsFile(): string {
   return join(app.getPath('userData'), 'settings.json');
 }

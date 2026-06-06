@@ -35,6 +35,30 @@ export default {
       return json({ error: 'unauthorized' }, 401);
     }
 
+    // Katalog (suite.json) LIVE aus dem Repo ausliefern — git ist die einzige
+    // Quelle der Wahrheit, damit neue Tools ohne Launcher-Release oder Worker-
+    // Deploy erscheinen (nur `suite.json` committen). Ref = env.MANIFEST_REF.
+    if (request.method === 'GET' && url.pathname === '/suite.json') {
+      try {
+        const ref = env.MANIFEST_REF || 'main';
+        const path = env.MANIFEST_PATH || 'packages/suite-manifest/suite.json';
+        const raw = await ghRaw(
+          `https://api.github.com/repos/${env.REPO}/contents/${path}?ref=${encodeURIComponent(ref)}`,
+          env,
+        );
+        return new Response(raw, {
+          status: 200,
+          headers: {
+            'content-type': 'application/json; charset=utf-8',
+            // kurz cachen; Clients holen ohnehin nur beim Start
+            'cache-control': 'public, max-age=60',
+          },
+        });
+      } catch (e) {
+        return json({ error: String((e && e.message) || e) }, 502);
+      }
+    }
+
     const match = url.pathname.match(/^\/tools\/([^/]+)\/latest\/?$/);
     if (request.method !== 'GET' || !match) {
       return json({ error: 'not found' }, 404);
@@ -99,6 +123,20 @@ async function ghJson(apiUrl, env) {
   });
   if (!res.ok) throw new Error(`GitHub API ${res.status} ${res.statusText}`);
   return res.json();
+}
+
+/** Rohinhalt einer Datei aus dem Repo holen (Contents-API, raw). */
+async function ghRaw(apiUrl, env) {
+  const res = await fetch(apiUrl, {
+    headers: {
+      Accept: 'application/vnd.github.raw',
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': USER_AGENT,
+    },
+  });
+  if (!res.ok) throw new Error(`GitHub contents ${res.status} ${res.statusText}`);
+  return res.text();
 }
 
 /**

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SUITE } from '@jm/suite-manifest';
 import type { SuiteManifest, ToolManifest } from '@jm/suite-manifest';
-import { resolveManifestUrl } from './settings';
+import { defaultManifestUrl, resolveManifestUrl, resolveProxy, resolveProxyKey } from './settings';
 
 // In-memory-Registry. Default = gebündeltes suite.json; beim Start wird ein
 // lokaler Cache geladen und optional eine remote suite.json (JMPS_MANIFEST_URL).
@@ -13,11 +13,25 @@ function cacheFile(): string {
   return join(app.getPath('userData'), 'manifest-cache.json');
 }
 
-function manifestUrl(): string | undefined {
-  // Env (JMPS_MANIFEST_URL) hat Vorrang, sonst der in den Settings hinterlegte
-  // Wert — so lässt sich der Katalog (neue Tools, Texte) ohne Launcher-Rebuild
-  // zentral aktualisieren.
-  return resolveManifestUrl();
+function manifestUrl(): string {
+  // Env (JMPS_MANIFEST_URL) > Setting > eingebackener Default (Proxy /suite.json).
+  // So lässt sich der Katalog (neue Tools, Texte) ohne Launcher-Rebuild zentral
+  // in git pflegen; ein gesetztes Setting/ENV überschreibt die Standardquelle.
+  return resolveManifestUrl() || defaultManifestUrl();
+}
+
+/**
+ * Header für den Katalog-Fetch: Wenn die URL auf den Proxy zeigt, den (low-value)
+ * Proxy-Key mitschicken, damit /suite.json key-geschützt bleibt wie der Rest.
+ */
+function manifestHeaders(url: string): Record<string, string> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  const proxy = resolveProxy();
+  const key = resolveProxyKey();
+  if (proxy && key && url.startsWith(proxy.replace(/\/$/, ''))) {
+    headers['X-Proxy-Key'] = key;
+  }
+  return headers;
 }
 
 function isValid(value: unknown): value is SuiteManifest {
@@ -46,7 +60,7 @@ export async function refreshManifest(): Promise<boolean> {
   const url = manifestUrl();
   if (!url) return false;
   try {
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    const res = await fetch(url, { headers: manifestHeaders(url) });
     if (!res.ok) return false;
     const parsed = (await res.json()) as unknown;
     if (!isValid(parsed)) return false;

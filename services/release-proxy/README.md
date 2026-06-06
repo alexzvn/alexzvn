@@ -48,14 +48,33 @@ Health-Check (ohne Key): `GET https://<dein-worker>.workers.dev/` → `… ok`.
 GET /tools/:id/latest?platform=<mac|win>&arch=<arm64|x64>
 Header: X-Proxy-Key: <PROXY_KEY>
 → 200 { version, assets: { <platform>: { url, size, fileName } } }
+
+GET /suite.json
+Header: X-Proxy-Key: <PROXY_KEY>
+→ 200 (liefert packages/suite-manifest/suite.json LIVE aus dem Repo)
 ```
 - `:id` = Tool-ID aus suite.json (`jm-copy`, `jm-sync`, … oder `launcher`).
 - Auf macOS bestimmt `arch` das richtige DMG (arm64/x64); auf Windows ist es x64.
+- `/suite.json` liefert den **Katalog** direkt aus git (Branch = `MANIFEST_REF` in
+  `wrangler.toml`). Damit erscheinen **neue Tools ohne Launcher-Release** — einfach
+  `suite.json` committen. Der Launcher zieht diese URL automatisch als Default.
 
-## Danach
-Schick mir die finale **Worker-URL** — dann backe ich Proxy-URL + Key als Default
-in den Launcher (Clients müssen dann nichts mehr eintippen) und release eine neue
-Launcher-Version.
+### Katalog-Quelle (MANIFEST_REF)
+`MANIFEST_REF` in `wrangler.toml` steht aktuell auf `feat/jm-production-suite`.
+**Nach dem Merge nach `main`** dort auf `main` umstellen und erneut `wrangler deploy`.
+
+## Update auf einen Stand mit `/suite.json`
+Wenn der Worker schon läuft und du nur die neue `/suite.json`-Route ausrollst:
+```bash
+cd services/release-proxy
+wrangler deploy            # Secrets bleiben erhalten, nur Code+Vars werden aktualisiert
+```
+Danach testen:
+```bash
+curl -s -H "X-Proxy-Key: <DEIN_KEY>" \
+  "https://jm-suite-proxy.jm-production-suite.workers.dev/suite.json" | head -c 200
+```
+Erwartet: der Anfang der `suite.json` (`{"schemaVersion":…,"tools":[…`).
 
 > Optional später: statt `PROXY_KEY` Cloudflare Access (Service-Tokens); Caching der
 > Release-Liste (~60 s) gegen GitHub-Rate-Limits. Für die Testphase nicht nötig.
