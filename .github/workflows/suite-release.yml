@@ -52,6 +52,12 @@ jobs:
           printf '\nelectronVersion: %s\n' "$ver" >> "apps/${{ steps.app.outputs.name }}/electron-builder.yml"
           echo "electronVersion=$ver"
 
+      # Tool-spezifische Vorbereitung (z. B. media-converter bündelt ffmpeg aus
+      # ffmpeg-static/ffprobe-static nach resources/bin/<platform>/). Tools ohne
+      # `prepackage`-Script werden dank --if-present übersprungen.
+      - name: Prepare bundled binaries (if any)
+        run: npm run prepackage -w @jm/${{ steps.app.outputs.name }} --if-present
+
       - name: Package (electron-builder, unsigniert)
         working-directory: apps/${{ steps.app.outputs.name }}
         run: npx electron-builder --publish never

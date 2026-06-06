@@ -51,6 +51,11 @@ jobs:
           printf '\nelectronVersion: %s\n' "$ver" >> "apps/${{ matrix.app }}/electron-builder.yml"
           echo "electronVersion=$ver"
 
+      # Tool-spezifische Vorbereitung (z. B. media-converter bündelt ffmpeg).
+      # Tools ohne `prepackage`-Script werden dank --if-present übersprungen.
+      - name: Prepare bundled binaries (if any)
+        run: npm run prepackage -w @jm/${{ matrix.app }} --if-present
+
       - name: Package (electron-builder, unsigniert)
         working-directory: apps/${{ matrix.app }}
         run: npx electron-builder --publish never

@@ -1,6 +1,6 @@
 {
   "name": "@jm/media-converter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Jakobs Medien Media Converter — lokales Tool für Video-Codec-Konvertierung und Office→PDF",
   "author": "Jakobs Medien GmbH",
@@ -15,7 +15,8 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "dist": "electron-vite build && electron-builder",
+    "prepackage": "node tools/bundle-ffmpeg.mjs",
+    "dist": "electron-vite build && npm run prepackage && electron-builder",
     "dist:dir": "electron-vite build && electron-builder --dir",
     "dist:win": "electron-vite build && electron-builder --win",
     "dist:mac": "electron-vite build && electron-builder --mac"
@@ -37,6 +38,8 @@
     "electron": "^33.0.0",
     "electron-builder": "24.13.3",
     "electron-vite": "^2.3.0",
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
