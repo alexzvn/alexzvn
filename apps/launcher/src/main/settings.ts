@@ -9,6 +9,13 @@ interface StoredSettings {
   manifestUrl?: string;
 }
 
+// Standard-Release-Quelle: der interne Cloudflare-Proxy. Die URL ist kein
+// Secret; der zugehörige Proxy-Key wird beim CI-Build via vite `define` aus dem
+// Actions-Secret JMPS_PROXY_KEY eingebacken (leer in lokalen Dev-Builds → dann
+// greift der Token-Fallback).
+const DEFAULT_PROXY_URL = 'https://jm-suite-proxy.jm-production-suite.workers.dev';
+const BAKED_PROXY_KEY = typeof __JMPS_PROXY_KEY__ !== 'undefined' ? __JMPS_PROXY_KEY__ : '';
+
 function settingsFile(): string {
   return join(app.getPath('userData'), 'settings.json');
 }
@@ -34,9 +41,19 @@ export function resolveToken(): string | undefined {
   return process.env['JMPS_GITHUB_TOKEN'] || read().githubToken || undefined;
 }
 
-/** Effektive Proxy-URL: Umgebungsvariable hat Vorrang. */
+/** Effektive Proxy-URL: Env > gespeichert > eingebackener Default. */
 export function resolveProxy(): string | undefined {
-  return process.env['JMPS_RELEASE_PROXY'] || read().proxyUrl || undefined;
+  return process.env['JMPS_RELEASE_PROXY'] || read().proxyUrl || DEFAULT_PROXY_URL || undefined;
+}
+
+/** Proxy-Key: Env (Dev) > eingebackener Build-Wert. Nicht in den Settings. */
+export function resolveProxyKey(): string | undefined {
+  return process.env['JMPS_PROXY_KEY'] || BAKED_PROXY_KEY || undefined;
+}
+
+/** Proxy ist nutzbar, wenn URL UND Key vorhanden sind. */
+function proxyActive(): boolean {
+  return Boolean(resolveProxy() && resolveProxyKey());
 }
 
 /** Effektive Remote-Manifest-URL (suite.json): Umgebungsvariable hat Vorrang. */
@@ -49,12 +66,11 @@ function envControlled(): boolean {
 }
 
 export function getSettingsView(): SuiteSettingsView {
-  const proxy = resolveProxy();
   const token = resolveToken();
-  const source: SuiteSettingsView['source'] = proxy ? 'proxy' : token ? 'github' : 'none';
+  const source: SuiteSettingsView['source'] = proxyActive() ? 'proxy' : token ? 'github' : 'none';
   return {
     hasToken: Boolean(token),
-    proxyUrl: proxy,
+    proxyUrl: resolveProxy(),
     source,
     fromEnv: envControlled(),
     manifestUrl: resolveManifestUrl(),

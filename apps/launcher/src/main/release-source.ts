@@ -1,5 +1,5 @@
 import type { Platform, ToolManifest } from '@jm/suite-manifest';
-import { resolveProxy, resolveToken } from './settings';
+import { resolveProxy, resolveProxyKey, resolveToken } from './settings';
 
 /** Aufgelöstes, herunterladbares Release-Artefakt für die aktuelle Plattform. */
 export interface ResolvedAsset {
@@ -162,52 +162,63 @@ class GithubReleaseSource implements ReleaseSource {
 }
 
 /**
- * Interner Proxy: hält das Token serverseitig und liefert Metadaten + Asset-URL.
- * Erwartetes Format von GET {base}/tools/{id}/latest:
- *   { version, assets: { mac?: {url,size,fileName}, win?: {url,size,fileName} } }
+ * Interner Proxy (Cloudflare Worker): hält das GitHub-Token serverseitig und
+ * liefert pro Tool Version + signierte, auth-freie Download-URL. Der Client weist
+ * sich mit dem Proxy-Key aus und übergibt Plattform/Architektur, damit das
+ * richtige Asset gewählt wird.
+ * GET {base}/tools/{id}/latest?platform=<mac|win>&arch=<arm64|x64>
+ *   → { version, assets: { <platform>: {url,size,fileName} } }
  */
 class ProxyReleaseSource implements ReleaseSource {
-  constructor(private readonly base: string) {}
+  constructor(
+    private readonly base: string,
+    private readonly key: string,
+  ) {}
 
-  async latestVersion(tool: ToolManifest): Promise<string | null> {
-    const url = `${this.base.replace(/\/$/, '')}/tools/${tool.id}/latest`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  private async query(
+    tool: ToolManifest,
+  ): Promise<{ version: string; asset?: { url: string; size: number; fileName: string } } | null> {
+    const platform = platformKey();
+    if (!platform) return null;
+    const url =
+      `${this.base.replace(/\/$/, '')}/tools/${tool.id}/latest` +
+      `?platform=${platform}&arch=${archToken()}`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json', 'X-Proxy-Key': this.key },
+    });
     if (!res.ok) throw new Error(`Proxy ${res.status} ${res.statusText}`);
-    const json = (await res.json()) as { version?: string };
-    return json.version ?? null;
-  }
-
-  async latest(tool: ToolManifest): Promise<ResolvedAsset | null> {
-    const key = platformKey();
-    if (!key) return null;
-    const url = `${this.base.replace(/\/$/, '')}/tools/${tool.id}/latest`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) {
-      throw new Error(`Proxy ${res.status} ${res.statusText}`);
-    }
     const json = (await res.json()) as {
       version: string;
       assets: Partial<Record<Platform, { url: string; size: number; fileName: string }>>;
     };
-    const asset = json.assets[key];
-    if (!asset) return null;
+    return { version: json.version, asset: json.assets[platform] };
+  }
+
+  async latestVersion(tool: ToolManifest): Promise<string | null> {
+    return (await this.query(tool))?.version ?? null;
+  }
+
+  async latest(tool: ToolManifest): Promise<ResolvedAsset | null> {
+    const result = await this.query(tool);
+    if (!result?.asset) return null;
     return {
-      version: json.version,
-      fileName: asset.fileName,
-      assetUrl: asset.url,
-      size: asset.size,
-      downloadHeaders: {},
+      version: result.version,
+      fileName: result.asset.fileName,
+      assetUrl: result.asset.url,
+      size: result.asset.size,
+      downloadHeaders: {}, // signierte URL braucht keine Auth
     };
   }
 }
 
 /**
- * Wählt die aktive Release-Quelle: Proxy bevorzugt (kein Token im Client),
- * sonst GitHub-PAT, sonst keine (manueller Download via Release-Seite).
+ * Wählt die aktive Release-Quelle: Proxy bevorzugt (kein GitHub-Token im Client,
+ * nur ein niederwertiger Proxy-Key), sonst GitHub-PAT, sonst keine.
  */
 export function getReleaseSource(): ReleaseSource | null {
   const proxy = resolveProxy();
-  if (proxy) return new ProxyReleaseSource(proxy);
+  const proxyKey = resolveProxyKey();
+  if (proxy && proxyKey) return new ProxyReleaseSource(proxy, proxyKey);
   const token = resolveToken();
   if (token) return new GithubReleaseSource(token);
   return null;
