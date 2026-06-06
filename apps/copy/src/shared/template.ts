@@ -31,6 +31,8 @@ export const DATE_TOKENS: TokenDef[] = [
 
 /** Project/production tokens — resolved from user-entered fields. */
 export const PROJECT_TOKENS: TokenDef[] = [
+  // PID = offizielle Projektbezeichnung (Jakobs Medien).
+  { key: 'pid', category: 'project', label: 'PID', example: 'PID-0042' },
   { key: 'projekt', category: 'project', label: 'Projekt', example: 'Sommerfest' },
   { key: 'kunde', category: 'project', label: 'Kunde', example: 'Musterfirma' },
   { key: 'produktion', category: 'project', label: 'Produktion', example: 'Talk' },
@@ -121,6 +123,12 @@ export interface BuiltinTemplate {
 
 /** Shipped starter templates so the tool is useful out of the box. */
 export const BUILTIN_TEMPLATES: BuiltinTemplate[] = [
+  {
+    id: 'builtin-pid-project',
+    name: 'PID + Projekt',
+    pattern: '{pid}_{date}_{projekt}',
+    subfolders: ['Footage', 'Audio', 'Docs', 'Export'],
+  },
   {
     id: 'builtin-date-project',
     name: 'Datum + Projekt',
