@@ -11,19 +11,23 @@ eigentlichen Downloads laufen direkt von GitHubs Storage (nicht über den Worker
 - Einen **Proxy-Key** (zufälliger String), z. B. `openssl rand -hex 24`.
 
 ## Deploy (wrangler, empfohlen — ~5 Min)
-Aus diesem Ordner (`services/release-proxy/`):
+**Wichtig:** alle Befehle aus DIESEM Ordner (`services/release-proxy/`) ausführen —
+sonst findet wrangler die `wrangler.toml` nicht ("Worker name missing").
 
 ```bash
-npm i -g wrangler        # oder: npx wrangler ...
-wrangler login           # öffnet den Browser, mit Cloudflare-Account anmelden
+cd services/release-proxy   # hier liegen wrangler.toml + worker.js
+npm i -g wrangler           # oder: npx wrangler ...
+wrangler login              # Browser öffnet sich, mit Cloudflare-Account anmelden
 
+# Erst deployen (legt den Worker an), DANN Secrets — `secret put` braucht einen
+# existierenden Worker. Secrets greifen sofort, kein erneutes Deploy nötig.
+wrangler deploy             # gibt die URL aus, z. B. https://jm-suite-proxy.<account>.workers.dev
 wrangler secret put GITHUB_TOKEN   # PAT einfügen
 wrangler secret put PROXY_KEY      # deinen Proxy-Key einfügen
-
-wrangler deploy          # gibt die URL aus, z. B. https://jm-suite-proxy.<account>.workers.dev
 ```
 
 Den `REPO`-Wert (Standard `AlexmachtCode/alexzvn`) ggf. in `wrangler.toml` anpassen.
+Falls wrangler den Namen partout nicht findet: `--name jm-suite-proxy` an die Befehle anhängen.
 
 ### Alternative: Dashboard
 Cloudflare → **Workers & Pages** → **Create Worker** → Code aus `worker.js` einfügen →
