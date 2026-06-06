@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Logo, cn } from '@jm/ui';
 import type { DisplayInfo, PresentationState } from '@shared/types';
 import { useProject } from '@/store/project';
+import { getExpandPptxBuilds, setExpandPptxBuilds } from '@/lib/settings';
 
 const btn =
   'h-9 px-3 rounded-md text-sm font-semibold whitespace-nowrap border border-[var(--border)] bg-[var(--card)] ' +
@@ -22,6 +23,8 @@ export function Toolbar() {
 
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   const [audienceDisplay, setAudienceDisplay] = useState<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [expandBuilds, setExpandBuildsState] = useState(getExpandPptxBuilds());
   const [present, setPresent] = useState<PresentationState>({
     active: false,
     index: 0,
@@ -110,6 +113,46 @@ export function Toolbar() {
             </option>
           ))}
         </select>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowSettings((v) => !v)}
+            title="Einstellungen"
+            className={cn(btn, showSettings && 'bg-[var(--highlight)]')}
+          >
+            ⚙︎
+          </button>
+          {showSettings && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)} />
+              <div className="absolute right-0 top-full mt-2 z-20 w-80 rounded-lg bg-[var(--card)] ring-1 ring-[var(--border)] shadow-xl p-4 text-sm">
+                <div className="font-bold mb-2">Einstellungen</div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={expandBuilds}
+                    onChange={(e) => {
+                      setExpandPptxBuilds(e.target.checked);
+                      setExpandBuildsState(e.target.checked);
+                    }}
+                    className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  />
+                  <span>
+                    <span className="font-semibold">PPTX-Aufbau-Animationen als Einzelschritte</span>{' '}
+                    <span className="text-[10px] uppercase tracking-wide text-[var(--primary)]">
+                      experimentell
+                    </span>
+                    <span className="block text-xs text-[var(--muted-foreground)] mt-0.5">
+                      Splittet On-Click-Animationen beim Office-Import in einzelne Folien. Bei
+                      Problemen wird automatisch auf das flache PDF zurückgefallen.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </>
+          )}
+        </div>
 
         {present.active ? (
           <button

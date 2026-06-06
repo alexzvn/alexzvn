@@ -24,7 +24,8 @@ const api: JmprApi = {
   files: {
     importDocs: () => ipcRenderer.invoke('files:importDocs') as Promise<ImportedFile[]>,
     importImage: () => ipcRenderer.invoke('files:importImage') as Promise<ImportedFile | null>,
-    importOffice: () => ipcRenderer.invoke('files:importOffice') as Promise<OfficeImportResult>,
+    importOffice: (expandBuilds?: boolean) =>
+      ipcRenderer.invoke('files:importOffice', expandBuilds) as Promise<OfficeImportResult>,
     openProject: () =>
       ipcRenderer.invoke('files:openProject') as Promise<{
         name: string;

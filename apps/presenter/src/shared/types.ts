@@ -109,6 +109,9 @@ export interface OfficeImportResult {
   error?: string;
   /** Present for .pptx imports that carry on-click build animations. */
   animations?: OfficeAnimations;
+  /** True when the (experimental) build-step expansion was applied — the PDF
+   *  pages are then already the progressive reveal steps. */
+  expanded?: boolean;
 }
 
 // ---- Network remote (phone clicker over LAN) ----
@@ -154,8 +157,10 @@ export interface JmprApi {
     importDocs: () => Promise<ImportedFile[]>;
     /** Open an image to use as an overlay (logo). */
     importImage: () => Promise<ImportedFile | null>;
-    /** Convert an Office document (PPTX/DOCX/…) to PDF via LibreOffice. */
-    importOffice: () => Promise<OfficeImportResult>;
+    /** Convert an Office document (PPTX/DOCX/…) to PDF via LibreOffice. When
+     *  `expandBuilds` is set, .pptx on-click animations are split into per-step
+     *  slides (experimental; falls back to the flat conversion on any doubt). */
+    importOffice: (expandBuilds?: boolean) => Promise<OfficeImportResult>;
     /** Open a .jmpres project; returns the raw zip bytes. */
     openProject: () => Promise<{ name: string; bytes: Uint8Array } | null>;
     /** Save .jmpres project bytes to disk (save dialog). */

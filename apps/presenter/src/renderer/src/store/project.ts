@@ -5,6 +5,7 @@ import { getSource, getImageBytes, putImage, putSource } from '@/lib/assets';
 import { pdfPageCount } from '@/lib/pdf';
 import { deserializeProject, serializeProject } from '@/lib/project-file';
 import { exportSlidesToPdf } from '@/lib/export-pdf';
+import { getExpandPptxBuilds } from '@/lib/settings';
 
 function stripExt(name: string): string {
   return name.replace(/\.[^.]+$/, '');
@@ -134,7 +135,7 @@ export const useProject = create<ProjectState>((set, get) => ({
   importOffice: async () => {
     set({ busy: { active: true, label: 'Konvertiere mit LibreOffice…' }, error: null, notice: null });
     try {
-      const res = await window.jmpr.files.importOffice();
+      const res = await window.jmpr.files.importOffice(getExpandPptxBuilds());
       if (!res.ok || !res.bytes) {
         if (res.error && res.error !== 'Abgebrochen.') set({ error: res.error });
         return;
@@ -164,9 +165,10 @@ export const useProject = create<ProjectState>((set, get) => ({
         },
         dirty: true,
         selectedId: get().selectedId ?? newSlides[0]?.id ?? null,
-        notice:
-          anim && anim.animatedSlides > 0
-            ? `${anim.animatedSlides} Folie(n) hatten Aufbau-Animationen (${anim.totalBuilds} Klicks) — als Notiz vermerkt. Schrittweises Einblenden folgt.`
+        notice: res.expanded
+          ? `Aufbau-Animationen als Einzelschritte importiert — ${count} Schritt-Folien (experimentell).`
+          : anim && anim.animatedSlides > 0
+            ? `${anim.animatedSlides} Folie(n) hatten Aufbau-Animationen (${anim.totalBuilds} Klicks) — als Notiz vermerkt.`
             : null,
       });
     } catch (err) {

@@ -23,7 +23,7 @@ export interface PptxAnimations {
 }
 
 /** Map of relationship id → target part path, robust to attribute order. */
-function relationshipMap(relsXml: string): Map<string, string> {
+export function relationshipMap(relsXml: string): Map<string, string> {
   const map = new Map<string, string>();
   for (const tag of relsXml.match(/<Relationship\b[^>]*>/g) ?? []) {
     const id = tag.match(/\bId="([^"]+)"/)?.[1];
@@ -34,13 +34,13 @@ function relationshipMap(relsXml: string): Map<string, string> {
 }
 
 /** Normalise a presentation-relative rel target to a zip part path under ppt/. */
-function partPath(target: string): string {
+export function partPath(target: string): string {
   if (target.startsWith('/')) return target.slice(1); // absolute "/ppt/slides/.."
   return `ppt/${target.replace(/^\.\//, '')}`; // relative to ppt/
 }
 
 /** Slide file paths in presentation (display) order, else null if unreadable. */
-function slideOrder(files: Record<string, Uint8Array>): string[] | null {
+export function slideOrder(files: Record<string, Uint8Array>): string[] | null {
   const pres = files['ppt/presentation.xml'];
   const rels = files['ppt/_rels/presentation.xml.rels'];
   if (!pres || !rels) return null;
@@ -56,11 +56,43 @@ function slideOrder(files: Record<string, Uint8Array>): string[] | null {
   return order;
 }
 
+/**
+ * Group a slide's entrance reveals by mouse click. Returns one entry per click
+ * that reveals at least one new shape, each an array of shape ids (cNvPr id)
+ * first revealed at that click. Walks the <p:timing> tokens in document order:
+ * `clickEffect` starts a new click; a shape-target seen after click 1 is recorded
+ * once at its first click. with/after-previous effects attach to the current
+ * click; targets seen before any click are treated as initial (always visible).
+ *
+ * Heuristic (good for the common entrance-build deck): every targeted shape is
+ * treated as a reveal — exit/emphasis effects on a shape can therefore hide it
+ * early. The expansion that consumes this validates page counts and falls back to
+ * the flat conversion, so a mis-grouped deck degrades gracefully.
+ */
+export function parseClickGroups(slideXml: string): string[][] {
+  const timing = slideXml.match(/<p:timing>[\s\S]*?<\/p:timing>/);
+  if (!timing) return [];
+  const tokenRe = /nodeType="(clickEffect|withEffect|afterEffect)"|spid="([^"]+)"/g;
+  const groups: string[][] = [];
+  const seen = new Set<string>();
+  let clickIdx = 0; // 0 = before the first click (initial / auto content)
+  let m: RegExpExecArray | null;
+  while ((m = tokenRe.exec(timing[0]))) {
+    if (m[1] === 'clickEffect') {
+      clickIdx += 1;
+      groups[clickIdx - 1] = groups[clickIdx - 1] ?? [];
+    } else if (m[2] && clickIdx >= 1 && !seen.has(m[2])) {
+      seen.add(m[2]);
+      (groups[clickIdx - 1] = groups[clickIdx - 1] ?? []).push(m[2]);
+    }
+  }
+  // Collapse clicks that revealed nothing new — they need no separate build step.
+  return groups.filter((g) => g && g.length > 0);
+}
+
 /** Count on-click build steps in one slide's XML. */
 function clickBuilds(slideXml: string): number {
-  const timing = slideXml.match(/<p:timing>[\s\S]*?<\/p:timing>/);
-  if (!timing) return 0;
-  return (timing[0].match(/nodeType="clickEffect"/g) ?? []).length;
+  return parseClickGroups(slideXml).length;
 }
 
 /**

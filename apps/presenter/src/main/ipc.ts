@@ -9,8 +9,9 @@ import type {
   ScreenMode,
   SourceKind,
 } from '@shared/types';
-import { convertOfficeToPdf } from './office/convert';
+import { convertOfficeBytesToPdf, convertOfficeToPdf, countPdfPages } from './office/convert';
 import { analyzePptxAnimations } from './office/pptx-animations';
+import { expandPptxBuildSteps } from './office/pptx-expand';
 import {
   broadcastAll,
   getDisplays,
@@ -86,38 +87,62 @@ export function registerIpc(): void {
     return readImported(filePath);
   });
 
-  ipcMain.handle('files:importOffice', async (): Promise<OfficeImportResult> => {
-    const win = editor();
-    const options: Electron.OpenDialogOptions = {
-      title: 'Office-Dokument importieren (LibreOffice nötig)',
-      properties: ['openFile'],
-      filters: [
-        {
-          name: 'Office-Dokumente',
-          extensions: ['pptx', 'ppt', 'odp', 'docx', 'doc', 'odt', 'rtf'],
-        },
-      ],
-    };
-    const result = win
-      ? await dialog.showOpenDialog(win, options)
-      : await dialog.showOpenDialog(options);
-    if (result.canceled || result.filePaths.length === 0) {
-      return { ok: false, error: 'Abgebrochen.' };
-    }
-    const inputPath = result.filePaths[0];
-    const converted = await convertOfficeToPdf(inputPath);
-    // Read the original deck's on-click build animations (LibreOffice flattens
-    // them when it makes the PDF). Read-only — never affects the conversion.
-    if (converted.ok && /\.pptx$/i.test(inputPath)) {
-      try {
-        const animations = analyzePptxAnimations(new Uint8Array(await readFile(inputPath)));
-        if (animations && animations.animatedSlides > 0) converted.animations = animations;
-      } catch {
-        // ignore — animation info is a nice-to-have, not required
+  ipcMain.handle(
+    'files:importOffice',
+    async (_e, expandBuilds?: boolean): Promise<OfficeImportResult> => {
+      const win = editor();
+      const options: Electron.OpenDialogOptions = {
+        title: 'Office-Dokument importieren (LibreOffice nötig)',
+        properties: ['openFile'],
+        filters: [
+          {
+            name: 'Office-Dokumente',
+            extensions: ['pptx', 'ppt', 'odp', 'docx', 'doc', 'odt', 'rtf'],
+          },
+        ],
+      };
+      const result = win
+        ? await dialog.showOpenDialog(win, options)
+        : await dialog.showOpenDialog(options);
+      if (result.canceled || result.filePaths.length === 0) {
+        return { ok: false, error: 'Abgebrochen.' };
       }
-    }
-    return converted;
-  });
+      const inputPath = result.filePaths[0];
+      const base = path.basename(inputPath, path.extname(inputPath));
+
+      // Flat conversion is the always-correct baseline.
+      const baseline = await convertOfficeToPdf(inputPath);
+      if (!baseline.ok || !/\.pptx$/i.test(inputPath)) return baseline;
+
+      let animations;
+      try {
+        animations = analyzePptxAnimations(new Uint8Array(await readFile(inputPath))) ?? undefined;
+      } catch {
+        animations = undefined;
+      }
+      if (!animations || animations.animatedSlides === 0) return baseline;
+
+      // EXPERIMENTAL: split on-click builds into per-step slides. Only adopt the
+      // expanded conversion if it succeeds AND its page count matches exactly —
+      // otherwise keep the flat baseline so import never silently breaks.
+      if (expandBuilds) {
+        try {
+          const expanded = expandPptxBuildSteps(new Uint8Array(await readFile(inputPath)));
+          if (expanded) {
+            const conv = await convertOfficeBytesToPdf(expanded.bytes, base);
+            if (conv.ok && conv.bytes && countPdfPages(conv.bytes) === expanded.pages) {
+              return { ...conv, name: baseline.name, expanded: true };
+            }
+          }
+        } catch {
+          // fall through to baseline
+        }
+      }
+
+      baseline.animations = animations;
+      return baseline;
+    },
+  );
 
   ipcMain.handle('files:openProject', async () => {
     const win = editor();
