@@ -3,9 +3,8 @@ import { join } from 'node:path';
 import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } from '@jm/electron-kit';
 import type { AppEvent } from '@shared/types';
 import { registerIpc } from './ipc';
-import { initManifest, refreshManifest, getTools } from './manifest';
+import { initManifest, refreshManifest } from './manifest';
 import { initAutoUpdate } from './updater';
-import { checkLauncherUpdate } from './updates';
 
 declare const __dirname: string;
 
@@ -38,20 +37,8 @@ if (setupSingleInstance(() => createWindow())) {
       })
       .catch(() => {});
     initAutoUpdate(emitAppEvent);
-
-    // Launcher-Selbstprüfung gegen die `launcher-v*`-Releases (online): da das
-    // electron-updater-Self-Update für das private Repo noch nicht greift, wird
-    // eine neuere Version vorerst als dezenter Hinweis gemeldet.
-    checkLauncherUpdate(getTools())
-      .then((upd) => {
-        if (upd) {
-          emitAppEvent({
-            type: 'notice',
-            message: `Neue Launcher-Version ${upd.latest} verfügbar (installiert ${upd.current}) — über die Releases-Seite aktualisieren.`,
-          });
-        }
-      })
-      .catch(() => {});
+    // Launcher-Self-Update läuft jetzt über den Renderer (loadLauncherUpdate →
+    // Banner mit „Aktualisieren"), siehe updates.ts/installer.ts.
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

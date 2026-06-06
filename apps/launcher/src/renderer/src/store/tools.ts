@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type {
   ActionResult,
   InstallProgress,
+  LauncherUpdate,
   SuiteSettingsInput,
   SuiteSettingsView,
   ToolManifest,
@@ -21,8 +22,11 @@ interface ToolsStore {
   settingsOpen: boolean;
   loading: boolean;
   notice: string | null;
+  launcherUpdate: LauncherUpdate | null;
   load: () => Promise<void>;
   checkUpdates: () => Promise<void>;
+  loadLauncherUpdate: () => Promise<void>;
+  updateLauncher: () => Promise<void>;
   open: (id: string) => Promise<void>;
   install: (id: string) => Promise<void>;
   update: (id: string) => Promise<void>;
@@ -66,6 +70,7 @@ export const useTools = create<ToolsStore>((set) => {
     settingsOpen: false,
     loading: true,
     notice: null,
+    launcherUpdate: null,
 
     load: async () => {
       if (!progressSubscribed) {
@@ -97,8 +102,9 @@ export const useTools = create<ToolsStore>((set) => {
         window.jmps.getSettings(),
       ]);
       set({ tools, states: byId(states), settings, loading: false });
-      // Zustände sofort rendern, die (langsamere, online) Update-Prüfung danach.
+      // Zustände sofort rendern, die (langsameren, online) Prüfungen danach.
       void useTools.getState().checkUpdates();
+      void useTools.getState().loadLauncherUpdate();
     },
 
     checkUpdates: async () => {
@@ -109,6 +115,16 @@ export const useTools = create<ToolsStore>((set) => {
         // offline / Quelle nicht erreichbar → bestehende Zustände behalten
       }
     },
+
+    loadLauncherUpdate: async () => {
+      try {
+        set({ launcherUpdate: await window.jmps.getLauncherUpdate() });
+      } catch {
+        // offline / kein Token → kein Launcher-Update-Hinweis
+      }
+    },
+
+    updateLauncher: () => run('launcher', () => window.jmps.updateLauncher()),
 
     open: (id) => run(id, () => window.jmps.open(id)),
     install: (id) => run(id, () => window.jmps.install(id), true),

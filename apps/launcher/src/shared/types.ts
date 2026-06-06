@@ -41,6 +41,12 @@ export interface SuiteSettingsView {
   manifestFromEnv: boolean;
 }
 
+/** Verfügbares Launcher-Update (Self-Update). */
+export interface LauncherUpdate {
+  current: string;
+  latest: string;
+}
+
 /** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */
 export type AppEvent =
   | { type: 'notice'; message: string }
@@ -55,6 +61,8 @@ export interface JmpsApi {
   open: (id: string) => Promise<ActionResult>;
   install: (id: string) => Promise<ActionResult>;
   update: (id: string) => Promise<ActionResult>;
+  getLauncherUpdate: () => Promise<LauncherUpdate | null>;
+  updateLauncher: () => Promise<ActionResult>;
   openExternal: (url: string) => Promise<void>;
   getSettings: () => Promise<SuiteSettingsView>;
   setSettings: (settings: SuiteSettingsInput) => Promise<SuiteSettingsView>;

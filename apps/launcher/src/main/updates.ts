@@ -1,5 +1,6 @@
 import { app } from 'electron';
 import type { ToolManifest, ToolState } from '@jm/suite-manifest';
+import type { LauncherUpdate } from '@shared/types';
 import { getAllStates } from './install-state';
 import {
   compareVersions,
@@ -57,10 +58,29 @@ export async function checkToolUpdates(tools: ToolManifest[]): Promise<ToolState
   );
 }
 
-/** Ergebnis der Launcher-Selbstprüfung. */
-export interface LauncherUpdate {
-  current: string;
-  latest: string;
+/**
+ * Pseudo-Manifest für den Launcher selbst, damit Download/Asset-Auflösung (über
+ * dieselbe ReleaseSource wie bei den Tools) wiederverwendet werden kann. Tag-
+ * Präfix `launcher-v`, Artefaktnamen entsprechend electron-builder.yml.
+ */
+export function launcherManifest(tools: ToolManifest[]): ToolManifest | null {
+  const repo = tools[0]?.repo;
+  if (!repo) return null;
+  return {
+    id: 'launcher',
+    name: 'JM Production Suite',
+    tagline: '',
+    description: '',
+    category: 'Utilities',
+    appId: 'gmbh.jakobs.production-suite',
+    repo,
+    app: 'launcher',
+    latestVersion: app.getVersion(),
+    platforms: {
+      win: { artifact: 'JM Production Suite-${version}-win-x64.exe' },
+      mac: { artifact: 'JM Production Suite-${version}-mac-${arch}.dmg' },
+    },
+  };
 }
 
 /**

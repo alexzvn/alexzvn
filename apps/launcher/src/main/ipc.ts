@@ -4,9 +4,9 @@ import type { ActionResult, InstallProgress, SuiteSettingsInput } from '@shared/
 import type { ToolManifest } from '@jm/suite-manifest';
 import { getTool, getTools } from './manifest';
 import { getAllStates } from './install-state';
-import { checkToolUpdates } from './updates';
+import { checkToolUpdates, checkLauncherUpdate } from './updates';
 import { openTool } from './launch';
-import { installTool } from './installer';
+import { installTool, updateLauncher } from './installer';
 import { getSettingsView, setSettings } from './settings';
 
 function withTool(
@@ -34,6 +34,12 @@ export function registerIpc(): void {
     );
   ipcMain.handle('tool:install', runInstall);
   ipcMain.handle('tool:update', runInstall);
+
+  // Launcher-Self-Update: Info abfragen + Download/Install (beendet die App).
+  ipcMain.handle('launcher:update-info', () => checkLauncherUpdate(getTools()));
+  ipcMain.handle('launcher:update', (e: IpcMainInvokeEvent) =>
+    updateLauncher((p: InstallProgress) => e.sender.send('suite:progress', p)),
+  );
 
   ipcMain.handle('settings:get', () => getSettingsView());
   ipcMain.handle('settings:set', (_e, input: SuiteSettingsInput) => setSettings(input));

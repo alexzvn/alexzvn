@@ -7,6 +7,8 @@ import type { ToolManifest } from '@jm/suite-manifest';
 import type { ActionResult, InstallProgress } from '@shared/types';
 import { getReleaseSource } from './release-source';
 import { recordInstalled } from './install-state';
+import { launcherManifest } from './updates';
+import { getTools } from './manifest';
 
 type Emit = (progress: InstallProgress) => void;
 
@@ -109,4 +111,62 @@ export async function installTool(tool: ToolManifest, emit: Emit): Promise<Actio
   const message = `${tool.name} ${asset.version}: heruntergeladen, Installer gestartet.`;
   emit({ id: tool.id, phase: 'done', message });
   return { ok: true, message };
+}
+
+/**
+ * Self-Update des Launchers: lädt den neuesten Launcher-Installer und startet
+ * ihn, dann beendet sich der Launcher, damit der Installer die laufenden Dateien
+ * ersetzen kann. Fortschritt läuft über die `id: 'launcher'` auf demselben Kanal.
+ */
+export async function updateLauncher(emit: Emit): Promise<ActionResult> {
+  const source = getReleaseSource();
+  if (!source) {
+    return { ok: false, message: 'Keine Release-Quelle konfiguriert — Token in den Einstellungen hinterlegen.' };
+  }
+  const launcher = launcherManifest(getTools());
+  if (!launcher) return { ok: false, message: 'Launcher-Quelle nicht ermittelbar.' };
+
+  let asset;
+  try {
+    asset = await source.latest(launcher);
+  } catch (e) {
+    const message = `Update-Abfrage fehlgeschlagen: ${(e as Error).message}`;
+    emit({ id: 'launcher', phase: 'error', message });
+    return { ok: false, message };
+  }
+  if (!asset) {
+    const message = 'Kein Launcher-Installer für diese Plattform gefunden.';
+    emit({ id: 'launcher', phase: 'error', message });
+    return { ok: false, message };
+  }
+
+  const dest = join(app.getPath('temp'), asset.fileName);
+  try {
+    emit({ id: 'launcher', phase: 'download', received: 0, total: asset.size, pct: 0 });
+    await download(asset.assetUrl, asset.downloadHeaders, dest, asset.size, (received, total) => {
+      emit({
+        id: 'launcher',
+        phase: 'download',
+        received,
+        total,
+        pct: total ? Math.round((received / total) * 100) : undefined,
+      });
+    });
+  } catch (e) {
+    const message = `Download fehlgeschlagen: ${(e as Error).message}`;
+    emit({ id: 'launcher', phase: 'error', message });
+    return { ok: false, message };
+  }
+
+  emit({ id: 'launcher', phase: 'install', message: 'Installer wird gestartet — Launcher beendet sich…' });
+  const err = await shell.openPath(dest);
+  if (err) {
+    const message = `Installer-Start fehlgeschlagen: ${err}`;
+    emit({ id: 'launcher', phase: 'error', message });
+    return { ok: false, message };
+  }
+  // Kurz warten, damit die UI-Meldung ankommt und der Installer startet, dann
+  // beenden — sonst sind die Launcher-Dateien gesperrt und das Update schlägt fehl.
+  setTimeout(() => app.quit(), 2000);
+  return { ok: true, message: `Launcher-Update ${asset.version} gestartet.` };
 }

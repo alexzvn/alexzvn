@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@jm/ui';
 import type { ToolCategory } from '@shared/types';
 import { Header } from '@/components/Header';
 import { CategoryChips, type CategoryFilter } from '@/components/CategoryChips';
@@ -44,6 +45,8 @@ export function App() {
     <div className="h-full flex flex-col">
       <Header />
 
+      <LauncherUpdateBanner />
+
       <main className="flex-1 overflow-auto">
         <div className="max-w-[1200px] mx-auto px-7 py-7 flex flex-col gap-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -84,6 +87,35 @@ export function App() {
       )}
 
       <SettingsModal />
+    </div>
+  );
+}
+
+function LauncherUpdateBanner() {
+  const upd = useTools((s) => s.launcherUpdate);
+  const busy = useTools((s) => s.busy['launcher'] ?? false);
+  const progress = useTools((s) => s.progress['launcher']);
+  const updateLauncher = useTools((s) => s.updateLauncher);
+
+  if (!upd) return null;
+
+  const downloading = busy && progress?.phase === 'download';
+  return (
+    <div
+      className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-b border-[var(--primary)]/40
+                 bg-[var(--highlight)] px-6 py-2.5 text-sm"
+    >
+      <span className="font-semibold">
+        Neue Launcher-Version <strong>{upd.latest}</strong> verfügbar
+        <span className="text-[var(--muted-foreground)]"> (installiert {upd.current})</span>
+      </span>
+      <Button size="sm" variant="primary" disabled={busy} onClick={() => updateLauncher()}>
+        {downloading
+          ? `Lädt… ${progress?.pct ?? 0}%`
+          : busy
+            ? 'Installer startet…'
+            : 'Aktualisieren'}
+      </Button>
     </div>
   );
 }
