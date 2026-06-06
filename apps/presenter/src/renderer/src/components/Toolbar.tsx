@@ -26,7 +26,7 @@ export function Toolbar() {
     active: false,
     index: 0,
     total: 0,
-    blackout: false,
+    screen: 'live',
   });
 
   useEffect(() => {

@@ -57,12 +57,15 @@ export interface ProjectDoc {
   sources: SourceMeta[];
 }
 
+/** Audience screen mode — normal slide, or a full black/white pause screen. */
+export type ScreenMode = 'live' | 'black' | 'white';
+
 /** Runtime presentation state — owned by the main process, broadcast to windows. */
 export interface PresentationState {
   active: boolean;
   index: number; // index into the visible-slide list
   total: number; // number of visible slides
-  blackout: boolean; // reserved for v0.2 (black/white screen)
+  screen: ScreenMode; // black/white pause screen (B/W keys, remote, buttons)
 }
 
 /**
@@ -98,6 +101,38 @@ export interface OfficeImportResult {
   error?: string;
 }
 
+// ---- Network remote (phone clicker over LAN) ----
+
+/** A selectable network interface to bind the remote server to. */
+export interface NetInterface {
+  /** IPv4 address, or the sentinel 'all' for 0.0.0.0 (every interface). */
+  address: string;
+  /** Human label, e.g. "Ethernet · 192.168.1.20" or "Alle Schnittstellen". */
+  label: string;
+}
+
+/** Persisted remote-control configuration. */
+export interface RemoteConfig {
+  enabled: boolean;
+  /** Bound IPv4 address, or 'all' for every interface. */
+  bind: string;
+  port: number;
+  /** Require a 4-digit PIN from the phone before it can control slides. */
+  pinEnabled: boolean;
+}
+
+/** Live status of the remote server, broadcast to the presenter window. */
+export interface RemoteStatus {
+  running: boolean;
+  /** Reachable URL for the phone, e.g. "http://192.168.1.20:7330" (null if off). */
+  url: string | null;
+  /** Active 4-digit PIN while running with pinEnabled (else null). */
+  pin: string | null;
+  config: RemoteConfig;
+  /** Last start error (e.g. port in use), else null. */
+  error: string | null;
+}
+
 /** The window API exposed on `window.jmpr`. */
 export interface JmprApi {
   platform: NodeJS.Platform;
@@ -129,11 +164,25 @@ export interface JmprApi {
     next: () => Promise<void>;
     prev: () => Promise<void>;
     stop: () => Promise<void>;
+    /** Set the audience pause screen (black/white/live); 'live' shows the slide. */
+    setScreen: (mode: ScreenMode) => Promise<void>;
     /** List displays + which one holds the audience window. */
     displays: () => Promise<DisplayInfo[]>;
     /** Move the audience window to a given display (fullscreen). */
     assignAudience: (displayId: number) => Promise<void>;
     toggleAudienceFullscreen: () => Promise<boolean>;
     onState: (cb: (s: PresentationState) => void) => () => void;
+  };
+
+  /** Network remote control (phone clicker over LAN). */
+  remote: {
+    /** Selectable network interfaces to bind to (plus an "all" option). */
+    interfaces: () => Promise<NetInterface[]>;
+    /** Current server status. */
+    status: () => Promise<RemoteStatus>;
+    /** Persist config and start/stop the server accordingly; returns new status. */
+    apply: (config: RemoteConfig) => Promise<RemoteStatus>;
+    /** Subscribe to live status changes (start/stop/error). */
+    onStatus: (cb: (s: RemoteStatus) => void) => () => void;
   };
 }

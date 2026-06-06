@@ -3,7 +3,7 @@ import type { PresentationState, Slide } from '@shared/types';
 import { clearAssets, putImage, putSource } from './assets';
 import { clearPdfCaches } from './pdf';
 
-const EMPTY: PresentationState = { active: false, index: 0, total: 0, blackout: false };
+const EMPTY: PresentationState = { active: false, index: 0, total: 0, screen: 'live' };
 
 /**
  * Used by the presenter + audience windows. Pulls the payload handed over by the
@@ -62,6 +62,19 @@ export function usePresenterKeys(enabled: boolean): void {
         case 'End':
           e.preventDefault();
           void window.jmpr.present.goto(9999);
+          break;
+        // PowerPoint-style pause screens: B = black, W = white (toggle).
+        case 'b':
+        case 'B':
+        case '.':
+          e.preventDefault();
+          void window.jmpr.present.setScreen('black');
+          break;
+        case 'w':
+        case 'W':
+        case ',':
+          e.preventDefault();
+          void window.jmpr.present.setScreen('white');
           break;
         case 'Escape':
           e.preventDefault();

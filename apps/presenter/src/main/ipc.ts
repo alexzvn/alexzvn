@@ -1,14 +1,17 @@
-import { dialog, ipcMain } from 'electron';
+import { app, dialog, ipcMain } from 'electron';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type {
   ImportedFile,
   OfficeImportResult,
   PresentationPayload,
+  RemoteConfig,
+  ScreenMode,
   SourceKind,
 } from '@shared/types';
 import { convertOfficeToPdf } from './office/convert';
 import {
+  broadcastAll,
   getDisplays,
   getEditorWindow,
   moveAudienceToDisplay,
@@ -20,9 +23,18 @@ import {
   goto,
   next,
   prev,
+  setScreen,
   startPresentation,
   stopPresentation,
 } from './present';
+import {
+  applyRemoteConfig,
+  getRemoteStatus,
+  listInterfaces,
+  setRemoteStatusHandler,
+  shutdownRemote,
+} from './remote';
+import { loadRemoteConfig, saveRemoteConfig } from './remote-config';
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp']);
 
@@ -160,9 +172,29 @@ export function registerIpc(): void {
   ipcMain.handle('present:next', () => next());
   ipcMain.handle('present:prev', () => prev());
   ipcMain.handle('present:stop', () => stopPresentation());
+  ipcMain.handle('present:setScreen', (_e, mode: ScreenMode) => setScreen(mode));
   ipcMain.handle('present:displays', () => getDisplays());
   ipcMain.handle('present:assignAudience', (_e, displayId: number) =>
     moveAudienceToDisplay(displayId),
   );
   ipcMain.handle('present:toggleAudienceFullscreen', () => toggleAudienceFullscreen());
+
+  // ---- Network remote (phone clicker) ----
+
+  // Push server status (start/stop/error) to all windows so the presenter UI's
+  // toggle stays in sync even if the server stops on its own (e.g. port clash).
+  setRemoteStatusHandler((status) => broadcastAll('remote:status', status));
+
+  ipcMain.handle('remote:interfaces', () => listInterfaces());
+  ipcMain.handle('remote:status', () => getRemoteStatus());
+  ipcMain.handle('remote:apply', async (_e, config: RemoteConfig) => {
+    saveRemoteConfig(config);
+    return applyRemoteConfig(config);
+  });
+
+  // Restore the persisted remote on launch (operator enabled it once).
+  const saved = loadRemoteConfig();
+  if (saved.enabled) void applyRemoteConfig(saved);
+
+  app.on('will-quit', () => shutdownRemote());
 }

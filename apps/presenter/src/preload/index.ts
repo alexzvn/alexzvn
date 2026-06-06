@@ -2,9 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ImportedFile,
   JmprApi,
+  NetInterface,
   OfficeImportResult,
   PresentationPayload,
   PresentationState,
+  RemoteConfig,
+  RemoteStatus,
   ViewName,
 } from '@shared/types';
 
@@ -43,6 +46,7 @@ const api: JmprApi = {
     next: () => ipcRenderer.invoke('present:next') as Promise<void>,
     prev: () => ipcRenderer.invoke('present:prev') as Promise<void>,
     stop: () => ipcRenderer.invoke('present:stop') as Promise<void>,
+    setScreen: (mode) => ipcRenderer.invoke('present:setScreen', mode) as Promise<void>,
     displays: () => ipcRenderer.invoke('present:displays'),
     assignAudience: (displayId) =>
       ipcRenderer.invoke('present:assignAudience', displayId) as Promise<void>,
@@ -52,6 +56,18 @@ const api: JmprApi = {
       const listener = (_event: unknown, s: PresentationState) => cb(s);
       ipcRenderer.on('present:state', listener);
       return () => ipcRenderer.off('present:state', listener);
+    },
+  },
+
+  remote: {
+    interfaces: () => ipcRenderer.invoke('remote:interfaces') as Promise<NetInterface[]>,
+    status: () => ipcRenderer.invoke('remote:status') as Promise<RemoteStatus>,
+    apply: (config: RemoteConfig) =>
+      ipcRenderer.invoke('remote:apply', config) as Promise<RemoteStatus>,
+    onStatus: (cb) => {
+      const listener = (_event: unknown, s: RemoteStatus) => cb(s);
+      ipcRenderer.on('remote:status', listener);
+      return () => ipcRenderer.off('remote:status', listener);
     },
   },
 };

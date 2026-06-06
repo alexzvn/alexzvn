@@ -3,6 +3,7 @@ import { cn } from '@jm/ui';
 import type { DisplayInfo } from '@shared/types';
 import { SlideCanvas } from '@/components/SlideCanvas';
 import { Clock } from '@/components/Clock';
+import { RemotePanel } from '@/components/RemotePanel';
 import { usePresentation, usePresenterKeys } from '@/lib/usePresentation';
 
 export function PresenterView() {
@@ -11,6 +12,7 @@ export function PresenterView() {
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   const [jump, setJump] = useState('');
   const [showGrid, setShowGrid] = useState(false);
+  const [showRemote, setShowRemote] = useState(false);
 
   useEffect(() => {
     void window.jmpr.present.displays().then(setDisplays);
@@ -58,9 +60,26 @@ export function PresenterView() {
               </option>
             ))}
           </select>
+          <HeaderBtn
+            onClick={() => void window.jmpr.present.setScreen('black')}
+            active={state.screen === 'black'}
+            title="Schwarzbild (Taste B)"
+          >
+            ⬛
+          </HeaderBtn>
+          <HeaderBtn
+            onClick={() => void window.jmpr.present.setScreen('white')}
+            active={state.screen === 'white'}
+            title="Weißbild (Taste W)"
+          >
+            ⬜
+          </HeaderBtn>
           <HeaderBtn onClick={() => void window.jmpr.present.toggleAudienceFullscreen()}>Vollbild</HeaderBtn>
           <HeaderBtn onClick={() => setShowGrid((v) => !v)} active={showGrid}>
             Übersicht
+          </HeaderBtn>
+          <HeaderBtn onClick={() => setShowRemote(true)} active={showRemote} title="Handy-Fernsteuerung">
+            📱
           </HeaderBtn>
           <HeaderBtn danger onClick={() => void window.jmpr.present.stop()}>
             ■ Beenden
@@ -159,6 +178,8 @@ export function PresenterView() {
           </div>
         </div>
       )}
+
+      {showRemote && <RemotePanel onClose={() => setShowRemote(false)} />}
     </div>
   );
 }
@@ -174,16 +195,19 @@ function HeaderBtn({
   onClick,
   active,
   danger,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   active?: boolean;
   danger?: boolean;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className={cn(
         'h-8 px-3 rounded-md text-xs font-semibold border transition-colors',
         danger
