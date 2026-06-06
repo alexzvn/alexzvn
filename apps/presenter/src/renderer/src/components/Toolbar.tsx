@@ -4,7 +4,7 @@ import type { DisplayInfo, PresentationState } from '@shared/types';
 import { useProject } from '@/store/project';
 
 const btn =
-  'h-9 px-3 rounded-md text-sm font-semibold border border-[var(--border)] bg-[var(--card)] ' +
+  'h-9 px-3 rounded-md text-sm font-semibold whitespace-nowrap border border-[var(--border)] bg-[var(--card)] ' +
   'hover:bg-[var(--highlight)] transition-colors disabled:opacity-40 disabled:pointer-events-none';
 
 export function Toolbar() {

@@ -61,18 +61,18 @@ function EmptyState({ onImport, onOffice }: { onImport: () => void; onOffice: ()
           Importiere PDFs, Bilder oder Office-Dokumente. Ordne die Folien neu, ergänze Titel,
           Notizen und Overlays — und präsentiere mit Referenten- und Publikumsansicht.
         </p>
-        <div className="mt-6 flex items-center justify-center gap-2">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
             onClick={onImport}
-            className="h-10 px-5 rounded-md bg-[var(--primary)] text-[var(--brand-dark)] font-bold"
+            className="h-10 px-5 rounded-md bg-[var(--primary)] text-[var(--brand-dark)] font-bold whitespace-nowrap"
           >
             PDF / Bilder importieren
           </button>
           <button
             type="button"
             onClick={onOffice}
-            className="h-10 px-5 rounded-md border border-[var(--border)] bg-[var(--card)] font-semibold"
+            className="h-10 px-5 rounded-md border border-[var(--border)] bg-[var(--card)] font-semibold whitespace-nowrap"
           >
             Office-Dokument
           </button>
