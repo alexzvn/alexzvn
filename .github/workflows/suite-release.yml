@@ -49,12 +49,17 @@ jobs:
 
       # electron ist im Workspace ans Root gehoistet → Version in die Config
       # schreiben (shell-sicher, statt -c.electronVersion am CLI; pwsh zerlegt das).
-      - name: Inject electron version into config
+      # npmRebuild: false → electron-builder überspringt den Schritt "installing
+      # production dependencies" im appDir. Seit die Lockfile electron-builder/
+      # 7zip-bin an die Root hoistet (statt pro App genested), zerstört dieser
+      # Schritt sonst die einzige 7zip-bin-Kopie → "ENOENT chmod 7za". Unsere Apps
+      # sind reines JS (vite bündelt alles in out/), daher ist das gefahrlos.
+      - name: Inject electron version + disable npmRebuild into config
         shell: bash
         run: |
           ver=$(node -p "require('electron/package.json').version")
-          printf '\nelectronVersion: %s\n' "$ver" >> "apps/${{ steps.app.outputs.name }}/electron-builder.yml"
-          echo "electronVersion=$ver"
+          printf '\nelectronVersion: %s\nnpmRebuild: false\n' "$ver" >> "apps/${{ steps.app.outputs.name }}/electron-builder.yml"
+          echo "electronVersion=$ver npmRebuild=false"
 
       # Tool-spezifische Vorbereitung (z. B. media-converter bündelt ffmpeg aus
       # ffmpeg-static/ffprobe-static nach resources/bin/<platform>/). Tools ohne
