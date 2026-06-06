@@ -55,4 +55,7 @@ export interface ToolState {
   status: InstallStatus;
   /** Installierte Version, falls ermittelbar; sonst null. */
   installedVersion: string | null;
+  /** Neueste online verfügbare Version, wenn ein Update bereitsteht (sonst
+   *  weggelassen) — live aus den Releases ermittelt. */
+  latestAvailable?: string;
 }

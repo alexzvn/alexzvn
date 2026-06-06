@@ -14,6 +14,7 @@ const api: JmpsApi = {
   platform: process.platform,
   listTools: () => invoke<ToolManifest[]>('suite:list'),
   getState: () => invoke<ToolState[]>('suite:state'),
+  checkUpdates: () => invoke<ToolState[]>('suite:check-updates'),
   open: (id) => invoke<ActionResult>('tool:open', id),
   install: (id) => invoke<ActionResult>('tool:install', id),
   update: (id) => invoke<ActionResult>('tool:update', id),

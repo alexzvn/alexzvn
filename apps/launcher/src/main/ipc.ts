@@ -4,6 +4,7 @@ import type { ActionResult, InstallProgress, SuiteSettingsInput } from '@shared/
 import type { ToolManifest } from '@jm/suite-manifest';
 import { getTool, getTools } from './manifest';
 import { getAllStates } from './install-state';
+import { checkToolUpdates } from './updates';
 import { openTool } from './launch';
 import { installTool } from './installer';
 import { getSettingsView, setSettings } from './settings';
@@ -20,6 +21,8 @@ function withTool(
 export function registerIpc(): void {
   ipcMain.handle('suite:list', () => getTools());
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
+  // Live-Update-Prüfung gegen die Releases (online, sonst unveränderte Zustände).
+  ipcMain.handle('suite:check-updates', () => checkToolUpdates(getTools()));
 
   ipcMain.handle('tool:open', (_e, id: string) => withTool(id, openTool));
 

@@ -63,15 +63,12 @@ export function getToolState(tool: ToolManifest): ToolState {
   if (!exists) {
     return { id: tool.id, status: 'not-installed', installedVersion: null };
   }
+  // installiert; „update-available" wird NICHT mehr statisch aus dem Manifest
+  // bestimmt, sondern live aus den GitHub-Releases (siehe updates.ts) — das
+  // statische `latestVersion` veraltete, sobald jemand eine neuere Version als
+  // das gebündelte Manifest installierte.
   const recorded = readRecords()[tool.id] ?? null;
-  if (recorded) {
-    return {
-      id: tool.id,
-      status: recorded === tool.latestVersion ? 'installed' : 'update-available',
-      installedVersion: recorded,
-    };
-  }
-  return { id: tool.id, status: 'installed', installedVersion: null };
+  return { id: tool.id, status: 'installed', installedVersion: recorded };
 }
 
 export function getAllStates(tools: ToolManifest[]): ToolState[] {

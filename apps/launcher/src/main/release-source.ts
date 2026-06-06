@@ -16,6 +16,9 @@ export interface ResolvedAsset {
 /** Abstraktion über die Herkunft der Release-Artefakte (GitHub-PAT, Proxy, …). */
 export interface ReleaseSource {
   latest(tool: ToolManifest): Promise<ResolvedAsset | null>;
+  /** Neueste verfügbare Version des Tools (ohne Asset-Auflösung), für die
+   *  Update-Prüfung. null, wenn (noch) kein passendes Release existiert. */
+  latestVersion(tool: ToolManifest): Promise<string | null>;
 }
 
 function platformKey(): Platform | null {
@@ -42,7 +45,7 @@ function resolveArtifactName(tool: ToolManifest, version: string): string | null
 const USER_AGENT = 'JM-Production-Suite';
 
 /** Vergleicht zwei Dotted-Versions numerisch; >0 wenn `a` neuer als `b`. */
-function compareVersions(a: string, b: string): number {
+export function compareVersions(a: string, b: string): number {
   const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
   const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
@@ -58,6 +61,51 @@ interface GithubRelease {
   assets: Array<{ id: number; name: string; size: number }>;
 }
 
+/** Listet die Releases einer Repo (read-only contents) via fine-grained PAT. */
+async function listGithubReleases(repo: string, token: string): Promise<GithubRelease[]> {
+  const res = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=100`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': USER_AGENT,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub API ${res.status} ${res.statusText}`);
+  }
+  return (await res.json()) as GithubRelease[];
+}
+
+/** Höchstversioniertes, nicht-draft Release mit Tag-Präfix `<prefix>` (z. B.
+ *  "copy-v"). Liefert das Release samt geparster Version oder null. */
+function pickHighestRelease(
+  releases: GithubRelease[],
+  prefix: string,
+): { release: GithubRelease; version: string } | null {
+  return (
+    releases
+      .filter((r) => !r.draft && r.tag_name.startsWith(prefix))
+      .map((r) => ({ release: r, version: r.tag_name.slice(prefix.length) }))
+      .sort((x, y) => compareVersions(y.version, x.version))[0] ?? null
+  );
+}
+
+/**
+ * Höchste verfügbare Version für ein Tag-Präfix in einer Repo — auch für Dinge,
+ * die kein `ToolManifest` haben (z. B. der Launcher selbst: `launcher-v`).
+ * Nutzt das konfigurierte GitHub-Token; null wenn kein Token/offline/keins da.
+ */
+export async function latestVersionForPrefix(
+  repo: string,
+  prefix: string,
+): Promise<string | null> {
+  const token = resolveToken();
+  if (!token) return null;
+  const releases = await listGithubReleases(repo, token);
+  return pickHighestRelease(releases, prefix)?.version ?? null;
+}
+
 /**
  * GitHub-Releases im gemeinsamen Monorepo via fine-grained PAT (read-only
  * contents). Tools teilen sich `repo` und werden über das Tag-Präfix
@@ -68,26 +116,14 @@ interface GithubRelease {
 class GithubReleaseSource implements ReleaseSource {
   constructor(private readonly token: string) {}
 
-  async latest(tool: ToolManifest): Promise<ResolvedAsset | null> {
-    const api = `https://api.github.com/repos/${tool.repo}/releases?per_page=100`;
-    const res = await fetch(api, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${this.token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': USER_AGENT,
-      },
-    });
-    if (!res.ok) {
-      throw new Error(`GitHub API ${res.status} ${res.statusText}`);
-    }
-    const releases = (await res.json()) as GithubRelease[];
+  async latestVersion(tool: ToolManifest): Promise<string | null> {
+    const releases = await listGithubReleases(tool.repo, this.token);
+    return pickHighestRelease(releases, `${tool.app}-v`)?.version ?? null;
+  }
 
-    const prefix = `${tool.app}-v`;
-    const candidate = releases
-      .filter((r) => !r.draft && r.tag_name.startsWith(prefix))
-      .map((r) => ({ release: r, version: r.tag_name.slice(prefix.length) }))
-      .sort((x, y) => compareVersions(y.version, x.version))[0];
+  async latest(tool: ToolManifest): Promise<ResolvedAsset | null> {
+    const releases = await listGithubReleases(tool.repo, this.token);
+    const candidate = pickHighestRelease(releases, `${tool.app}-v`);
     if (!candidate) return null;
 
     const { release, version } = candidate;
@@ -132,6 +168,14 @@ class GithubReleaseSource implements ReleaseSource {
  */
 class ProxyReleaseSource implements ReleaseSource {
   constructor(private readonly base: string) {}
+
+  async latestVersion(tool: ToolManifest): Promise<string | null> {
+    const url = `${this.base.replace(/\/$/, '')}/tools/${tool.id}/latest`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Proxy ${res.status} ${res.statusText}`);
+    const json = (await res.json()) as { version?: string };
+    return json.version ?? null;
+  }
 
   async latest(tool: ToolManifest): Promise<ResolvedAsset | null> {
     const key = platformKey();

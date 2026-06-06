@@ -22,6 +22,7 @@ interface ToolsStore {
   loading: boolean;
   notice: string | null;
   load: () => Promise<void>;
+  checkUpdates: () => Promise<void>;
   open: (id: string) => Promise<void>;
   install: (id: string) => Promise<void>;
   update: (id: string) => Promise<void>;
@@ -44,7 +45,9 @@ export const useTools = create<ToolsStore>((set) => {
       const res = await action();
       if (res.message) set({ notice: res.message });
       if (refresh) {
-        const states = await window.jmps.getState();
+        // checkUpdates liefert die plattenbasierten Zustände inkl. Live-Update-
+        // Overlay — nach (De-)Installation also direkt der aktuelle Stand.
+        const states = await window.jmps.checkUpdates();
         set({ states: byId(states) });
       }
     } catch (e) {
@@ -81,12 +84,11 @@ export const useTools = create<ToolsStore>((set) => {
             set({ tools, states: byId(states) });
           }
         });
-        // Nach Rückkehr zum Launcher (z. B. wenn der NSIS-Installer durch ist)
-        // den Status neu prüfen — sonst bliebe die Karte bis zum Reload „nicht
-        // installiert", obwohl die App jetzt auf der Platte liegt.
-        window.addEventListener('focus', async () => {
-          const states = await window.jmps.getState();
-          set({ states: byId(states) });
+        // Nach Rückkehr zum Launcher (z. B. wenn der NSIS-Installer durch ist
+        // oder der Rechner wieder online geht) Status + Updates neu prüfen —
+        // sonst bliebe die Karte bis zum Reload veraltet.
+        window.addEventListener('focus', () => {
+          void useTools.getState().checkUpdates();
         });
       }
       const [tools, states, settings] = await Promise.all([
@@ -95,6 +97,17 @@ export const useTools = create<ToolsStore>((set) => {
         window.jmps.getSettings(),
       ]);
       set({ tools, states: byId(states), settings, loading: false });
+      // Zustände sofort rendern, die (langsamere, online) Update-Prüfung danach.
+      void useTools.getState().checkUpdates();
+    },
+
+    checkUpdates: async () => {
+      try {
+        const states = await window.jmps.checkUpdates();
+        set({ states: byId(states) });
+      } catch {
+        // offline / Quelle nicht erreichbar → bestehende Zustände behalten
+      }
     },
 
     open: (id) => run(id, () => window.jmps.open(id)),

@@ -45,6 +45,7 @@ export interface JmpsApi {
   platform: NodeJS.Platform;
   listTools: () => Promise<ToolManifest[]>;
   getState: () => Promise<ToolState[]>;
+  checkUpdates: () => Promise<ToolState[]>;
   open: (id: string) => Promise<ActionResult>;
   install: (id: string) => Promise<ActionResult>;
   update: (id: string) => Promise<ActionResult>;

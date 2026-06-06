@@ -50,9 +50,9 @@ export function ToolCard({ tool, state }: Props) {
       ) : (
         <div className="flex items-center justify-between gap-3 pt-1">
           <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-            v{tool.latestVersion} · {tool.category}
-            {state?.installedVersion && state.installedVersion !== tool.latestVersion
-              ? ` · installiert ${state.installedVersion}`
+            v{state?.installedVersion ?? tool.latestVersion} · {tool.category}
+            {status === 'update-available' && state?.latestAvailable
+              ? ` · Update auf ${state.latestAvailable}`
               : ''}
           </span>
           <Actions
