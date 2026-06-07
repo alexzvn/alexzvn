@@ -1,0 +1,20 @@
+{
+  "name": "@jm/ndi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native NDI-Bindings (send) für die JM Production Suite",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "install": "node scripts/maybe-build.mjs",
+    "rebuild": "node-gyp rebuild",
+    "spike": "node test/spike.cjs"
+  },
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^8.0.0"
+  },
+  "devDependencies": {
+    "node-gyp": "^10.0.0"
+  }
+}
