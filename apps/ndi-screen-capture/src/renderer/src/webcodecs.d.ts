@@ -12,4 +12,10 @@ declare global {
     constructor(init: MediaStreamTrackProcessorInit);
     readonly readable: ReadableStream<T>;
   }
+
+  // Chromium unterstützt das `format`-Feld in copyTo/allocationSize (z. B. um
+  // I420 → BGRA zu konvertieren); es fehlt noch in der TS-DOM-Lib.
+  interface VideoFrameCopyToOptions {
+    format?: VideoPixelFormat;
+  }
 }

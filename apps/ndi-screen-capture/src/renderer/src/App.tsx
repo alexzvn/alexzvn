@@ -16,10 +16,12 @@ export function App() {
   const [stats, setStats] = useState<CaptureStats | null>(null);
   const [active, setActive] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [audioOn, setAudioOn] = useState(true);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const sessionRef = useRef<CaptureSession | null>(null);
+  const framePortRef = useRef<MessagePort | null>(null);
 
   const refreshSources = useCallback(async () => {
     const list = await window.jmndi.listSources();
@@ -31,8 +33,19 @@ export function App() {
     void refreshSources();
     void window.jmndi.getStatus().then(setStatus);
     const off = window.jmndi.onStatus(setStatus);
+
+    // Frame-MessagePort vom Main (über die Preload-Bridge) entgegennehmen.
+    const onMessage = (e: MessageEvent) => {
+      if (e.data === 'jmndi:frame-port' && e.ports[0]) {
+        framePortRef.current = e.ports[0];
+        framePortRef.current.start();
+      }
+    };
+    window.addEventListener('message', onMessage);
+
     return () => {
       off();
+      window.removeEventListener('message', onMessage);
       sessionRef.current?.stop();
     };
   }, [refreshSources]);
@@ -48,9 +61,40 @@ export function App() {
     ctxRef.current?.drawImage(frame, 0, 0);
   }, []);
 
+  // Video: lokale Vorschau + BGRA an den nativen Sender (utilityProcess).
+  const handleFrame = useCallback(
+    async (frame: VideoFrame) => {
+      drawFrame(frame);
+      const port = framePortRef.current;
+      if (!port) return;
+      const size = frame.allocationSize({ format: 'BGRA' });
+      const buf = new ArrayBuffer(size);
+      await frame.copyTo(new Uint8Array(buf), { format: 'BGRA' });
+      port.postMessage(
+        { type: 'video', buffer: buf, w: frame.displayWidth, h: frame.displayHeight, fpsN: TARGET_FPS },
+        [buf],
+      );
+    },
+    [drawFrame],
+  );
+
+  // Audio: float32-planar (FLTP) an den nativen Sender.
+  const handleAudio = useCallback(async (data: AudioData) => {
+    const port = framePortRef.current;
+    if (!port) return;
+    const ch = data.numberOfChannels;
+    const n = data.numberOfFrames;
+    const out = new Float32Array(ch * n);
+    for (let c = 0; c < ch; c++) {
+      await data.copyTo(out.subarray(c * n, c * n + n), { planeIndex: c, format: 'f32-planar' });
+    }
+    port.postMessage({ type: 'audio', buffer: out.buffer, ch, n, sr: data.sampleRate }, [out.buffer]);
+  }, []);
+
   const stop = useCallback(async () => {
     sessionRef.current?.stop();
     sessionRef.current = null;
+    framePortRef.current = null;
     setActive(false);
     setStats(null);
     await window.jmndi.stop();
@@ -60,16 +104,17 @@ export function App() {
     if (!selectedId) return;
     setBusy(true);
     try {
-      // Quelle im Main vormerken, dann Capture starten (löst getDisplayMedia aus).
+      // Quelle vormerken + nativen Sender starten (Main postet den Frame-Port).
       await window.jmndi.start({
         sourceId: selectedId,
         targetFps: TARGET_FPS,
-        audio: false,
+        audio: audioOn,
         pixelFormat: 'bgra',
       });
       const session = new CaptureSession(
         {
-          onFrame: drawFrame,
+          onFrame: handleFrame,
+          onAudio: handleAudio,
           onStats: setStats,
           onError: (e) => {
             setStatus((s) => ({ ...s, sendState: 'error', error: e.message }));
@@ -77,7 +122,7 @@ export function App() {
           },
           onEnded: () => setActive(false),
         },
-        { targetFps: TARGET_FPS },
+        { targetFps: TARGET_FPS, audio: audioOn },
       );
       sessionRef.current = session;
       await session.start();
@@ -88,7 +133,7 @@ export function App() {
     } finally {
       setBusy(false);
     }
-  }, [selectedId, drawFrame, stop]);
+  }, [selectedId, audioOn, handleFrame, handleAudio, stop]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
@@ -103,7 +148,7 @@ export function App() {
           </span>
         </div>
         <Badge tone="warning" className="ml-auto">
-          Vorschau v0.1.0
+          v0.1.0
         </Badge>
       </header>
 
@@ -131,6 +176,15 @@ export function App() {
               onSelect={setSelectedId}
               disabled={active}
             />
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--muted-foreground)]">
+              <input
+                type="checkbox"
+                checked={audioOn}
+                disabled={active}
+                onChange={(e) => setAudioOn(e.target.checked)}
+              />
+              System-Audio mitsenden (Windows)
+            </label>
           </Card>
 
           <Button
@@ -139,7 +193,7 @@ export function App() {
             disabled={busy || (!active && !selectedId)}
             onClick={() => void (active ? stop() : start())}
           >
-            {active ? 'Stoppen' : 'Vorschau starten'}
+            {active ? 'Stoppen' : 'NDI-Versand starten'}
           </Button>
         </aside>
       </main>

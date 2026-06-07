@@ -1,12 +1,12 @@
 // WebCodecs-Capture-Pipeline: getDisplayMedia() → MediaStreamTrackProcessor →
-// VideoFrame-Strom. Jeder (FPS-gekappte) Frame wird synchron an onFrame
-// übergeben und unmittelbar danach geschlossen — frame.close() ist Pflicht,
-// da VideoFrames ein hartes GPU-Ressourcenlimit haben und Lecks die Aufnahme
-// abwürgen.
+// VideoFrame-/AudioData-Strom. Frames werden an onFrame/onAudio übergeben und
+// unmittelbar danach geschlossen — close() ist Pflicht (VideoFrame/AudioData
+// sind ein hartes Ressourcenlimit). onFrame/onAudio dürfen async sein (z. B.
+// copyTo + MessagePort-Transfer); die Session wartet, bevor sie schließt.
 //
-// In Phase 2 ist der Konsument die lokale Vorschau (Canvas). Der native
-// NDI-Sender dockt später an genau dieser Stelle an: Frame → copyTo(BGRA) →
-// transferable ArrayBuffer → MessagePort → utilityProcess.
+// onFrame kopiert den Frame als BGRA in einen ArrayBuffer und überträgt ihn
+// transferable an den utilityProcess (nativer NDI-Sender). Daneben dient er der
+// lokalen Canvas-Vorschau.
 
 export interface CaptureStats {
   width: number;
@@ -15,9 +15,10 @@ export interface CaptureStats {
 }
 
 export interface CaptureCallbacks {
-  /** Synchron pro emittiertem Frame. NICHT schließen – die Session schließt
-   *  den Frame direkt nach Rückkehr. */
-  onFrame?: (frame: VideoFrame) => void;
+  /** Pro (FPS-gekapptem) Video-Frame. Darf async sein; danach wird geschlossen. */
+  onFrame?: (frame: VideoFrame) => void | Promise<void>;
+  /** Pro Audio-Paket (nur wenn ein Audio-Track vorhanden ist). */
+  onAudio?: (data: AudioData) => void | Promise<void>;
   onStats?: (stats: CaptureStats) => void;
   onError?: (error: Error) => void;
   onEnded?: () => void;
@@ -25,11 +26,13 @@ export interface CaptureCallbacks {
 
 export interface CaptureOptions {
   targetFps: number;
+  audio: boolean;
 }
 
 export class CaptureSession {
   private stream: MediaStream | null = null;
-  private reader: ReadableStreamDefaultReader<VideoFrame> | null = null;
+  private videoReader: ReadableStreamDefaultReader<VideoFrame> | null = null;
+  private audioReader: ReadableStreamDefaultReader<AudioData> | null = null;
   private running = false;
   private emitted = 0;
   private lastStatsT = 0;
@@ -41,25 +44,37 @@ export class CaptureSession {
   ) {}
 
   async start(): Promise<void> {
-    // Audio kommt in Phase 3; hier zunächst video-only.
-    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: this.opts.audio,
+    });
     this.stream = stream;
-    const track = stream.getVideoTracks()[0];
-    if (!track) throw new Error('Kein Video-Track in der Aufnahme.');
-    track.addEventListener('ended', () => this.stop());
 
-    const processor = new MediaStreamTrackProcessor<VideoFrame>({ track });
-    this.reader = processor.readable.getReader();
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack) throw new Error('Kein Video-Track in der Aufnahme.');
+    videoTrack.addEventListener('ended', () => this.stop());
+
     this.running = true;
     this.lastStatsT = performance.now();
-    void this.loop();
+
+    const videoProc = new MediaStreamTrackProcessor<VideoFrame>({ track: videoTrack });
+    this.videoReader = videoProc.readable.getReader();
+    void this.videoLoop();
+
+    // Audio ist optional — auf Nicht-Windows (kein Loopback) gibt es keinen Track.
+    const audioTrack = stream.getAudioTracks()[0];
+    if (audioTrack) {
+      const audioProc = new MediaStreamTrackProcessor<AudioData>({ track: audioTrack });
+      this.audioReader = audioProc.readable.getReader();
+      void this.audioLoop();
+    }
   }
 
-  private async loop(): Promise<void> {
+  private async videoLoop(): Promise<void> {
     const minInterval = 1000 / this.opts.targetFps;
     try {
-      while (this.running && this.reader) {
-        const { value: frame, done } = await this.reader.read();
+      while (this.running && this.videoReader) {
+        const { value: frame, done } = await this.videoReader.read();
         if (done) break;
         if (!frame) continue;
         try {
@@ -69,7 +84,7 @@ export class CaptureSession {
           if (now - this.lastEmitT >= minInterval - 1) {
             this.lastEmitT = now;
             this.emitted++;
-            this.cb.onFrame?.(frame);
+            await this.cb.onFrame?.(frame);
             if (now - this.lastStatsT >= 1000) {
               const fps = Math.round((this.emitted * 1000) / (now - this.lastStatsT));
               this.cb.onStats?.({ width: frame.displayWidth, height: frame.displayHeight, fps });
@@ -88,11 +103,30 @@ export class CaptureSession {
     }
   }
 
+  private async audioLoop(): Promise<void> {
+    try {
+      while (this.running && this.audioReader) {
+        const { value: data, done } = await this.audioReader.read();
+        if (done) break;
+        if (!data) continue;
+        try {
+          await this.cb.onAudio?.(data);
+        } finally {
+          data.close();
+        }
+      }
+    } catch {
+      // Audio ist optional — Fehler hier sollen die Video-Aufnahme nicht stoppen.
+    }
+  }
+
   stop(): void {
     if (!this.running && !this.stream) return;
     this.running = false;
-    this.reader?.cancel().catch(() => {});
-    this.reader = null;
+    this.videoReader?.cancel().catch(() => {});
+    this.videoReader = null;
+    this.audioReader?.cancel().catch(() => {});
+    this.audioReader = null;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
   }

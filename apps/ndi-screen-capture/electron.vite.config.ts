@@ -14,7 +14,12 @@ export default defineConfig({
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'src/main/index.ts') },
+        input: {
+          index: resolve(__dirname, 'src/main/index.ts'),
+          // Entry des utilityProcess (nativer NDI-Sender). Landet als
+          // out/main/ndi-sender.cjs und wird per utilityProcess.fork geladen.
+          'ndi-sender': resolve(__dirname, 'src/utility/ndi-sender.ts'),
+        },
         output: {
           format: 'cjs',
           entryFileNames: '[name].cjs',

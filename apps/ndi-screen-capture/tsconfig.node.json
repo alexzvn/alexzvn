@@ -21,6 +21,7 @@
     "electron.vite.config.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
+    "src/utility/**/*.ts",
     "src/shared/**/*.ts",
     "tools/**/*.ts"
   ]
