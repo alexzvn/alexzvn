@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@jm/ui/base.css";
+
+/* @jm/ui-Komponenten liegen außerhalb des Renderer-Roots → explizit als Quelle angeben */
+@source "../../../../../packages/ui/src";

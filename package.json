@@ -15,6 +15,9 @@
     "presenter:dev": "npm run dev -w @jm/presenter",
     "presenter:build": "npm run build -w @jm/presenter",
     "presenter:dist": "npm run dist -w @jm/presenter",
+    "ndi:dev": "npm run dev -w @jm/ndi-screen-capture",
+    "ndi:build": "npm run build -w @jm/ndi-screen-capture",
+    "ndi:dist": "npm run dist -w @jm/ndi-screen-capture",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }

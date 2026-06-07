@@ -148,6 +148,27 @@
         }
       },
       "app": "presenter"
+    },
+    {
+      "id": "jm-ndi-screen-capture",
+      "name": "JM NDI Screen Capture",
+      "tagline": "Bildschirm als NDI-Quelle",
+      "description": "Sendet einen Monitor oder ein einzelnes Fenster inkl. System-Audio als NDI-Quelle ins Studio-LAN — nutzbar als Eingang in TriCaster, vMix oder OBS, ohne separate NDI-Tools-Installation.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.ndi-screen-capture",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM NDI Screen Capture-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM NDI Screen Capture.app"
+        },
+        "win": {
+          "artifact": "JM NDI Screen Capture-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM NDI Screen Capture\\JM NDI Screen Capture.exe"
+        }
+      },
+      "app": "ndi-screen-capture"
     }
   ]
 }
