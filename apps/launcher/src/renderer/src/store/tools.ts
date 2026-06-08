@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type {
   ActionResult,
+  FeedbackInput,
   InstallProgress,
   LauncherUpdate,
   SuiteSettingsInput,
@@ -34,6 +35,10 @@ interface ToolsStore {
   openSettings: () => void;
   closeSettings: () => void;
   saveSettings: (input: SuiteSettingsInput) => Promise<void>;
+  feedbackOpen: boolean;
+  openFeedback: () => void;
+  closeFeedback: () => void;
+  submitFeedback: (input: FeedbackInput) => Promise<ActionResult>;
 }
 
 let progressSubscribed = false;
@@ -68,6 +73,7 @@ export const useTools = create<ToolsStore>((set) => {
     progress: {},
     settings: null,
     settingsOpen: false,
+    feedbackOpen: false,
     loading: true,
     notice: null,
     launcherUpdate: null,
@@ -137,6 +143,15 @@ export const useTools = create<ToolsStore>((set) => {
     saveSettings: async (input) => {
       const settings = await window.jmps.setSettings(input);
       set({ settings, settingsOpen: false, notice: 'Einstellungen gespeichert.' });
+    },
+
+    openFeedback: () => set({ feedbackOpen: true }),
+    closeFeedback: () => set({ feedbackOpen: false }),
+    submitFeedback: async (input) => {
+      const res = await window.jmps.submitFeedback(input);
+      set({ notice: res.message ?? (res.ok ? 'Danke!' : 'Senden fehlgeschlagen.') });
+      if (res.ok) set({ feedbackOpen: false });
+      return res;
     },
   };
 });

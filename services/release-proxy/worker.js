@@ -35,6 +35,54 @@ export default {
       return json({ error: 'unauthorized' }, 401);
     }
 
+    // Feedback (Bug/Wunsch) aus dem Launcher → serverseitig ein GitHub-Issue
+    // anlegen, damit die Clients tokenlos bleiben. Braucht GITHUB_TOKEN mit
+    // Berechtigung issues:write auf REPO.
+    if (request.method === 'POST' && url.pathname === '/feedback') {
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return json({ error: 'ungültiges JSON' }, 400);
+      }
+      const title = String((payload && payload.title) || '').trim();
+      const description = String((payload && payload.description) || '').trim();
+      if (!title || !description) {
+        return json({ error: 'title und description erforderlich' }, 400);
+      }
+      const isBug = payload && payload.type === 'bug';
+      const context = String((payload && payload.context) || '').trim();
+      const body =
+        description +
+        '\n\n---\n_Aus dem JM Production Suite Launcher gemeldet_' +
+        (context ? `\n\n\`\`\`\n${context}\n\`\`\`` : '');
+      try {
+        const res = await fetch(`https://api.github.com/repos/${env.REPO}/issues`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+            'User-Agent': USER_AGENT,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: `[${isBug ? 'Bug' : 'Wunsch'}] ${title}`,
+            body,
+            labels: [isBug ? 'bug' : 'enhancement', 'from-launcher'],
+          }),
+        });
+        if (!res.ok) {
+          const detail = await res.text().catch(() => '');
+          return json({ error: `GitHub ${res.status}`, detail: detail.slice(0, 300) }, 502);
+        }
+        const issue = await res.json();
+        return json({ ok: true, number: issue.number, url: issue.html_url });
+      } catch (e) {
+        return json({ error: String((e && e.message) || e) }, 502);
+      }
+    }
+
     // Katalog (suite.json) LIVE aus dem Repo ausliefern — git ist die einzige
     // Quelle der Wahrheit, damit neue Tools ohne Launcher-Release oder Worker-
     // Deploy erscheinen (nur `suite.json` committen). Ref = env.MANIFEST_REF.

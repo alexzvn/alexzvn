@@ -47,6 +47,13 @@ export interface LauncherUpdate {
   latest: string;
 }
 
+/** Bug-Report / Feature-Wunsch aus dem Launcher (→ GitHub-Issue). */
+export interface FeedbackInput {
+  type: 'bug' | 'feature';
+  title: string;
+  description: string;
+}
+
 /** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */
 export type AppEvent =
   | { type: 'notice'; message: string }
@@ -66,6 +73,7 @@ export interface JmpsApi {
   openExternal: (url: string) => Promise<void>;
   getSettings: () => Promise<SuiteSettingsView>;
   setSettings: (settings: SuiteSettingsInput) => Promise<SuiteSettingsView>;
+  submitFeedback: (input: FeedbackInput) => Promise<ActionResult>;
   onProgress: (cb: (p: InstallProgress) => void) => () => void;
   onAppEvent: (cb: (e: AppEvent) => void) => () => void;
 }

@@ -2,6 +2,7 @@ import { exposeApi, invoke, listen } from '@jm/electron-kit/preload';
 import type {
   ActionResult,
   AppEvent,
+  FeedbackInput,
   InstallProgress,
   JmpsApi,
   LauncherUpdate,
@@ -24,6 +25,7 @@ const api: JmpsApi = {
   openExternal: (url) => invoke<void>('shell:openExternal', url),
   getSettings: () => invoke<SuiteSettingsView>('settings:get'),
   setSettings: (settings: SuiteSettingsInput) => invoke<SuiteSettingsView>('settings:set', settings),
+  submitFeedback: (input: FeedbackInput) => invoke<ActionResult>('feedback:submit', input),
   onProgress: (cb) => listen<InstallProgress>('suite:progress', cb),
   onAppEvent: (cb) => listen<AppEvent>('app:event', cb),
 };

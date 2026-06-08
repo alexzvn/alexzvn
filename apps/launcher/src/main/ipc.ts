@@ -1,6 +1,6 @@
 import { ipcMain, shell } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
-import type { ActionResult, InstallProgress, SuiteSettingsInput } from '@shared/types';
+import type { ActionResult, FeedbackInput, InstallProgress, SuiteSettingsInput } from '@shared/types';
 import type { ToolManifest } from '@jm/suite-manifest';
 import { getTool, getTools } from './manifest';
 import { getAllStates } from './install-state';
@@ -8,6 +8,7 @@ import { checkToolUpdates, checkLauncherUpdate } from './updates';
 import { openTool } from './launch';
 import { installTool, updateLauncher } from './installer';
 import { getSettingsView, setSettings } from './settings';
+import { submitFeedback } from './feedback';
 
 function withTool(
   id: string,
@@ -43,6 +44,9 @@ export function registerIpc(): void {
 
   ipcMain.handle('settings:get', () => getSettingsView());
   ipcMain.handle('settings:set', (_e, input: SuiteSettingsInput) => setSettings(input));
+
+  // Bug-/Wunsch-Meldung → GitHub-Issue (via Proxy, sonst Token-Fallback).
+  ipcMain.handle('feedback:submit', (_e, input: FeedbackInput) => submitFeedback(input));
 
   ipcMain.handle('shell:openExternal', (_e, url: string) => shell.openExternal(url));
 }

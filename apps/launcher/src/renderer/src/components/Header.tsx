@@ -5,6 +5,7 @@ import { useTools } from '@/store/tools';
 export function Header() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const openSettings = useTools((s) => s.openSettings);
+  const openFeedback = useTools((s) => s.openFeedback);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -37,6 +38,21 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={openFeedback}
+          aria-label="Feedback senden"
+          title="Bug melden / Funktion wünschen"
+          className={cn(
+            'grid place-items-center size-8 rounded-[var(--radius)]',
+            'border border-[var(--border)] text-[var(--foreground)]',
+            'hover:bg-[var(--highlight)] transition-colors',
+          )}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={openSettings}
