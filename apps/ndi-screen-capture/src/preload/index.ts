@@ -6,7 +6,6 @@ import { IPC } from '@shared/ipc';
 // durchreichen — contextBridge kann MessagePorts nicht direkt übergeben, daher
 // der dokumentierte window.postMessage-Transfer (Empfang: window 'message').
 ipcRenderer.on('jmndi:frame-port', (e) => {
-  console.log('[jmndi/preload] frame-port vom Main empfangen; ports:', e.ports.length);
   window.postMessage('jmndi:frame-port', '*', e.ports);
 });
 

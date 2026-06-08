@@ -25,12 +25,7 @@ export function startSender(win: BrowserWindow, name: string): void {
 
   // Frame-Kanal: port1 an den Renderer, port2 im Main als Weiterleitung.
   const { port1, port2 } = new MessageChannelMain();
-  let forwarded = 0;
   port2.on('message', (e) => {
-    if (forwarded === 0) {
-      console.log('[main-bridge] erste Frame-Nachricht: type=' + (e.data as { type?: string } | null)?.type);
-    }
-    forwarded++;
     // Ohne Transfer weiterreichen — der Buffer wird kopiert. (Ein transferierter
     // ArrayBuffer käme über die Port-Grenzen als null an.)
     child?.postMessage(e.data);

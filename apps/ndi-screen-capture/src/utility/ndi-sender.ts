@@ -18,9 +18,6 @@ type Msg =
 let started = false;
 let videoFrames = 0;
 
-// Sichtbar machen, dass der Utility-Prozess hochkam und @jm/ndi geladen wurde.
-console.log('[ndi-sender] gestartet; @jm/ndi geladen:', typeof ndi.init === 'function');
-
 process.parentPort.on('message', (e) => {
   const d = e.data as Msg | null;
   if (!d || typeof d !== 'object') return;
@@ -30,10 +27,10 @@ process.parentPort.on('message', (e) => {
       ndi.init();
       ndi.createSender(d.name);
       started = true;
-      console.log('[ndi-sender] NDI-Sender erstellt:', d.name);
+      console.log('[ndi-sender] NDI-Sender aktiv:', d.name);
     } catch (err) {
       started = false;
-      console.error('[ndi-sender] init/createSender FEHLGESCHLAGEN:', err);
+      console.error('[ndi-sender] init/createSender fehlgeschlagen:', err);
     }
     return;
   }
@@ -42,8 +39,9 @@ process.parentPort.on('message', (e) => {
 
   if (d.type === 'video') {
     ndi.sendVideoBGRA(new Uint8Array(d.buffer), d.w, d.h, d.fpsN, 1);
-    if (videoFrames++ % 30 === 0) {
-      console.log(`[ndi-sender] video #${videoFrames} ${d.w}x${d.h} | Empfänger: ${ndi.connections()}`);
+    // Heartbeat ~alle 10 s: bestätigt Versand + zeigt verbundene Empfänger.
+    if (videoFrames++ % 300 === 0) {
+      console.log(`[ndi-sender] aktiv: ${d.w}x${d.h}, Empfänger: ${ndi.connections()}`);
     }
   } else if (d.type === 'audio') {
     ndi.sendAudioFLTP(new Float32Array(d.buffer), d.ch, d.n, d.sr);
