@@ -22,10 +22,10 @@
     <path d="M1309,613.25v23.09L1162.49,957.78l-54.34.9-6.45-2.77L955.3,637.24v-24Z"/>
   </g>
 
-  <!-- copy badge: Kopier-Blätter -->
+  <!-- studio-control badge: Regler (Steuerung) -->
   <circle cx="800" cy="800" r="180" fill="#141414"/>
   <circle cx="800" cy="800" r="152" fill="#fbe73b"/>
   <g transform="translate(704,704) scale(8)" fill="#161616">
-    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+    <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
   </g>
 </svg>
