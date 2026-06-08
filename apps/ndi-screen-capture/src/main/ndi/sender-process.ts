@@ -6,19 +6,35 @@ declare const __dirname: string;
 let child: UtilityProcess | null = null;
 
 /**
- * Startet den utilityProcess mit dem nativen NDI-Sender und verbindet ihn per
- * MessageChannelMain mit dem Renderer: ein Port-Ende geht an den Utility-Prozess
- * (empfängt Frames + sendet via @jm/ndi), das andere an den Renderer (postet die
- * BGRA-/FLTP-Buffer transferable). `name` ist der sichtbare NDI-Quellname.
+ * Startet den utilityProcess mit dem nativen NDI-Sender.
+ *
+ * Frame-Weg: Der Renderer bekommt `port1` und postet BGRA-/FLTP-Buffer darauf;
+ * `port2` bleibt im Main und leitet jede Nachricht per `child.postMessage` (mit
+ * Buffer-Transfer) an den Utility-Prozess weiter, der sie über `parentPort`
+ * empfängt. (Ein direktes Renderer↔Utility-MessagePort liefert in dieser
+ * Electron-Version nicht zuverlässig — deshalb bridgen wir über den Main; die
+ * Pixel werden hier nur durchgereicht, nicht verarbeitet.) `name` ist der
+ * sichtbare NDI-Quellname.
  */
 export function startSender(win: BrowserWindow, name: string): void {
   stopSender();
   child = utilityProcess.fork(join(__dirname, 'ndi-sender.cjs'));
 
+  // init (Sendername) → Utility erstellt NDI-Sender.
+  child.postMessage({ type: 'init', name });
+
+  // Frame-Kanal: port1 an den Renderer, port2 im Main als Weiterleitung.
   const { port1, port2 } = new MessageChannelMain();
-  // Utility-Prozess: init + createSender(name); danach Frames über port2.
-  child.postMessage({ type: 'init', name }, [port2]);
-  // Renderer bekommt port1 und postet die Frames (Bridge im Preload → window).
+  port2.on('message', (e) => {
+    const data = e.data as { type: string; buffer?: ArrayBuffer };
+    if (data?.buffer) {
+      child?.postMessage(data, [data.buffer]); // Buffer transferable weiterreichen
+    } else {
+      child?.postMessage(data);
+    }
+  });
+  port2.start();
+
   win.webContents.postMessage('jmndi:frame-port', null, [port1]);
 }
 
