@@ -39,9 +39,15 @@ process.parentPort.on('message', (e) => {
 
   if (d.type === 'video') {
     ndi.sendVideoBGRA(new Uint8Array(d.buffer), d.w, d.h, d.fpsN, 1);
-    // Heartbeat ~alle 10 s: bestätigt Versand + zeigt verbundene Empfänger.
-    if (videoFrames++ % 300 === 0) {
-      console.log(`[ndi-sender] aktiv: ${d.w}x${d.h}, Empfänger: ${ndi.connections()}`);
+    videoFrames++;
+    // ~1×/s die Empfängerzahl an den Main melden (für die Statusleiste);
+    // alle ~10 s zusätzlich ein Heartbeat ins Log.
+    if (videoFrames % 30 === 0) {
+      const connections = ndi.connections();
+      process.parentPort.postMessage({ type: 'stat', connections });
+      if (videoFrames % 300 === 0) {
+        console.log(`[ndi-sender] aktiv: ${d.w}x${d.h}, Empfänger: ${connections}`);
+      }
     }
   } else if (d.type === 'audio') {
     ndi.sendAudioFLTP(new Float32Array(d.buffer), d.ch, d.n, d.sr);

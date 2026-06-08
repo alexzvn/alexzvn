@@ -16,9 +16,21 @@ let child: UtilityProcess | null = null;
  * Pixel werden hier nur durchgereicht, nicht verarbeitet.) `name` ist der
  * sichtbare NDI-Quellname.
  */
-export function startSender(win: BrowserWindow, name: string): void {
+export function startSender(
+  win: BrowserWindow,
+  name: string,
+  onStat?: (connections: number) => void,
+): void {
   stopSender();
   child = utilityProcess.fork(join(__dirname, 'ndi-sender.cjs'));
+
+  // Stats vom Utility (Empfängerzahl) → Status-Update.
+  child.on('message', (msg: unknown) => {
+    const m = msg as { type?: string; connections?: number } | null;
+    if (m && m.type === 'stat' && typeof m.connections === 'number') {
+      onStat?.(m.connections);
+    }
+  });
 
   // init (Sendername) → Utility erstellt NDI-Sender.
   child.postMessage({ type: 'init', name });

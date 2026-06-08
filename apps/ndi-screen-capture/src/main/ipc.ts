@@ -23,8 +23,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
     // … und den nativen NDI-Sender (utilityProcess) starten. Lädt @jm/ndi; ohne
     // gebautes Addon bleibt er still (kein Crash) → Renderer-Vorschau läuft trotzdem.
+    // Der Stat-Callback aktualisiert laufend die Empfängerzahl in der Statusleiste.
     const win = getWindow();
-    if (win) startSender(win, ndiSourceName);
+    if (win) {
+      startSender(win, ndiSourceName, (connections) => {
+        status = { ...status, connections };
+        pushStatus();
+      });
+    }
 
     status = { sendState: 'sending', audioEnabled: opts.audio, ndiSourceName };
     pushStatus();

@@ -31,8 +31,11 @@ export function StatusBar({ status, stats }: Props) {
       {stats ? <span>{stats.width}×{stats.height}</span> : null}
       {stats ? <span>{stats.fps} fps</span> : null}
       {status.audioEnabled ? <span>Audio</span> : null}
+      {status.sendState === 'sending' && typeof status.connections === 'number' ? (
+        <span title="Verbundene NDI-Empfänger">{status.connections} Empfänger</span>
+      ) : null}
       <span className="ml-auto italic">
-        {status.error ?? 'Lokale Vorschau – nativer NDI-Versand folgt'}
+        {status.error ?? (status.sendState === 'sending' ? 'NDI-Versand läuft' : 'Bereit')}
       </span>
     </div>
   );

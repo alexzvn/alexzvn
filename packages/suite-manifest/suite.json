@@ -157,7 +157,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.ndi-screen-capture",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.1.1",
       "platforms": {
         "mac": {
           "artifact": "JM NDI Screen Capture-${version}-mac-${arch}.dmg",
