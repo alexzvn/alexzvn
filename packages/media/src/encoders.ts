@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { EncoderSupport, HwKind } from '@shared/types';
+import type { EncoderSupport, HwKind } from './types';
 import { ffmpegPath } from './locate';
 
 const execFileAsync = promisify(execFile);

@@ -4,9 +4,8 @@ import type {
   PreviewRequest,
   VideoConvertSpec,
 } from '@shared/types';
-import { probeMedia } from './ffmpeg/probe';
+import { detectEncoders, probeMedia } from '@jm/media';
 import { previewFrame } from './ffmpeg/preview';
-import { detectEncoders } from './ffmpeg/encoders';
 import { cancelVideo, enqueueVideo, setVideoEmitter } from './ffmpeg/convert';
 import { enqueueOffice, setOfficeEmitter } from './office/convert';
 import { locateSoffice } from './office/locate';

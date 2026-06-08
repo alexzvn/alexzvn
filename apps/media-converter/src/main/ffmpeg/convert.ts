@@ -3,8 +3,7 @@ import { existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import type { ConvertProgress, ConvertResult, RateControl, VideoConvertSpec } from '@shared/types';
 import { getPreset, usesAudioBitrate, type VideoPreset } from '@shared/presets';
-import { ffmpegPath } from './locate';
-import { detectEncoders } from './encoders';
+import { detectEncoders, ffmpegPath } from '@jm/media';
 
 export interface ConvertEmitter {
   progress: (p: ConvertProgress) => void;

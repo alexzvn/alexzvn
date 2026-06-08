@@ -1,35 +1,11 @@
 export type JobKind = 'video' | 'office';
 export type JobStatus = 'queued' | 'running' | 'done' | 'error' | 'canceled';
 
-export interface MediaStreamInfo {
-  type: 'video' | 'audio' | 'subtitle' | 'other';
-  codec: string;
-  width?: number;
-  height?: number;
-  fps?: number;
-  channels?: number;
-  sampleRate?: number;
-}
-
-export interface MediaInfo {
-  path: string;
-  fileName: string;
-  durationSec: number;
-  sizeBytes: number;
-  format: string;
-  streams: MediaStreamInfo[];
-  video?: { codec: string; width: number; height: number; fps: number };
-  audio?: { codec: string; channels: number; sampleRate: number };
-}
-
-export type HwKind = 'nvenc' | 'qsv' | 'videotoolbox' | 'vaapi';
-
-export interface EncoderSupport {
-  /** Hardware backend detected for the current machine, or null for software-only. */
-  hwKind: HwKind | null;
-  /** Raw set of ffmpeg encoder names available in the bundled binary. */
-  available: string[];
-}
+// Generische Medien-/Encoder-Typen leben jetzt in @jm/media (geteilt mit
+// Player/Recorder/Switcher). Import + Re-Export, damit sie sowohl lokal (JmcApi)
+// nutzbar sind als auch bestehende @shared/types-Importe unverändert laufen.
+import type { MediaStreamInfo, MediaInfo, HwKind, EncoderSupport } from '@jm/media';
+export type { MediaStreamInfo, MediaInfo, HwKind, EncoderSupport };
 
 export type RateControl = 'quality' | 'vbr' | 'cbr';
 

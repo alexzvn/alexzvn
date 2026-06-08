@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { statSync } from 'node:fs';
 import path from 'node:path';
-import type { MediaInfo, MediaStreamInfo } from '@shared/types';
+import type { MediaInfo, MediaStreamInfo } from './types';
 import { ffprobePath } from './locate';
 
 const execFileAsync = promisify(execFile);
@@ -90,3 +90,6 @@ export async function probeMedia(filePath: string): Promise<MediaInfo> {
       : undefined,
   };
 }
+
+/** Alias — entspricht der im Roadmap-Plan genannten `probe(file)`-Signatur. */
+export const probe = probeMedia;

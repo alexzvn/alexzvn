@@ -1,0 +1,22 @@
+{
+  "name": "@jm/media-library",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteilte Medienbibliothek (better-sqlite3): Schema + Zugriff für Playlists, Soundboard-Cues und Tags — genutzt vom JM Player.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0"
+  },
+  "peerDependencies": {
+    "electron": ">=30"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11"
+  }
+}

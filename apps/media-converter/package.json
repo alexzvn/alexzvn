@@ -24,6 +24,7 @@
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
     "@jm/electron-kit": "*",
+    "@jm/media": "*",
     "@jm/ui": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -38,8 +39,6 @@
     "electron": "^33.0.0",
     "electron-builder": "24.13.3",
     "electron-vite": "^2.3.0",
-    "ffmpeg-static": "^5.2.0",
-    "ffprobe-static": "^3.1.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"

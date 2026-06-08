@@ -18,6 +18,8 @@ function bundledBinDir(): string {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'bin', platformDir());
   }
+  // Bundelt sich in <app>/out/main/index.cjs → __dirname = out/main, also
+  // ../../resources/bin = <app>/resources/bin (vom prepackage befüllt).
   return path.join(__dirname, '..', '..', 'resources', 'bin', platformDir());
 }
 

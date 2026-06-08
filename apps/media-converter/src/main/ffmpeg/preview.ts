@@ -5,8 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { PreviewRequest, PreviewResult } from '@shared/types';
 import { getPreset } from '@shared/presets';
-import { ffmpegPath } from './locate';
-import { detectEncoders } from './encoders';
+import { detectEncoders, ffmpegPath } from '@jm/media';
 import { pickEncoder, scaleArgs, videoRateArgs } from './convert';
 
 const execFileAsync = promisify(execFile);
