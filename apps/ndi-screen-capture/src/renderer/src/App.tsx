@@ -22,6 +22,7 @@ export function App() {
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const sessionRef = useRef<CaptureSession | null>(null);
   const framePortRef = useRef<MessagePort | null>(null);
+  const noPortWarnedRef = useRef(false);
 
   const refreshSources = useCallback(async () => {
     const list = await window.jmndi.listSources();
@@ -36,9 +37,13 @@ export function App() {
 
     // Frame-MessagePort vom Main (über die Preload-Bridge) entgegennehmen.
     const onMessage = (e: MessageEvent) => {
-      if (e.data === 'jmndi:frame-port' && e.ports[0]) {
-        framePortRef.current = e.ports[0];
-        framePortRef.current.start();
+      if (e.data === 'jmndi:frame-port') {
+        console.log('[jmndi] message-Event empfangen; ports:', e.ports.length);
+        if (e.ports[0]) {
+          framePortRef.current = e.ports[0];
+          framePortRef.current.start();
+          console.log('[jmndi] Frame-Port gesetzt + gestartet ✓');
+        }
       }
     };
     window.addEventListener('message', onMessage);
@@ -66,7 +71,13 @@ export function App() {
     async (frame: VideoFrame) => {
       drawFrame(frame);
       const port = framePortRef.current;
-      if (!port) return;
+      if (!port) {
+        if (!noPortWarnedRef.current) {
+          console.warn('[jmndi] handleFrame läuft (Vorschau ok), aber framePortRef ist null → kein NDI-Versand');
+          noPortWarnedRef.current = true;
+        }
+        return;
+      }
       const size = frame.allocationSize({ format: 'BGRA' });
       const buf = new ArrayBuffer(size);
       await frame.copyTo(new Uint8Array(buf), { format: 'BGRA' });
