@@ -27,10 +27,16 @@ export function startSender(win: BrowserWindow, name: string): void {
   const { port1, port2 } = new MessageChannelMain();
   let forwarded = 0;
   port2.on('message', (e) => {
-    const data = e.data as { type: string; buffer?: ArrayBuffer };
-    if (forwarded % 30 === 0) {
-      console.log(`[main-bridge] Frame vom Renderer #${forwarded} (type=${data?.type}) → Utility`);
+    if (forwarded < 3) {
+      const d = e.data as Record<string, unknown> | undefined;
+      console.log(
+        `[main-bridge] DUMP #${forwarded}: e-keys=[${Object.keys(e || {}).join(',')}]` +
+          ` data-typeof=${typeof e.data}` +
+          ` data-keys=[${d && typeof d === 'object' ? Object.keys(d).join(',') : String(d)}]` +
+          ` type=${d?.['type']} w=${d?.['w']} hasBuffer=${!!d?.['buffer']}`,
+      );
     }
+    const data = e.data as { type: string; buffer?: ArrayBuffer };
     forwarded++;
     if (data?.buffer) {
       child?.postMessage(data, [data.buffer]); // Buffer transferable weiterreichen
