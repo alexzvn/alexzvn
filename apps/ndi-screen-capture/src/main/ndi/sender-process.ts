@@ -25,8 +25,13 @@ export function startSender(win: BrowserWindow, name: string): void {
 
   // Frame-Kanal: port1 an den Renderer, port2 im Main als Weiterleitung.
   const { port1, port2 } = new MessageChannelMain();
+  let forwarded = 0;
   port2.on('message', (e) => {
     const data = e.data as { type: string; buffer?: ArrayBuffer };
+    if (forwarded % 30 === 0) {
+      console.log(`[main-bridge] Frame vom Renderer #${forwarded} (type=${data?.type}) → Utility`);
+    }
+    forwarded++;
     if (data?.buffer) {
       child?.postMessage(data, [data.buffer]); // Buffer transferable weiterreichen
     } else {
