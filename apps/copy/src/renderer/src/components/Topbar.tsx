@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Logo } from '@jm/ui';
-import { cn } from '@jm/ui';
+import { cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 import type { Section } from '@/App';
 
 interface NavItem {
@@ -31,9 +31,11 @@ export function Topbar({ section, onSection }: Props) {
 
   return (
     <header
+      style={dragRegion}
       className={cn(
         'relative h-16 flex items-center justify-between',
-        'px-6 border-b border-[var(--border)]/60',
+        'pr-6 border-b border-[var(--border)]/60',
+        isElectronMac ? 'pl-20' : 'pl-6',
         'bg-[var(--card)]/60 backdrop-blur-md',
       )}
     >
@@ -54,7 +56,7 @@ export function Topbar({ section, onSection }: Props) {
           </div>
         </div>
 
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1" style={noDragRegion}>
           {NAV.map((item) => (
             <NavButton
               key={item.id}
@@ -69,6 +71,7 @@ export function Topbar({ section, onSection }: Props) {
 
       <button
         type="button"
+        style={noDragRegion}
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         className={cn(
           'h-8 px-3 rounded-[var(--radius)] text-xs uppercase tracking-wide font-extrabold',

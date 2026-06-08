@@ -3,7 +3,7 @@ import { useSession } from '@/store/session';
 import { useApp, type Section } from '@/store/app';
 import { apiFetch } from '@/sync/client';
 import { Logo } from '@jm/ui';
-import { cn } from '@jm/ui';
+import { cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 
 interface NavItem {
   id: Section;
@@ -45,9 +45,11 @@ export function Topbar() {
 
   return (
     <header
+      style={dragRegion}
       className={cn(
         'relative h-16 flex items-center justify-between',
-        'px-6 border-b border-[var(--border)]/60',
+        'pr-6 border-b border-[var(--border)]/60',
+        isElectronMac ? 'pl-20' : 'pl-6',
         'bg-[var(--card)]/60 backdrop-blur-md',
       )}
     >
@@ -68,7 +70,7 @@ export function Topbar() {
           </div>
         </div>
 
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1" style={noDragRegion}>
           {NAV.map((item) => (
             <NavButton
               key={item.id}
@@ -82,7 +84,7 @@ export function Topbar() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" style={noDragRegion}>
         <SyncPill connected={connected} />
         {user && (
           <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)] hidden md:inline">

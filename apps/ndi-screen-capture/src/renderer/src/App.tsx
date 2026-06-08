@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Badge, Button, Card, Logo } from '@jm/ui';
+import { Badge, Button, Card, Logo, cn, dragRegion, isElectronMac } from '@jm/ui';
 import type { JmNdiSource, JmNdiStatus } from '@shared/types';
 import { CaptureSession, type CaptureStats } from './core/capture';
 import { SourcePicker } from './components/SourcePicker';
@@ -148,7 +148,13 @@ export function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
-      <header className="flex items-center gap-3 border-b border-[var(--border)] px-6 py-4">
+      <header
+        style={dragRegion}
+        className={cn(
+          'flex items-center gap-3 border-b border-[var(--border)] pr-6 py-4',
+          isElectronMac ? 'pl-20' : 'pl-6',
+        )}
+      >
         <Logo size={26} />
         <div className="flex flex-col">
           <span className="text-sm font-extrabold uppercase tracking-[0.14em]">

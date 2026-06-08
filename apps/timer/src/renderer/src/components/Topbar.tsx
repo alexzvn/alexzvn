@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '@/store/timer';
 import { Logo } from '@jm/ui';
-import { cn } from '@jm/ui';
+import { cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 
 const MODE_LABELS: Record<string, string> = {
   clock: 'Real-Time Clock',
@@ -32,9 +32,11 @@ export function Topbar() {
 
   return (
     <header
+      style={dragRegion}
       className={cn(
         'relative h-14 flex items-center justify-between',
-        'px-6 border-b border-[var(--border)]/60',
+        'pr-6 border-b border-[var(--border)]/60',
+        isElectronMac ? 'pl-20' : 'pl-6',
         'bg-[var(--card)]/60 backdrop-blur-md',
       )}
     >
@@ -52,7 +54,7 @@ export function Topbar() {
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" style={noDragRegion}>
         <SyncPill connected={connected} />
         <button
           type="button"

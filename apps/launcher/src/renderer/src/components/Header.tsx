@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Logo, cn } from '@jm/ui';
+import { Logo, cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 import { useTools } from '@/store/tools';
 
 export function Header() {
@@ -15,9 +15,11 @@ export function Header() {
 
   return (
     <header
+      style={dragRegion}
       className={cn(
         'relative h-16 flex items-center justify-between shrink-0',
-        'px-6 border-b border-[var(--border)]/60',
+        'pr-6 border-b border-[var(--border)]/60',
+        isElectronMac ? 'pl-20' : 'pl-6',
         'bg-[var(--card)]/60 backdrop-blur-md',
       )}
     >
@@ -37,7 +39,7 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" style={noDragRegion}>
         <button
           type="button"
           onClick={openFeedback}

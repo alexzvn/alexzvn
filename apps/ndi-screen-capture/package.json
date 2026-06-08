@@ -1,6 +1,6 @@
 {
   "name": "@jm/ndi-screen-capture",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Jakobs Medien NDI Screen Capture — Bildschirm/Fenster als NDI-Quelle ins Studio-LAN",
   "author": "Jakobs Medien GmbH",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Logo, cn } from '@jm/ui';
+import { Logo, cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 import type { DisplayInfo, PresentationState } from '@shared/types';
 import { useProject } from '@/store/project';
 import { getExpandPptxBuilds, setExpandPptxBuilds } from '@/lib/settings';
@@ -60,7 +60,13 @@ export function Toolbar() {
   };
 
   return (
-    <header className="h-14 flex items-center gap-3 px-4 border-b border-[var(--border)]/60 bg-[var(--card)]/60 backdrop-blur-md">
+    <header
+      style={dragRegion}
+      className={cn(
+        'h-14 flex items-center gap-3 pr-4 border-b border-[var(--border)]/60 bg-[var(--card)]/60 backdrop-blur-md',
+        isElectronMac ? 'pl-20' : 'pl-4',
+      )}
+    >
       <div className="flex items-center gap-2.5 pr-2">
         <Logo size={26} />
         <div className="hidden md:flex flex-col leading-tight">
@@ -73,7 +79,7 @@ export function Toolbar() {
 
       <div className="h-6 w-px bg-[var(--border)]" />
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5" style={noDragRegion}>
         <button type="button" className={btn} disabled={busy.active} onClick={() => void importDocs()}>
           + PDF / Bilder
         </button>
@@ -96,7 +102,7 @@ export function Toolbar() {
         </button>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2" style={noDragRegion}>
         {busy.active && (
           <span className="text-xs text-[var(--muted-foreground)] animate-pulse">{busy.label}</span>
         )}
