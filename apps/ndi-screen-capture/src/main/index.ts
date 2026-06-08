@@ -29,13 +29,21 @@ if (process.platform === 'win32') {
 const preloadPath = join(__dirname, '../preload/index.mjs');
 
 function createWindow(): BrowserWindow {
-  return createMainWindow({
+  const win = createMainWindow({
     title: 'JM NDI Screen Capture',
     preloadPath,
     iconPath: resourcePath('icon.png', join(__dirname, '..', '..', 'resources')),
     rendererUrl: process.env['ELECTRON_RENDERER_URL'],
     rendererFile: join(__dirname, '../renderer/index.html'),
   });
+
+  // Renderer-Konsole (nur unsere [jmndi]-Logs) ins Terminal spiegeln, damit man
+  // zum Debuggen keine DevTools öffnen muss.
+  win.webContents.on('console-message', (_e, _level, message) => {
+    if (message.includes('[jmndi]')) console.log('[renderer]', message);
+  });
+
+  return win;
 }
 
 if (setupSingleInstance(() => createWindow())) {
