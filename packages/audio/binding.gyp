@@ -11,7 +11,7 @@
       "conditions": [
         ["OS=='win'", {
           "libraries": [
-            "<!(node -p \"(process.env.PORTAUDIO_DIR || '') + '/lib/portaudio_x64.lib'\")"
+            "<!(node -p \"(process.env.PORTAUDIO_DIR || '') + '/lib/portaudio.lib'\")"
           ]
         }],
         ["OS=='mac'", {

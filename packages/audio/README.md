@@ -31,24 +31,33 @@ ist eine **Kopie** und nach Rückkehr ungültig.
 
 ## Build (Windows, mit ASIO)
 
-PortAudio + ASIO-SDK sind **nicht** eingecheckt (ASIO-SDK ist nicht
-redistribuierbar). Einmalig bereitstellen:
+Voraussetzung: **CMake** (`winget install Kitware.CMake`) + Visual-Studio-
+Buildtools. Das **ASIO-SDK lädt PortAudios CMake automatisch herunter** (kein
+manuelles Steinberg-SDK nötig) — es wird nur lokal gebaut, nicht eingecheckt.
 
-1. **Steinberg ASIO-SDK** herunterladen (Steinberg-Entwicklerseite), z. B. nach
-   `C:\sdk\asiosdk`.
-2. **PortAudio** mit ASIO bauen (CMake), ASIO-SDK-Pfad übergeben:
+1. **PortAudio mit ASIO bauen** (CMake):
    ```powershell
    git clone https://github.com/PortAudio/portaudio
    cd portaudio
-   cmake -B build -A x64 -DPA_USE_ASIO=ON -DASIOSDK_ROOT_DIR="C:\sdk\asiosdk"
+   cmake -B build -A x64 -DPA_USE_ASIO=ON
    cmake --build build --config Release
    ```
-   Ergebnis: `build\Release\portaudio_x64.lib` (+ `portaudio_x64.dll`) und die
-   Header in `include\`. Diese beiden in einen Ordner legen, z. B.:
+   Default = **SHARED**. Ergebnis: `build\Release\portaudio.dll` + Import-Lib
+   `build\Release\portaudio.lib`, Header in `include\`.
+   *(Statisch ohne DLL: zusätzlich `-DBUILD_SHARED_LIBS=OFF` — dann entfällt der
+   DLL-Schritt unten. Für den Spike reicht SHARED.)*
+
+2. **PORTAUDIO_DIR zusammenstellen** (Layout, das binding.gyp erwartet):
    ```
-   C:\sdk\portaudio\include\portaudio.h
-   C:\sdk\portaudio\lib\portaudio_x64.lib
+   C:\sdk\portaudio\include\portaudio.h        ← aus portaudio\include\
+   C:\sdk\portaudio\lib\portaudio.lib          ← aus build\Release\
    ```
+   ```powershell
+   mkdir C:\sdk\portaudio\include, C:\sdk\portaudio\lib
+   copy <portaudio>\include\portaudio.h        C:\sdk\portaudio\include\
+   copy <portaudio>\build\Release\portaudio.lib C:\sdk\portaudio\lib\
+   ```
+
 3. **Env setzen + Addon bauen** (System-Node oder Electron):
    ```powershell
    setx PORTAUDIO_DIR "C:\sdk\portaudio"
@@ -59,6 +68,16 @@ redistribuierbar). Einmalig bereitstellen:
    ```
    `npm install` baut **nicht** automatisch, wenn `PORTAUDIO_DIR` fehlt
    (Guard in `scripts/maybe-build.mjs`) — Codespace/CI bleiben grün.
+
+4. **portaudio.dll zur Laufzeit bereitstellen** (nur SHARED-Build): die DLL muss
+   neben `jm_audio.node` liegen, sonst scheitert das Laden mit Fehler 126
+   (Windows durchsucht das Verzeichnis der `.node` zuerst — gleiche Mechanik wie
+   bei @jm/ndi). Für den Dev-/Spike-Build:
+   ```powershell
+   copy <portaudio>\build\Release\portaudio.dll packages\audio\build\Release\
+   ```
+   In der gepackten App später `portaudio.dll` neben `jm_audio.node` nach
+   `resources/bin/win` bündeln.
 
 ## Spike-Test gegen DVSC
 
@@ -83,9 +102,9 @@ und Samplerate stimmen.
 - **Backpressure:** `NonBlockingCall` verwirft Blöcke bei voller Queue
   (= Aufnahmelücke). Für die Recorder-Disk-Aufnahme ggf. Ringpuffer/Blocking
   prüfen — v0.2.
-- **Gepackte App:** falls PortAudio dynamisch gelinkt, `portaudio_x64.dll` neben
-  `jm_audio.node` nach `resources/bin/win` bündeln (Bundle-Script analog
-  `packages/ndi/tools/bundle-ndi.mjs` ergänzen). Statischer Link spart das.
+- **Gepackte App:** bei SHARED-Build `portaudio.dll` neben `jm_audio.node` nach
+  `resources/bin/win` bündeln (Bundle-Script analog `packages/ndi/tools/bundle-ndi.mjs`
+  ergänzen). Statischer Link (`-DBUILD_SHARED_LIBS=OFF`) spart das.
 
 Genutzt von: **JM Audio Recorder** (Phase 3). Siehe Roadmap
 [[jm-suite-next-tools-roadmap]].
