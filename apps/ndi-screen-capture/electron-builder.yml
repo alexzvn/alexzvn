@@ -19,6 +19,14 @@ extraResources:
 
 asar: true
 
+# NDI wird LOKAL auf Windows gebaut (NDI-SDK nicht in CI verfügbar; der
+# suite-release-Workflow überspringt dieses Tool). electron ist im Workspace ans
+# Root gehoistet → electron-builder findet die Version sonst nicht; npmRebuild aus,
+# weil das native Addon bereits via electron-rebuild gebaut + von bundle-ndi nach
+# resources/bin/win gestaged wird. electronVersion bei Electron-Upgrade nachziehen.
+electronVersion: 33.4.11
+npmRebuild: false
+
 mac:
   target:
     - target: dmg

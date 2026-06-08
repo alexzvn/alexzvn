@@ -15,6 +15,11 @@ on:
 jobs:
   release:
     name: ${{ matrix.os }}
+    # ndi-screen-capture wird NICHT in CI gebaut: das native @jm/ndi-Addon braucht
+    # das (lizenzierte, nicht redistribuierbare) NDI-SDK, das auf GitHub-Runnern
+    # fehlt. Dieses Tool wird lokal auf Windows gebaut und das Release manuell
+    # angelegt (gh release create ndi-screen-capture-v<version> + Installer-Upload).
+    if: ${{ !startsWith(github.ref_name, 'ndi-screen-capture-v') }}
     strategy:
       fail-fast: false
       matrix:
