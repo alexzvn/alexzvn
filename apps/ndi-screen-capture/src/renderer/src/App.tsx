@@ -23,6 +23,8 @@ export function App() {
   const sessionRef = useRef<CaptureSession | null>(null);
   const framePortRef = useRef<MessagePort | null>(null);
   const noPortWarnedRef = useRef(false);
+  const frameSeenRef = useRef(false);
+  const postOkRef = useRef(false);
 
   const refreshSources = useCallback(async () => {
     const list = await window.jmndi.listSources();
@@ -69,6 +71,10 @@ export function App() {
   // Video: lokale Vorschau + BGRA an den nativen Sender (utilityProcess).
   const handleFrame = useCallback(
     async (frame: VideoFrame) => {
+      if (!frameSeenRef.current) {
+        console.log('[jmndi] handleFrame zum ersten Mal aufgerufen', frame.displayWidth + 'x' + frame.displayHeight, 'format:', frame.format);
+        frameSeenRef.current = true;
+      }
       drawFrame(frame);
       const port = framePortRef.current;
       if (!port) {
@@ -78,13 +84,21 @@ export function App() {
         }
         return;
       }
-      const size = frame.allocationSize({ format: 'BGRA' });
-      const buf = new ArrayBuffer(size);
-      await frame.copyTo(new Uint8Array(buf), { format: 'BGRA' });
-      port.postMessage(
-        { type: 'video', buffer: buf, w: frame.displayWidth, h: frame.displayHeight, fpsN: TARGET_FPS },
-        [buf],
-      );
+      try {
+        const size = frame.allocationSize({ format: 'BGRA' });
+        const buf = new ArrayBuffer(size);
+        await frame.copyTo(new Uint8Array(buf), { format: 'BGRA' });
+        port.postMessage(
+          { type: 'video', buffer: buf, w: frame.displayWidth, h: frame.displayHeight, fpsN: TARGET_FPS },
+          [buf],
+        );
+        if (!postOkRef.current) {
+          console.log('[jmndi] erster Frame an NDI gepostet ✓ size=' + size);
+          postOkRef.current = true;
+        }
+      } catch (err) {
+        console.error('[jmndi] handleFrame Fehler beim copyTo/postMessage:', err);
+      }
     },
     [drawFrame],
   );
@@ -114,6 +128,9 @@ export function App() {
   const start = useCallback(async () => {
     if (!selectedId) return;
     setBusy(true);
+    noPortWarnedRef.current = false;
+    frameSeenRef.current = false;
+    postOkRef.current = false;
     try {
       // Quelle vormerken + nativen Sender starten (Main postet den Frame-Port).
       await window.jmndi.start({
