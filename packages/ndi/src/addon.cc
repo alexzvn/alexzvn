@@ -15,11 +15,16 @@ namespace {
 
 NDIlib_send_instance_t g_send = nullptr;
 
+// Wirft einen JS-Error über die Node-API-C-Schnittstelle. Versionsunabhängig
+// und unabhängig davon, ob C++-Exceptions an sind (NAPI_DISABLE_CPP_EXCEPTIONS).
+void ThrowJs(napi_env env, const char* message) {
+  napi_throw_error(env, nullptr, message);
+}
+
 Napi::Value Init(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (!NDIlib_initialize()) {
-    Napi::Error::New(env, "NDIlib_initialize fehlgeschlagen (NDI-Runtime vorhanden?)")
-        .ThrowAsJavaScriptError();
+    ThrowJs(env, "NDIlib_initialize fehlgeschlagen (NDI-Runtime vorhanden?)");
     return env.Undefined();
   }
   return Napi::Boolean::New(env, true);
@@ -29,7 +34,7 @@ Napi::Value Init(const Napi::CallbackInfo& info) {
 Napi::Value CreateSender(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (info.Length() < 1 || !info[0].IsString()) {
-    Napi::TypeError::New(env, "createSender(name: string) erwartet").ThrowAsJavaScriptError();
+    ThrowJs(env, "createSender(name: string) erwartet");
     return env.Undefined();
   }
   std::string name = info[0].As<Napi::String>().Utf8Value();
@@ -42,7 +47,7 @@ Napi::Value CreateSender(const Napi::CallbackInfo& info) {
 
   g_send = NDIlib_send_create(&desc);
   if (!g_send) {
-    Napi::Error::New(env, "NDIlib_send_create fehlgeschlagen").ThrowAsJavaScriptError();
+    ThrowJs(env, "NDIlib_send_create fehlgeschlagen");
   }
   return env.Undefined();
 }
@@ -52,8 +57,7 @@ Napi::Value SendVideoBGRA(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (!g_send) return env.Undefined();
   if (info.Length() < 3) {
-    Napi::TypeError::New(env, "sendVideoBGRA(buf, width, height, [fpsN], [fpsD])")
-        .ThrowAsJavaScriptError();
+    ThrowJs(env, "sendVideoBGRA(buf, width, height, [fpsN], [fpsD])");
     return env.Undefined();
   }
 
@@ -87,8 +91,7 @@ Napi::Value SendAudioFLTP(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   if (!g_send) return env.Undefined();
   if (info.Length() < 3) {
-    Napi::TypeError::New(env, "sendAudioFLTP(planar, channels, samples, [sampleRate])")
-        .ThrowAsJavaScriptError();
+    ThrowJs(env, "sendAudioFLTP(planar, channels, samples, [sampleRate])");
     return env.Undefined();
   }
 
