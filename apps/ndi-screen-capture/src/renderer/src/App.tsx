@@ -88,10 +88,16 @@ export function App() {
         const size = frame.allocationSize({ format: 'BGRA' });
         const buf = new ArrayBuffer(size);
         await frame.copyTo(new Uint8Array(buf), { format: 'BGRA' });
-        port.postMessage(
-          { type: 'video', buffer: buf, w: frame.displayWidth, h: frame.displayHeight, fpsN: TARGET_FPS },
-          [buf],
-        );
+        // WICHTIG: NICHT transferieren ([buf]). Ein transferierter ArrayBuffer
+        // kommt über die Renderer→Main-MessagePort-Grenze als `null` an. Ohne
+        // Transfer wird der Buffer kopiert und überträgt korrekt.
+        port.postMessage({
+          type: 'video',
+          buffer: buf,
+          w: frame.displayWidth,
+          h: frame.displayHeight,
+          fpsN: TARGET_FPS,
+        });
         if (!postOkRef.current) {
           console.log('[jmndi] erster Frame an NDI gepostet ✓ size=' + size);
           postOkRef.current = true;
@@ -113,7 +119,8 @@ export function App() {
     for (let c = 0; c < ch; c++) {
       await data.copyTo(out.subarray(c * n, c * n + n), { planeIndex: c, format: 'f32-planar' });
     }
-    port.postMessage({ type: 'audio', buffer: out.buffer, ch, n, sr: data.sampleRate }, [out.buffer]);
+    // Nicht transferieren (sonst kommt die Nachricht als null an) → kopieren.
+    port.postMessage({ type: 'audio', buffer: out.buffer, ch, n, sr: data.sampleRate });
   }, []);
 
   const stop = useCallback(async () => {
