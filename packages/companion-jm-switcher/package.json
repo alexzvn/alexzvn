@@ -9,8 +9,7 @@
     "dev": "companion-module-build dev"
   },
   "dependencies": {
-    "@companion-module/base": "~1.8.0",
-    "@jm/companion-protocol": "*"
+    "@companion-module/base": "~1.8.0"
   },
   "devDependencies": {
     "@companion-module/tools": "~1.5.0"

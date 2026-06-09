@@ -26,11 +26,14 @@ Stream Deck / Companion bedienen.
 Cut/Auto/Rec/Stream + Preview/Program für Szene 1–4.
 
 ## Bauen / Verteilen
-Das Modul nutzt `@companion-module/base`. Zum Paketieren für Companion:
+Dieses Modul ist **eigenständig** (kein npm-Workspace-Mitglied — sonst zöge der
+Companion-Toolchain-Baum den Suite-Install unnötig auf). Der Protokoll-Client ist
+in `main.js` inline gespiegelt (Quelle der Wahrheit bleibt
+[@jm/companion-protocol](../companion-protocol), das der Switcher selbst nutzt).
 ```bash
-npm install        # im Monorepo-Root (verlinkt @jm/companion-protocol)
 cd packages/companion-jm-switcher
-npx companion-module-build      # bündelt inkl. @jm/companion-protocol → pkg
+npm install          # nur die Modul-eigenen Deps
+npx companion-module-build
 ```
 Das erzeugte Paket in Companions Modul-Ordner (Developer modules path) ablegen.
 

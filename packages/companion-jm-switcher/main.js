@@ -9,7 +9,44 @@ import {
   Regex,
   combineRgb,
 } from '@companion-module/base'
-import { DEFAULT_CONTROL_PORT, createLineBuffer, parseState } from '@jm/companion-protocol'
+
+// Protokoll-Client (Spiegel von @jm/companion-protocol — hier inline, damit das
+// Modul ohne Monorepo-Workspace eigenständig baubar/verteilbar ist).
+const DEFAULT_CONTROL_PORT = 8723
+
+function createLineBuffer(onLine) {
+  let buf = ''
+  return (chunk) => {
+    buf += chunk
+    let nl
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl)
+      buf = buf.slice(nl + 1)
+      if (line.trim()) onLine(line)
+    }
+  }
+}
+
+function parseState(line) {
+  const t = line.trim()
+  if (!/^STATE\s/i.test(t)) return null
+  const kv = new Map()
+  for (const tok of t.split(/\s+/).slice(1)) {
+    const eq = tok.indexOf('=')
+    if (eq > 0) kv.set(tok.slice(0, eq).toLowerCase(), tok.slice(eq + 1))
+  }
+  const num = (k) => {
+    const n = Number(kv.get(k))
+    return Number.isFinite(n) ? n : 0
+  }
+  return {
+    program: num('program'),
+    preview: num('preview'),
+    recording: kv.get('recording') === '1',
+    streaming: kv.get('streaming') === '1',
+    scenes: num('scenes'),
+  }
+}
 
 const RED = combineRgb(200, 30, 30)
 const GREEN = combineRgb(30, 160, 60)

@@ -6,7 +6,8 @@
   "author": "Jakobs Medien GmbH",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "!packages/companion-jm-switcher"
   ],
   "scripts": {
     "launcher:dev": "npm run dev -w @jm/launcher",
