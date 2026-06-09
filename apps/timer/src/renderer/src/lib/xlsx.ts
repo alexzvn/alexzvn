@@ -69,6 +69,41 @@ export async function parseXlsx(buffer: ArrayBuffer): Promise<ParseResult> {
   };
 }
 
+/**
+ * Erzeugt eine Beispiel-XLSX (Header + Beispielzeilen) und bietet sie zum
+ * Download an (Issue #11a). Die Spalten entsprechen exakt der Auto-Erkennung
+ * beim Import (Programmpunkt / Dauer / Notiz), die Dauern sind als HH:MM:SS
+ * geschrieben. SheetJS wird wie beim Import erst hier lazy geladen.
+ */
+export async function downloadTemplate(): Promise<void> {
+  const XLSX = await import('xlsx');
+  const aoa: (string)[][] = [
+    ['Programmpunkt', 'Dauer', 'Notiz'],
+    ['Begrüßung', '00:05:00', 'Einlauf / Moderation'],
+    ['Keynote', '00:30:00', ''],
+    ['Pause', '00:15:00', 'Catering'],
+    ['Podiumsdiskussion', '00:45:00', '3 Gäste'],
+    ['Abschluss', '00:10:00', ''],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 32 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Regieplan');
+
+  const data = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
+  const blob = new Blob([data], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'JM-Timer-Regieplan-Vorlage.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 interface DetectedColumns {
   label: string | null;
   duration: string | null;

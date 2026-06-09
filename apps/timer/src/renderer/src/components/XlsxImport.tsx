@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { parseXlsx, type ParseResult } from '@/lib/xlsx';
+import { parseXlsx, downloadTemplate, type ParseResult } from '@/lib/xlsx';
 import { formatHMS } from '@/lib/time';
 import { useStore } from '@/store/timer';
 import { Button } from '@jm/ui';
@@ -107,12 +107,18 @@ export function XlsxImport({ open, onClose }: Props) {
               <Button onClick={() => inputRef.current?.click()}>
                 Datei auswählen
               </Button>
+              <Button variant="outline" onClick={() => void downloadTemplate()}>
+                Vorlage herunterladen
+              </Button>
               {filename && (
                 <span className="text-sm text-[var(--muted-foreground)] truncate">
                   {filename}
                 </span>
               )}
             </div>
+            <p className="-mt-2 text-xs text-[var(--muted-foreground)]">
+              Noch keine Datei? Lade die Vorlage herunter, fülle sie aus und importiere sie wieder.
+            </p>
 
             {error && <div className="text-sm text-[var(--destructive)]">{error}</div>}
 
