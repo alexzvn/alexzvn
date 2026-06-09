@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, cn } from '@jm/ui';
-import type { MediaItem, ShowCue } from '@shared/types';
+import type { DisplayInfo, MediaItem, ShowCue } from '@shared/types';
 import { usePlayer } from '@/store/player';
 import { formatDuration } from '@/lib/format';
 
@@ -25,6 +25,7 @@ export function ShowView() {
   const showTogglePause = usePlayer((s) => s.showTogglePause);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [outputOpen, setOutputOpen] = useState(false);
   const [editCue, setEditCue] = useState<ShowCue | null>(null);
 
   // Beim ersten Betreten die erste Show wählen.
@@ -35,7 +36,7 @@ export function ShowView() {
   // Leertaste = GO, Escape = Stop (außer in Eingabefeldern / bei offenem Dialog).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (addOpen || editCue) return;
+      if (addOpen || outputOpen || editCue) return;
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) return;
       if (e.code === 'Space') {
@@ -47,7 +48,7 @@ export function ShowView() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [addOpen, editCue, showGo, showStop]);
+  }, [addOpen, outputOpen, editCue, showGo, showStop]);
 
   const newShow = async (): Promise<void> => {
     await createShow(`Show ${shows.length + 1}`);
@@ -121,7 +122,10 @@ export function ShowView() {
             </Button>
           </>
         )}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setOutputOpen(true)}>
+            ▦ Ausgabe
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
             + Cue
           </Button>
@@ -193,6 +197,81 @@ export function ShowView() {
 
       {addOpen && activeShowId != null && <AddCuesModal onClose={() => setAddOpen(false)} />}
       {editCue && <CueSettingsModal cue={editCue} onClose={() => setEditCue(null)} />}
+      {outputOpen && <OutputModal onClose={() => setOutputOpen(false)} />}
+    </div>
+  );
+}
+
+function OutputModal({ onClose }: { onClose: () => void }) {
+  const openOutput = usePlayer((s) => s.openOutput);
+  const closeOutput = usePlayer((s) => s.closeOutput);
+  const outputDisplayId = usePlayer((s) => s.outputDisplayId);
+  const [displays, setDisplays] = useState<DisplayInfo[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    void window.jmplay.output.displays().then(setDisplays);
+    void window.jmplay.output.isOpen().then(setIsOpen);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm px-6" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-extrabold tracking-tight">Video-Ausgabe</h2>
+        <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+          Bildschirm für das Vollbild-Ausgabefenster wählen. Video-Cues erscheinen dort.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-2">
+          {displays.length === 0 && (
+            <p className="text-sm text-[var(--muted-foreground)]">Keine Bildschirme erkannt.</p>
+          )}
+          {displays.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => {
+                void openOutput(d.id);
+                setIsOpen(true);
+              }}
+              className={cn(
+                'flex items-center justify-between rounded-[var(--radius)] border px-4 py-3 text-left transition-colors',
+                d.id === outputDisplayId
+                  ? 'border-[var(--primary)]/60 bg-[var(--highlight)]'
+                  : 'border-[var(--border)] hover:bg-[var(--highlight)]',
+              )}
+            >
+              <span className="text-sm font-bold">
+                {d.label}
+                {d.primary ? ' · Primär' : ''}
+              </span>
+              <span className="text-[11px] text-[var(--muted-foreground)] tabular">
+                {d.width}×{d.height}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              void closeOutput();
+              setIsOpen(false);
+            }}
+            disabled={!isOpen}
+          >
+            Ausgabe schließen
+          </Button>
+          <Button size="sm" variant="primary" onClick={onClose}>
+            Fertig
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -19,6 +19,9 @@ function clearShowTimers(): void {
   showTimers.clear();
 }
 
+// Einmalige Anmeldung des „Video zu Ende"-Listeners (nur im Hauptfenster).
+let outputEndedSubscribed = false;
+
 interface PlayerStore {
   items: MediaItem[];
   playlists: Playlist[];
@@ -44,6 +47,10 @@ interface PlayerStore {
   /** Cue-IDs, die gerade klingen oder im Pre-Wait stehen. */
   playingCueIds: number[];
   showPaused: boolean;
+  /** Aktuell im Ausgabefenster laufender Video-Cue (für Ende → Auto-Continue). */
+  videoCue: { id: number; index: number; autoContinue: boolean } | null;
+  /** Gewählter Ausgabe-Bildschirm (null = primär). */
+  outputDisplayId: number | null;
 
   load: () => Promise<void>;
   setNotice: (s: string | null) => void;
@@ -90,6 +97,10 @@ interface PlayerStore {
   showStop: () => void;
   showPanic: () => void;
   showTogglePause: () => void;
+  openOutput: (displayId?: number) => Promise<void>;
+  closeOutput: () => Promise<void>;
+  /** Vom Ausgabefenster gemeldetes Video-Ende → ggf. Auto-Continue. */
+  onOutputEnded: () => void;
 }
 
 export const usePlayer = create<PlayerStore>((set, get) => ({
@@ -109,6 +120,8 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   standbyIndex: 0,
   playingCueIds: [],
   showPaused: false,
+  videoCue: null,
+  outputDisplayId: null,
 
   setNotice: (notice) => set({ notice }),
 
@@ -121,6 +134,10 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
     const firstSoundboard = playlists.find((p) => p.kind === 'soundboard') ?? null;
     set({ items, playlists, shows, loading: false, soundboardId: firstSoundboard?.id ?? null });
     if (firstSoundboard) void get().refreshCues();
+    if (!outputEndedSubscribed) {
+      outputEndedSubscribed = true;
+      window.jmplay.output.onEnded(() => get().onOutputEnded());
+    }
   },
 
   refreshLibrary: async () => set({ items: await window.jmplay.library.list() }),
@@ -322,10 +339,29 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
     const url = window.jmplay.mediaUrl(media.path);
     const startNow = (): void => {
       set((s) => ({ playingCueIds: [...new Set([...s.playingCueIds, cue.id])] }));
-      void showAudio.play(cue, url, () => {
-        set((s) => ({ playingCueIds: s.playingCueIds.filter((x) => x !== cue.id) }));
-        if (cue.autoContinue) get().fireCue(index + 1);
-      });
+      if (media.kind === 'video') {
+        // Video → Ausgabefenster (ggf. öffnen). Ende-/Auto-Continue läuft über
+        // onOutputEnded (das Ausgabefenster meldet das natürliche Ende zurück).
+        set({ videoCue: { id: cue.id, index, autoContinue: cue.autoContinue } });
+        const load = (): Promise<void> =>
+          window.jmplay.output.command({
+            type: 'load',
+            url,
+            gainDb: cue.gainDb,
+            loop: cue.loop,
+            fadeInSec: cue.fadeInSec,
+          });
+        void window.jmplay.output
+          .isOpen()
+          .then((open) =>
+            open ? load() : window.jmplay.output.open(get().outputDisplayId ?? undefined).then(load),
+          );
+      } else {
+        void showAudio.play(cue, url, () => {
+          set((s) => ({ playingCueIds: s.playingCueIds.filter((x) => x !== cue.id) }));
+          if (cue.autoContinue) get().fireCue(index + 1);
+        });
+      }
     };
 
     if (cue.preWaitSec > 0) {
@@ -343,28 +379,53 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   showGo: () => get().fireCue(get().standbyIndex),
 
   showStop: () => {
-    const { showCues, playingCueIds } = get();
+    const { showCues, playingCueIds, videoCue } = get();
     for (const id of playingCueIds) {
       const cue = showCues.find((c) => c.id === id);
-      showAudio.stop(id, cue?.fadeOutSec ?? 0);
+      if (cue && cue.media?.kind === 'video') {
+        void window.jmplay.output.command({ type: 'stop', fadeOutSec: cue.fadeOutSec });
+      } else {
+        showAudio.stop(id, cue?.fadeOutSec ?? 0);
+      }
+    }
+    if (videoCue && !playingCueIds.includes(videoCue.id)) {
+      void window.jmplay.output.command({ type: 'stop', fadeOutSec: 0 });
     }
     clearShowTimers();
-    set({ playingCueIds: [] });
+    set({ playingCueIds: [], videoCue: null });
   },
 
   showPanic: () => {
     showAudio.panic();
+    void window.jmplay.output.command({ type: 'black' });
     clearShowTimers();
-    set({ playingCueIds: [], showPaused: false });
+    set({ playingCueIds: [], videoCue: null, showPaused: false });
   },
 
   showTogglePause: () => {
     if (get().showPaused) {
       void showAudio.resume();
+      void window.jmplay.output.command({ type: 'resume' });
       set({ showPaused: false });
     } else {
       void showAudio.suspend();
+      void window.jmplay.output.command({ type: 'pause' });
       set({ showPaused: true });
     }
+  },
+
+  openOutput: async (displayId) => {
+    await window.jmplay.output.open(displayId);
+    if (displayId != null) set({ outputDisplayId: displayId });
+  },
+  closeOutput: async () => {
+    await window.jmplay.output.close();
+    set({ videoCue: null });
+  },
+  onOutputEnded: () => {
+    const vc = get().videoCue;
+    if (!vc) return;
+    set((s) => ({ playingCueIds: s.playingCueIds.filter((x) => x !== vc.id), videoCue: null }));
+    if (vc.autoContinue) get().fireCue(vc.index + 1);
   },
 }));

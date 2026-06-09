@@ -98,6 +98,24 @@ export interface ShowCuePatch {
   loop?: boolean;
 }
 
+// ---- Video-Ausgabefenster (2. Screen) ----
+
+export interface DisplayInfo {
+  id: number;
+  label: string;
+  primary: boolean;
+  width: number;
+  height: number;
+}
+
+/** Befehle vom Hauptfenster an das Video-Ausgabefenster. */
+export type OutputCommand =
+  | { type: 'load'; url: string; gainDb: number; loop: boolean; fadeInSec: number }
+  | { type: 'stop'; fadeOutSec: number }
+  | { type: 'pause' }
+  | { type: 'resume' }
+  | { type: 'black' };
+
 export interface ImportResult {
   added: number;
   skipped: number;
@@ -150,6 +168,21 @@ export interface JmplayApi {
     removeCue: (cueId: number) => Promise<void>;
     reorder: (showId: number, orderedCueIds: number[]) => Promise<void>;
     updateCue: (cueId: number, patch: ShowCuePatch) => Promise<ShowCue>;
+  };
+  /** Video-Ausgabefenster (2. Screen). */
+  output: {
+    displays: () => Promise<DisplayInfo[]>;
+    open: (displayId?: number) => Promise<void>;
+    close: () => Promise<void>;
+    isOpen: () => Promise<boolean>;
+    /** Befehl ans Ausgabefenster (Hauptfenster → Ausgabe). */
+    command: (cmd: OutputCommand) => Promise<void>;
+    /** Ausgabefenster meldet, dass das aktuelle Video natürlich endete. */
+    notifyEnded: () => Promise<void>;
+    /** Ausgabe-Seite: auf Befehle hören. Liefert Unsubscribe. */
+    onCommand: (cb: (cmd: OutputCommand) => void) => () => void;
+    /** Hauptfenster-Seite: auf „Video zu Ende" hören. Liefert Unsubscribe. */
+    onEnded: (cb: () => void) => () => void;
   };
   shell: {
     reveal: (path: string) => Promise<void>;

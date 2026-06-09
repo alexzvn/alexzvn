@@ -2,9 +2,11 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
   Cue,
   CueInput,
+  DisplayInfo,
   ImportResult,
   JmplayApi,
   MediaItem,
+  OutputCommand,
   Playlist,
   PlaylistItem,
   PlaylistKind,
@@ -60,6 +62,24 @@ const api: JmplayApi = {
       ipcRenderer.invoke('shows:reorder', showId, orderedCueIds) as Promise<void>,
     updateCue: (cueId, patch: ShowCuePatch) =>
       ipcRenderer.invoke('shows:updateCue', cueId, patch) as Promise<ShowCue>,
+  },
+  output: {
+    displays: () => ipcRenderer.invoke('output:displays') as Promise<DisplayInfo[]>,
+    open: (displayId) => ipcRenderer.invoke('output:open', displayId) as Promise<void>,
+    close: () => ipcRenderer.invoke('output:close') as Promise<void>,
+    isOpen: () => ipcRenderer.invoke('output:isOpen') as Promise<boolean>,
+    command: (cmd) => ipcRenderer.invoke('output:command', cmd) as Promise<void>,
+    notifyEnded: () => ipcRenderer.invoke('output:ended') as Promise<void>,
+    onCommand: (cb) => {
+      const listener = (_e: unknown, cmd: OutputCommand): void => cb(cmd);
+      ipcRenderer.on('output:cmd', listener);
+      return () => ipcRenderer.off('output:cmd', listener);
+    },
+    onEnded: (cb) => {
+      const listener = (): void => cb();
+      ipcRenderer.on('output:ended', listener);
+      return () => ipcRenderer.off('output:ended', listener);
+    },
   },
   shell: {
     reveal: (filePath) => ipcRenderer.invoke('shell:reveal', filePath) as Promise<void>,

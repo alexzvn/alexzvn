@@ -1,6 +1,6 @@
 {
   "name": "@jm/player",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Jakobs Medien Player — Video-/Audio-Player mit lokaler Bibliothek, Playlists (Lounge-/Einlass-Musik) und Soundboard-Sofort-Cues",
   "author": "Jakobs Medien GmbH",

@@ -1,14 +1,21 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import type { CueInput, PlaylistKind, ShowCuePatch } from '@shared/types';
+import type { CueInput, OutputCommand, PlaylistKind, ShowCuePatch } from '@shared/types';
 import * as lib from './library';
 import { ensureThumb } from './thumbs';
+import {
+  closeOutputWindow,
+  isOutputOpen,
+  listDisplays,
+  openOutputWindow,
+  sendToOutput,
+} from './output-window';
 
 const MEDIA_EXT = [
   'mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'mpg', 'mpeg', 'wmv',
   'mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'opus', 'aif', 'aiff', 'wma',
 ];
 
-export function registerIpc(_getWin: () => BrowserWindow | null): void {
+export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('dialog:pickFolders', async () => {
     const r = await dialog.showOpenDialog({ properties: ['openDirectory', 'multiSelections'] });
     return r.canceled ? [] : r.filePaths;
@@ -59,6 +66,17 @@ export function registerIpc(_getWin: () => BrowserWindow | null): void {
   ipcMain.handle('shows:updateCue', (_e, cueId: number, patch: ShowCuePatch) =>
     lib.updateShowCue(cueId, patch),
   );
+
+  // Video-Ausgabefenster (2. Screen).
+  ipcMain.handle('output:displays', () => listDisplays());
+  ipcMain.handle('output:open', (_e, displayId?: number) => openOutputWindow(displayId));
+  ipcMain.handle('output:close', () => closeOutputWindow());
+  ipcMain.handle('output:isOpen', () => isOutputOpen());
+  ipcMain.handle('output:command', (_e, cmd: OutputCommand) => sendToOutput(cmd));
+  // Ausgabefenster meldet „Video zu Ende" → ans Hauptfenster weiterreichen.
+  ipcMain.handle('output:ended', () => {
+    getWin()?.webContents.send('output:ended');
+  });
 
   ipcMain.handle('shell:reveal', (_e, p: string) => {
     shell.showItemInFolder(p);
