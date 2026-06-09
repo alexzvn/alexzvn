@@ -49,6 +49,35 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* JM-Slider (Seek/Volume) — Track grau, Füllung über inline-Gradient, Thumb gelb */
+.jm-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--muted);
+  cursor: pointer;
+  outline: none;
+}
+.jm-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1px var(--border);
+  transition: transform 0.1s ease;
+}
+.jm-range:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.jm-range:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* thin scrollbars inside scrolling panes */
 .scroll-thin::-webkit-scrollbar {
   width: 10px;

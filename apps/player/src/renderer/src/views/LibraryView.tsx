@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, cn } from '@jm/ui';
 import type { MediaItem } from '@shared/types';
 import { usePlayer } from '@/store/player';
@@ -449,10 +449,63 @@ function PlayerPanel() {
   const currentMediaId = usePlayer((s) => s.currentMediaId);
   const playNext = usePlayer((s) => s.playNext);
   const playPrev = usePlayer((s) => s.playPrev);
-  const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
+  const mediaRef = useRef<HTMLMediaElement | null>(null);
 
   const item = useMemo(() => items.find((m) => m.id === currentMediaId) ?? null, [items, currentMediaId]);
   const src = item ? window.jmplay.mediaUrl(item.path) : '';
+
+  const [playing, setPlaying] = useState(false);
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+
+  // Transport bei Titelwechsel zurücksetzen.
+  useEffect(() => {
+    setTime(0);
+    setDuration(0);
+    setPlaying(false);
+  }, [item?.id]);
+
+  // Lautstärke/Mute am (neu gemounteten) Element nachziehen.
+  useEffect(() => {
+    const el = mediaRef.current;
+    if (el) {
+      el.volume = volume;
+      el.muted = muted;
+    }
+  }, [volume, muted, item?.id]);
+
+  const setRef = useCallback((el: HTMLMediaElement | null) => {
+    mediaRef.current = el;
+  }, []);
+
+  const toggle = (): void => {
+    const el = mediaRef.current;
+    if (!el) return;
+    if (el.paused) void el.play();
+    else el.pause();
+  };
+  const seek = (v: number): void => {
+    const el = mediaRef.current;
+    if (el) {
+      el.currentTime = v;
+      setTime(v);
+    }
+  };
+
+  const seekPct = duration > 0 ? (time / duration) * 100 : 0;
+  const volPct = (muted ? 0 : volume) * 100;
+  const fill = (p: number): string =>
+    `linear-gradient(to right, var(--primary) ${p}%, var(--muted) ${p}%)`;
+
+  const mediaEvents = {
+    onPlay: () => setPlaying(true),
+    onPause: () => setPlaying(false),
+    onTimeUpdate: () => setTime(mediaRef.current?.currentTime ?? 0),
+    onLoadedMetadata: () => setDuration(mediaRef.current?.duration || 0),
+    onEnded: () => playNext(),
+  };
 
   return (
     <aside className="w-[400px] shrink-0 flex flex-col bg-[var(--card)]/30">
@@ -460,46 +513,136 @@ function PlayerPanel() {
         {!item ? (
           <span className="text-xs text-[var(--muted-foreground)]">Kein Titel gewählt</span>
         ) : item.kind === 'video' ? (
-          <video
-            key={item.id}
-            ref={mediaRef as React.RefObject<HTMLVideoElement>}
-            src={src}
-            controls
-            autoPlay
-            onEnded={() => playNext()}
-            className="size-full"
-          />
+          <video key={item.id} ref={setRef} src={src} autoPlay className="size-full" {...mediaEvents} />
         ) : (
-          <div className="size-full grid place-items-center text-[var(--muted-foreground)]">
+          <div className="flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
             <NoteIcon large />
-            <audio
-              key={item.id}
-              ref={mediaRef as React.RefObject<HTMLAudioElement>}
-              src={src}
-              controls
-              autoPlay
-              onEnded={() => playNext()}
-              className="absolute bottom-0 left-0 right-0 w-full"
-            />
+            <span className="text-[10px] uppercase tracking-[0.14em] font-bold">Audio</span>
+            <audio key={item.id} ref={setRef} src={src} autoPlay className="hidden" {...mediaEvents} />
           </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-[var(--border)]/60">
-        <div className="text-sm font-extrabold truncate">{item ? item.title || item.fileName : '—'}</div>
-        <div className="text-[11px] text-[var(--muted-foreground)] truncate mt-0.5">
-          {item ? `${basename(item.path)} · ${formatDuration(item.durationSec)}` : 'Doppelklick auf einen Titel zum Abspielen'}
+      <div className="p-4 border-t border-[var(--border)]/60 flex flex-col gap-3">
+        <div>
+          <div className="text-sm font-extrabold truncate">{item ? item.title || item.fileName : '—'}</div>
+          <div className="text-[11px] text-[var(--muted-foreground)] truncate mt-0.5">
+            {item ? basename(item.path) : 'Doppelklick auf einen Titel zum Abspielen'}
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-4">
-          <Button size="sm" variant="outline" disabled={!item} onClick={() => playPrev()}>
-            ◀ Zurück
-          </Button>
-          <Button size="sm" variant="outline" disabled={!item} onClick={() => playNext()}>
-            Weiter ▶
-          </Button>
+
+        {/* Seek */}
+        <div className="flex items-center gap-3">
+          <span className="tabular text-[11px] text-[var(--muted-foreground)] w-10 text-right">
+            {formatDuration(time)}
+          </span>
+          <input
+            type="range"
+            className="jm-range flex-1"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={Math.min(time, duration || 0)}
+            disabled={!item}
+            onChange={(e) => seek(Number(e.target.value))}
+            style={{ background: fill(seekPct) }}
+          />
+          <span className="tabular text-[11px] text-[var(--muted-foreground)] w-10">
+            {duration ? formatDuration(duration) : '–'}
+          </span>
+        </div>
+
+        {/* Transport */}
+        <div className="flex items-center gap-2">
+          <TransportBtn title="Vorheriger" disabled={!item} onClick={() => playPrev()}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M6 6h2v12H6zM20 6v12L9 12z" />
+            </svg>
+          </TransportBtn>
+
+          <button
+            type="button"
+            title={playing ? 'Pause' : 'Abspielen'}
+            disabled={!item}
+            onClick={toggle}
+            className={cn(
+              'grid place-items-center size-11 rounded-full transition-opacity',
+              'bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90',
+              'disabled:opacity-40 disabled:cursor-not-allowed',
+            )}
+          >
+            {playing ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </button>
+
+          <TransportBtn title="Nächster" disabled={!item} onClick={() => playNext()}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M16 6h2v12h-2zM4 6l11 6L4 18z" />
+            </svg>
+          </TransportBtn>
+
+          <div className="ml-auto flex items-center gap-2">
+            <TransportBtn title={muted ? 'Ton an' : 'Stumm'} onClick={() => setMuted((m) => !m)}>
+              {muted || volume === 0 ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M11 5 6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M11 5 6 9H3v6h3l5 4zM16 9a4 4 0 0 1 0 6" />
+                </svg>
+              )}
+            </TransportBtn>
+            <input
+              type="range"
+              className="jm-range w-20"
+              min={0}
+              max={1}
+              step={0.05}
+              value={muted ? 0 : volume}
+              onChange={(e) => {
+                setVolume(Number(e.target.value));
+                setMuted(false);
+              }}
+              style={{ background: fill(volPct) }}
+            />
+          </div>
         </div>
       </div>
     </aside>
+  );
+}
+
+function TransportBtn({
+  title,
+  onClick,
+  disabled,
+  children,
+}: {
+  title: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+      className="grid place-items-center size-9 rounded-[var(--radius)] border border-[var(--border)]
+                 text-[var(--foreground)] hover:bg-[var(--highlight)] transition-colors
+                 disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      {children}
+    </button>
   );
 }
 
