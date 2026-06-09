@@ -1,0 +1,9 @@
+node_modules/
+out/
+release/
+resources/bin/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.local
+*.zip

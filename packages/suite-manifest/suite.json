@@ -87,6 +87,27 @@
       "app": "media-converter"
     },
     {
+      "id": "jm-player",
+      "name": "JM Player",
+      "tagline": "Player · Bibliothek · Soundboard",
+      "description": "Video-/Audio-Player mit lokaler Bibliothek und Playlists (Lounge-/Einlass-Musik) sowie einem Soundboard mit Sofort-Cues auf Hotkeys (z. B. Theatergong).",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.player",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Player-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Player.app"
+        },
+        "win": {
+          "artifact": "JM Player-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Player\\JM Player.exe"
+        }
+      },
+      "app": "player"
+    },
+    {
       "id": "jm-sync",
       "name": "JM Sync",
       "tagline": "A/V-Lipsync-Messung",
