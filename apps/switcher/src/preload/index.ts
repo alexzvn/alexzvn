@@ -34,8 +34,11 @@ const api: JmswitchApi = {
       ipcRenderer.invoke('output:recStart') as Promise<{ ok: boolean; path?: string; error?: string }>,
     recChunk: (chunk) => ipcRenderer.send('output:recChunk', chunk),
     recStop: () => ipcRenderer.send('output:recStop'),
-    streamStart: (url) =>
-      ipcRenderer.invoke('output:streamStart', { url }) as Promise<{ ok: boolean; error?: string }>,
+    streamStart: (url, videoBitrateKbps) =>
+      ipcRenderer.invoke('output:streamStart', { url, videoBitrateKbps }) as Promise<{
+        ok: boolean;
+        error?: string;
+      }>,
     streamChunk: (chunk) => ipcRenderer.send('output:streamChunk', chunk),
     streamStop: () => ipcRenderer.send('output:streamStop'),
     onStatus: (cb) => {

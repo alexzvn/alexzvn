@@ -104,14 +104,14 @@ export class OutputController {
     this.teardown('rec');
   }
 
-  async startStreaming(url: string): Promise<void> {
+  async startStreaming(url: string, bitrateKbps?: number): Promise<void> {
     if (this.streamRecorder) return;
     const stream = this.ensureStream();
     if (!stream) {
       this.patch({ error: 'Kein Program-Bild zum Streamen.' });
       return;
     }
-    const res = await window.jmswitch.output.streamStart(url);
+    const res = await window.jmswitch.output.streamStart(url, bitrateKbps);
     if (!res.ok) {
       this.patch({ error: res.error ?? 'Stream-Start fehlgeschlagen.' });
       return;

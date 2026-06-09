@@ -63,7 +63,7 @@ export interface JmswitchOutputApi {
   /** Aufnahme abschließen. */
   recStop: () => void;
   /** ffmpeg → RTMP starten. */
-  streamStart: (url: string) => Promise<{ ok: boolean; error?: string }>;
+  streamStart: (url: string, videoBitrateKbps?: number) => Promise<{ ok: boolean; error?: string }>;
   /** WebM-Chunk in ffmpegs stdin schreiben. */
   streamChunk: (chunk: Uint8Array) => void;
   /** Stream beenden (ffmpeg stdin schließen). */

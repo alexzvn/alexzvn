@@ -10,6 +10,7 @@ import {
   type SourceInfo,
 } from '@/core/engine';
 import { OutputController, type OutputState } from '@/core/output';
+import { useSettings } from '@/store/settings';
 
 const PALETTE = ['#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#0891b2', '#ca8a04'];
 
@@ -31,7 +32,7 @@ function currentPreset(l: LayerInfo): string {
   return PRESET_BY_KEY.get(rectKey(l)) ?? 'custom';
 }
 
-export function SwitcherView() {
+export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void }) {
   const engineRef = useRef<SwitcherEngine | null>(null);
   if (!engineRef.current) engineRef.current = new SwitcherEngine();
   const engine = engineRef.current;
@@ -44,7 +45,8 @@ export function SwitcherView() {
   if (!outputRef.current) outputRef.current = new OutputController(() => programRef.current);
   const output = outputRef.current;
   const [outputState, setOutputState] = useState<OutputState>(() => output.getState());
-  const [rtmpUrl, setRtmpUrl] = useState('');
+  const rtmpUrl = useSettings((s) => s.rtmpUrl);
+  const streamBitrateKbps = useSettings((s) => s.streamBitrateKbps);
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
   const [ndiPicker, setNdiPicker] = useState(false);
@@ -116,7 +118,7 @@ export function SwitcherView() {
   };
   const toggleStreaming = (): void => {
     if (outputState.streaming) output.stopStreaming();
-    else void output.startStreaming(rtmpUrl);
+    else void output.startStreaming(rtmpUrl, streamBitrateKbps);
   };
 
   const previewScene = state.scenes.find((s) => s.id === state.previewSceneId) ?? null;
@@ -249,7 +251,7 @@ export function SwitcherView() {
       <OutputBar
         state={outputState}
         rtmpUrl={rtmpUrl}
-        onRtmpUrl={setRtmpUrl}
+        onOpenSettings={onOpenSettings}
         onToggleRecording={toggleRecording}
         onToggleStreaming={toggleStreaming}
       />
@@ -318,17 +320,18 @@ export function SwitcherView() {
 function OutputBar({
   state,
   rtmpUrl,
-  onRtmpUrl,
+  onOpenSettings,
   onToggleRecording,
   onToggleStreaming,
 }: {
   state: OutputState;
   rtmpUrl: string;
-  onRtmpUrl: (v: string) => void;
+  onOpenSettings: () => void;
   onToggleRecording: () => void;
   onToggleStreaming: () => void;
 }) {
   const recName = state.recPath ? state.recPath.replace(/^.*[\\/]/, '') : null;
+  const hasTarget = rtmpUrl.trim().length > 0;
   return (
     <div className="shrink-0 flex items-center gap-3 px-6 h-14 border-t border-[var(--border)]/60">
       <button
@@ -345,29 +348,36 @@ function OutputBar({
         {state.recording ? 'Aufnahme stoppen' : 'Aufnehmen'}
       </button>
 
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <button
-          type="button"
-          onClick={onToggleStreaming}
-          disabled={!state.streaming && !rtmpUrl.trim()}
-          className={cn(
-            'h-9 px-3.5 rounded-[var(--radius)] text-sm font-extrabold uppercase tracking-wide inline-flex items-center gap-2 transition-colors border-2 shrink-0',
-            state.streaming
-              ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
-              : 'border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)] disabled:opacity-40 disabled:cursor-not-allowed',
-          )}
-        >
-          <span className={cn('size-2.5 rounded-full', state.streaming ? 'bg-white animate-pulse' : 'bg-[var(--primary)]')} />
-          {state.streaming ? 'Stream stoppen' : 'Stream starten'}
-        </button>
-        <input
-          type="text"
-          value={rtmpUrl}
-          disabled={state.streaming}
-          onChange={(e) => onRtmpUrl(e.target.value)}
-          placeholder="rtmp://server/app/streamkey"
-          className="h-9 flex-1 min-w-0 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-[var(--foreground)] disabled:opacity-60"
-        />
+      <button
+        type="button"
+        onClick={onToggleStreaming}
+        disabled={!state.streaming && !hasTarget}
+        title={!hasTarget ? 'Stream-Ziel in den Einstellungen festlegen' : undefined}
+        className={cn(
+          'h-9 px-3.5 rounded-[var(--radius)] text-sm font-extrabold uppercase tracking-wide inline-flex items-center gap-2 transition-colors border-2 shrink-0',
+          state.streaming
+            ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+            : 'border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)] disabled:opacity-40 disabled:cursor-not-allowed',
+        )}
+      >
+        <span className={cn('size-2.5 rounded-full', state.streaming ? 'bg-white animate-pulse' : 'bg-[var(--primary)]')} />
+        {state.streaming ? 'Stream stoppen' : 'Stream starten'}
+      </button>
+
+      <div className="flex-1 min-w-0 text-xs">
+        {hasTarget ? (
+          <span className="text-[var(--muted-foreground)] truncate block" title={rtmpUrl}>
+            Ziel: <span className="font-semibold text-[var(--foreground)]">{rtmpUrl}</span>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="text-[var(--muted-foreground)] hover:text-[var(--primary)] underline underline-offset-2"
+          >
+            Stream-Ziel in den Einstellungen festlegen →
+          </button>
+        )}
       </div>
 
       <div className="shrink-0 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide">

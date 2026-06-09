@@ -78,11 +78,12 @@ export function registerOutputIpc(): void {
   ipcMain.on('output:recStop', () => closeRecording());
 
   // ---- Stream ----
-  ipcMain.handle('output:streamStart', (_e, opts: { url?: string }) => {
+  ipcMain.handle('output:streamStart', (_e, opts: { url?: string; videoBitrateKbps?: number }) => {
     const url = (opts?.url ?? '').trim();
     if (!url) return { ok: false, error: 'Keine RTMP-URL angegeben' };
     if (streaming) return { ok: true };
 
+    const vbr = Math.min(20000, Math.max(500, Math.round(opts?.videoBitrateKbps ?? 0) || 4500));
     streamAbort = new AbortController();
     const args = [
       '-hide_banner',
@@ -114,11 +115,11 @@ export function registerOutputIpc(): void {
       '-g',
       '60',
       '-b:v',
-      '4500k',
+      `${vbr}k`,
       '-maxrate',
-      '4500k',
+      `${vbr}k`,
       '-bufsize',
-      '9000k',
+      `${vbr * 2}k`,
       '-c:a',
       'aac',
       '-b:a',

@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Logo, cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 
-export function Topbar() {
+export type SwitcherTab = 'switcher' | 'settings';
+
+const TABS: { key: SwitcherTab; label: string }[] = [
+  { key: 'switcher', label: 'Mischer' },
+  { key: 'settings', label: 'Einstellungen' },
+];
+
+export function Topbar({ tab, onTab }: { tab: SwitcherTab; onTab: (t: SwitcherTab) => void }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
@@ -35,6 +42,24 @@ export function Topbar() {
           </span>
         </div>
       </div>
+
+      <nav style={noDragRegion} className="flex items-center gap-1">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => onTab(t.key)}
+            className={cn(
+              'h-8 px-3.5 rounded-[var(--radius)] text-xs uppercase tracking-wide font-extrabold transition-colors',
+              tab === t.key
+                ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
+                : 'text-[var(--muted-foreground)] hover:bg-[var(--highlight)] hover:text-[var(--foreground)]',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
 
       <button
         type="button"
