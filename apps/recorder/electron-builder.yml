@@ -18,9 +18,15 @@ extraResources:
       - "**/*"
 
 asar: true
-# Natives @jm/audio-Addon (jm_audio.node) nicht aus der asar laden.
-asarUnpack:
-  - "**/node_modules/@jm/audio/**"
+
+# Das native @jm/audio-Addon wird LOKAL auf Windows gebaut (PortAudio/ASIO-SDK
+# nicht in CI; der suite-release-Workflow überspringt dieses Tool). bundle-audio
+# stuft jm_audio.node + portaudio.dll nach resources/bin/win (vom @jm/audio-Loader
+# dort gefunden). electron ist im Workspace ans Root gehoistet → electron-builder
+# findet die Version sonst nicht; npmRebuild aus, da das Addon bereits via
+# electron-rebuild gebaut + gestaged ist. electronVersion bei Upgrade nachziehen.
+electronVersion: 33.4.11
+npmRebuild: false
 
 mac:
   target:
