@@ -4,7 +4,6 @@ import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } fr
 import type { AppEvent } from '@shared/types';
 import { registerIpc } from './ipc';
 import { initManifest, refreshManifest } from './manifest';
-import { initAutoUpdate } from './updater';
 
 declare const __dirname: string;
 
@@ -30,15 +29,17 @@ if (setupSingleInstance(() => createWindow())) {
     registerIpc();
     createWindow();
 
-    // Hintergrund: remote suite.json holen + Self-Update prüfen (nur gepackt)
+    // Hintergrund: remote suite.json holen
     refreshManifest()
       .then((changed) => {
         if (changed) emitAppEvent({ type: 'manifest-changed' });
       })
       .catch(() => {});
-    initAutoUpdate(emitAppEvent);
-    // Launcher-Self-Update läuft jetzt über den Renderer (loadLauncherUpdate →
-    // Banner mit „Aktualisieren"), siehe updates.ts/installer.ts.
+    // Launcher-Self-Update läuft über den Renderer (loadLauncherUpdate → Banner
+    // mit „Aktualisieren"), siehe updates.ts/installer.ts. Den früheren
+    // electron-updater-Pfad gibt es nicht mehr: er konnte mangels Feed (private
+    // Releases via Proxy/Token) nur fehlschlagen und blendete dabei beim Start
+    // eine nicht-handlungsrelevante Fehler-Notice ein (Issue #8).
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
