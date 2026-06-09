@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.1',
+        date: '2026-06-09',
+        notes: ['Patch Notes für JM Player, Media Converter und Timer ergänzt.'],
+      },
+      {
         version: '0.2.0',
         date: '2026-06-09',
         notes: [
@@ -50,6 +55,13 @@ export const CHANGELOG: AppChangelog[] = [
     app: 'player',
     name: 'JM Player',
     entries: [
+      {
+        version: '0.2.0',
+        notes: [
+          'Neuer Cue-Show-Modus (QLab-Stil): geordnete Cue-Liste, GO mit Auto-Continue, Pre-Wait und Fades.',
+          'Audio-Cues latenzarm; Video-Cues auf separatem Vollbild-Ausgabefenster (2. Bildschirm).',
+        ],
+      },
       {
         version: '0.1.0',
         notes: [
@@ -121,6 +133,10 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Timer',
     entries: [
       {
+        version: '0.1.1',
+        notes: ['Beispiel-XLSX-Vorlage im Import zum Herunterladen.'],
+      },
+      {
         version: '0.1.0',
         notes: ['Countdown-/Ablauf-Timer mit Tabellen-Import (XLSX).'],
       },
@@ -162,6 +178,13 @@ export const CHANGELOG: AppChangelog[] = [
     app: 'media-converter',
     name: 'JM Media Converter',
     entries: [
+      {
+        version: '0.2.0',
+        notes: [
+          'Trim mit echter Vorschau: Start/Ende bild-genau setzen.',
+          'Warteschlange rechts mit aufklappbaren erledigten Aufträgen; Zielgröße in MB/GB.',
+        ],
+      },
       {
         version: '0.1.0',
         notes: ['Videokonvertierung (FFmpeg-Codecs) und Office → PDF.'],
