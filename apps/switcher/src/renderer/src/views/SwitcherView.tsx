@@ -198,7 +198,7 @@ export function SwitcherView() {
   return (
     <div className="h-full flex flex-col">
       {/* Monitore + Transition */}
-      <div className="flex-1 min-h-0 flex items-center gap-5 px-6 py-5">
+      <div className="flex-1 min-h-0 flex items-stretch gap-5 px-6 py-5">
         <Monitor label="Preview" tone="preview" canvasRef={previewRef} sceneName={previewScene?.name} />
 
         <div className="shrink-0 flex flex-col items-center justify-center gap-3 w-28">
@@ -395,18 +395,20 @@ function Monitor({
 }) {
   const accent = tone === 'program' ? 'var(--destructive)' : 'var(--success)';
   return (
-    <div className="flex-1 min-w-0 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
+      <div className="shrink-0 flex items-center justify-between">
         <span className="text-xs font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}>
           {label}
         </span>
         <span className="text-[11px] text-[var(--muted-foreground)] truncate ml-3">{sceneName ?? '—'}</span>
       </div>
-      <div
-        className="relative w-full aspect-video rounded-[var(--radius-lg)] overflow-hidden bg-black border-2"
-        style={{ borderColor: accent }}
-      >
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <div className="flex-1 min-h-0 flex items-center justify-center">
+        <div
+          className="relative w-full max-h-full aspect-video rounded-[var(--radius-lg)] overflow-hidden bg-black border-2"
+          style={{ borderColor: accent }}
+        >
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-contain" />
+        </div>
       </div>
     </div>
   );
