@@ -9,6 +9,7 @@ import {
   type SceneInfo,
   type SourceInfo,
 } from '@/core/engine';
+import { OutputController, type OutputState } from '@/core/output';
 
 const PALETTE = ['#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#0891b2', '#ca8a04'];
 
@@ -39,6 +40,11 @@ export function SwitcherView() {
   const programRef = useRef<HTMLCanvasElement>(null);
   const ndiSourceIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const outputRef = useRef<OutputController | null>(null);
+  if (!outputRef.current) outputRef.current = new OutputController(() => programRef.current);
+  const output = outputRef.current;
+  const [outputState, setOutputState] = useState<OutputState>(() => output.getState());
+  const [rtmpUrl, setRtmpUrl] = useState('');
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
   const [ndiPicker, setNdiPicker] = useState(false);
@@ -52,11 +58,15 @@ export function SwitcherView() {
     }
     const unsub = engine.subscribe(() => setState(engine.getState()));
     setState(engine.getState());
+    const unsubOut = output.subscribe(() => setOutputState(output.getState()));
+    setOutputState(output.getState());
     return () => {
       unsub();
+      unsubOut();
+      output.destroy();
       engine.destroy();
     };
-  }, [engine]);
+  }, [engine, output]);
 
   // NDI: Status + Frame-MessagePort (vom Main über die Preload-Bridge).
   useEffect(() => {
@@ -95,6 +105,19 @@ export function SwitcherView() {
     const t = setTimeout(() => setNotice(null), 4000);
     return () => clearTimeout(t);
   }, [notice]);
+
+  useEffect(() => {
+    if (outputState.error) setNotice(outputState.error);
+  }, [outputState.error]);
+
+  const toggleRecording = (): void => {
+    if (outputState.recording) output.stopRecording();
+    else void output.startRecording();
+  };
+  const toggleStreaming = (): void => {
+    if (outputState.streaming) output.stopStreaming();
+    else void output.startStreaming(rtmpUrl);
+  };
 
   const previewScene = state.scenes.find((s) => s.id === state.previewSceneId) ?? null;
   const programScene = state.scenes.find((s) => s.id === state.programSceneId) ?? null;
@@ -222,6 +245,15 @@ export function SwitcherView() {
         <Monitor label="Program" tone="program" canvasRef={programRef} sceneName={programScene?.name} />
       </div>
 
+      {/* Aufnahme / RTMP-Stream des Program-Outputs */}
+      <OutputBar
+        state={outputState}
+        rtmpUrl={rtmpUrl}
+        onRtmpUrl={setRtmpUrl}
+        onToggleRecording={toggleRecording}
+        onToggleStreaming={toggleStreaming}
+      />
+
       {/* Szenen / Ebenen / Quellen */}
       <div className="shrink-0 h-[300px] border-t border-[var(--border)]/60 grid grid-cols-[1fr_1.4fr_1fr] divide-x divide-[var(--border)]/60">
         <ScenesPanel
@@ -279,6 +311,73 @@ export function SwitcherView() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function OutputBar({
+  state,
+  rtmpUrl,
+  onRtmpUrl,
+  onToggleRecording,
+  onToggleStreaming,
+}: {
+  state: OutputState;
+  rtmpUrl: string;
+  onRtmpUrl: (v: string) => void;
+  onToggleRecording: () => void;
+  onToggleStreaming: () => void;
+}) {
+  const recName = state.recPath ? state.recPath.replace(/^.*[\\/]/, '') : null;
+  return (
+    <div className="shrink-0 flex items-center gap-3 px-6 h-14 border-t border-[var(--border)]/60">
+      <button
+        type="button"
+        onClick={onToggleRecording}
+        className={cn(
+          'h-9 px-3.5 rounded-[var(--radius)] text-sm font-extrabold uppercase tracking-wide inline-flex items-center gap-2 transition-colors border-2',
+          state.recording
+            ? 'bg-[var(--destructive)] text-[var(--destructive-foreground)] border-[var(--destructive)]'
+            : 'border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)]',
+        )}
+      >
+        <span className={cn('size-2.5 rounded-full', state.recording ? 'bg-white animate-pulse' : 'bg-[var(--destructive)]')} />
+        {state.recording ? 'Aufnahme stoppen' : 'Aufnehmen'}
+      </button>
+
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <button
+          type="button"
+          onClick={onToggleStreaming}
+          disabled={!state.streaming && !rtmpUrl.trim()}
+          className={cn(
+            'h-9 px-3.5 rounded-[var(--radius)] text-sm font-extrabold uppercase tracking-wide inline-flex items-center gap-2 transition-colors border-2 shrink-0',
+            state.streaming
+              ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+              : 'border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)] disabled:opacity-40 disabled:cursor-not-allowed',
+          )}
+        >
+          <span className={cn('size-2.5 rounded-full', state.streaming ? 'bg-white animate-pulse' : 'bg-[var(--primary)]')} />
+          {state.streaming ? 'Stream stoppen' : 'Stream starten'}
+        </button>
+        <input
+          type="text"
+          value={rtmpUrl}
+          disabled={state.streaming}
+          onChange={(e) => onRtmpUrl(e.target.value)}
+          placeholder="rtmp://server/app/streamkey"
+          className="h-9 flex-1 min-w-0 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-[var(--foreground)] disabled:opacity-60"
+        />
+      </div>
+
+      <div className="shrink-0 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide">
+        {state.recording && (
+          <span className="text-[var(--destructive)] truncate max-w-[220px]" title={state.recPath ?? ''}>
+            ● REC {recName}
+          </span>
+        )}
+        {state.streaming && <span className="text-[var(--primary)]">● LIVE</span>}
+      </div>
     </div>
   );
 }

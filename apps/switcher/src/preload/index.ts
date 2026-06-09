@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { JmswitchApi, NdiStatus, ScreenSourceInfo } from '@shared/types';
+import type {
+  JmswitchApi,
+  NdiStatus,
+  OutputError,
+  OutputStatus,
+  ScreenSourceInfo,
+} from '@shared/types';
 
 // Den vom Main übertragenen NDI-Frame-MessagePort in den Renderer-Main-World
 // durchreichen — contextBridge kann MessagePorts nicht direkt übergeben, daher
@@ -21,6 +27,26 @@ const api: JmswitchApi = {
       const listener = (_event: unknown, s: NdiStatus) => cb(s);
       ipcRenderer.on('ndi:status', listener);
       return () => ipcRenderer.off('ndi:status', listener);
+    },
+  },
+  output: {
+    recStart: () =>
+      ipcRenderer.invoke('output:recStart') as Promise<{ ok: boolean; path?: string; error?: string }>,
+    recChunk: (chunk) => ipcRenderer.send('output:recChunk', chunk),
+    recStop: () => ipcRenderer.send('output:recStop'),
+    streamStart: (url) =>
+      ipcRenderer.invoke('output:streamStart', { url }) as Promise<{ ok: boolean; error?: string }>,
+    streamChunk: (chunk) => ipcRenderer.send('output:streamChunk', chunk),
+    streamStop: () => ipcRenderer.send('output:streamStop'),
+    onStatus: (cb) => {
+      const listener = (_event: unknown, s: OutputStatus) => cb(s);
+      ipcRenderer.on('output:status', listener);
+      return () => ipcRenderer.off('output:status', listener);
+    },
+    onError: (cb) => {
+      const listener = (_event: unknown, e: OutputError) => cb(e);
+      ipcRenderer.on('output:error', listener);
+      return () => ipcRenderer.off('output:error', listener);
     },
   },
 };

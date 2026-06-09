@@ -27,7 +27,12 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   Devices`) und öffnet sie via `getUserMedia` → gleicher Canvas-Pfad wie der
   Bildschirm. Deckt USB-Capture-Karten (Elgato, Magewell, Grabber) ab, Win **und**
   Mac, ohne nativen Prozess. ffmpeg-`dshow` für reine SDI-Karten ohne UVC = v0.2.
-- **Slice 5:** **Aufnahme** (ffmpeg) + **RTMP**-Ausgabe des Program-Outputs.
+- **Slice 5 (Aufnahme + RTMP):** Der Program-Canvas wird per `captureStream` +
+  **MediaRecorder** (WebM) kodiert. **Aufnahme** schreibt die WebM-Chunks direkt
+  in eine Datei (Speicherdialog, `.webm`; → JM Media Converter für MP4). **Stream**
+  pipet dieselben Chunks in **ffmpeg** (`@jm/media`) → H.264 + stille AAC-Spur
+  (`anullsrc`, damit YouTube/Twitch die FLV akzeptieren) → **RTMP**. Pro Output ein
+  eigener MediaRecorder (sauberer WebM-Header je Sink). Audio-Mix → v0.2.
 - **Slice 6:** **TCP-Steuerserver** + **@jm/companion-protocol** + Bitfocus-
   **Companion-Modul** (`packages/companion-jm-switcher`): PREVIEW/PROGRAM/CUT/
   AUTO/RECORD/STREAM + State-Feedback.
@@ -56,3 +61,9 @@ npm run rebuild:native -w @jm/switcher     # Addon für die Electron-ABI bauen
 `npm run dist:win` stuft via `bundle-ndi` Addon + Runtime-DLL nach
 `resources/bin/win` — der Zielrechner braucht dann kein NDI-SDK. Ohne gebautes
 Addon startet die App normal; nur „+ NDI" liefert dann keine Quellen.
+
+### ffmpeg (RTMP-Stream)
+Die **Aufnahme** braucht kein ffmpeg (WebM direkt). Der **RTMP-Stream** nutzt
+ffmpeg aus `@jm/media`: `npm run dist*` bündelt es via `bundle-ffmpeg` nach
+`resources/bin`. Im Dev wird ffmpeg vom PATH genutzt (sonst `npm run prepackage
+-w @jm/switcher` einmal ausführen, dann liegt es in `resources/bin`).

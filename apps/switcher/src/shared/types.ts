@@ -41,6 +41,37 @@ export interface JmswitchNdiApi {
   onStatus: (cb: (s: NdiStatus) => void) => () => void;
 }
 
+/** Aufnahme-/Stream-Status des Program-Outputs (Slice 5). */
+export interface OutputStatus {
+  recording: boolean;
+  streaming: boolean;
+  recPath: string | null;
+}
+
+/** Fehler aus dem Output-Pfad (Datei-Schreibfehler, ffmpeg-Exit …). */
+export interface OutputError {
+  scope: 'record' | 'stream';
+  message: string;
+}
+
+/** Aufnahme (WebM-Datei) + RTMP-Stream (ffmpeg) des Program-Outputs. */
+export interface JmswitchOutputApi {
+  /** Speicherort wählen + Datei öffnen. */
+  recStart: () => Promise<{ ok: boolean; path?: string; error?: string }>;
+  /** WebM-Chunk in die Aufnahmedatei schreiben. */
+  recChunk: (chunk: Uint8Array) => void;
+  /** Aufnahme abschließen. */
+  recStop: () => void;
+  /** ffmpeg → RTMP starten. */
+  streamStart: (url: string) => Promise<{ ok: boolean; error?: string }>;
+  /** WebM-Chunk in ffmpegs stdin schreiben. */
+  streamChunk: (chunk: Uint8Array) => void;
+  /** Stream beenden (ffmpeg stdin schließen). */
+  streamStop: () => void;
+  onStatus: (cb: (s: OutputStatus) => void) => () => void;
+  onError: (cb: (e: OutputError) => void) => () => void;
+}
+
 /** Shape, die der Preload auf `window.jmswitch` legt. */
 export interface JmswitchApi {
   platform: NodeJS.Platform;
@@ -50,4 +81,6 @@ export interface JmswitchApi {
   armCapture: (sourceId: string) => Promise<void>;
   /** NDI-Empfang (Slice 3). */
   ndi: JmswitchNdiApi;
+  /** Aufnahme + RTMP des Program-Outputs (Slice 5). */
+  output: JmswitchOutputApi;
 }

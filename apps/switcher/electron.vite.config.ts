@@ -5,9 +5,13 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
+// @jm/media als Quelle bündeln (kein Laufzeit-require); @jm/ndi bleibt EXTERN
+// (natives Addon, zur Laufzeit geladen).
+const internalPackages = ['@jm/media'];
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: internalPackages })],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {
@@ -25,7 +29,7 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: internalPackages })],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {

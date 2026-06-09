@@ -3,6 +3,7 @@ import path, { join } from 'node:path';
 import { registerIpc } from './ipc';
 import { installDisplayMediaHandler } from './capture-handler';
 import { attachNdiWindow, stopNdi } from './ndi-receive';
+import { attachOutputWindow, stopOutput } from './output';
 
 declare const __dirname: string;
 
@@ -60,11 +61,13 @@ function createMainWindow(): BrowserWindow {
 
   win.on('closed', () => {
     stopNdi();
+    stopOutput();
     mainWindow = null;
   });
 
   loadMain(win);
   attachNdiWindow(win);
+  attachOutputWindow(win);
   mainWindow = win;
   return win;
 }

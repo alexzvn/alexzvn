@@ -16,7 +16,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "rebuild:native": "electron-rebuild --only @jm/ndi",
-    "prepackage": "node tools/bundle-ndi.mjs",
+    "prepackage": "node tools/bundle-ndi.mjs && node tools/bundle-ffmpeg.mjs",
     "dist": "electron-vite build && npm run prepackage && electron-builder",
     "dist:dir": "electron-vite build && electron-builder --dir",
     "dist:win": "electron-vite build && npm run prepackage && electron-builder --win",
@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/media": "*",
     "@jm/ndi": "*",
     "@jm/ui": "*",
     "react": "^18.3.1",
