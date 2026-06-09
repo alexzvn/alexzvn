@@ -13,10 +13,13 @@ export interface SettingsState {
   controlEnabled: boolean;
   /** Port des Steuerservers. */
   controlPort: number;
+  /** Programm-Audioquelle (deviceId aus enumerateDevices) — '' = kein Ton. */
+  audioInputId: string;
   setRtmpUrl: (v: string) => void;
   setStreamBitrateKbps: (v: number) => void;
   setControlEnabled: (v: boolean) => void;
   setControlPort: (v: number) => void;
+  setAudioInputId: (v: string) => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -26,12 +29,14 @@ export const useSettings = create<SettingsState>()(
       streamBitrateKbps: 4500,
       controlEnabled: false,
       controlPort: DEFAULT_CONTROL_PORT,
+      audioInputId: '',
       setRtmpUrl: (rtmpUrl) => set({ rtmpUrl }),
       setStreamBitrateKbps: (streamBitrateKbps) =>
         set({ streamBitrateKbps: Math.min(20000, Math.max(500, Math.round(streamBitrateKbps) || 0)) }),
       setControlEnabled: (controlEnabled) => set({ controlEnabled }),
       setControlPort: (controlPort) =>
         set({ controlPort: Math.min(65535, Math.max(1, Math.round(controlPort) || DEFAULT_CONTROL_PORT)) }),
+      setAudioInputId: (audioInputId) => set({ audioInputId }),
     }),
     { name: 'jmswitch-settings' },
   ),

@@ -8,16 +8,26 @@ export function SettingsView() {
     streamBitrateKbps,
     controlEnabled,
     controlPort,
+    audioInputId,
     setRtmpUrl,
     setStreamBitrateKbps,
     setControlEnabled,
     setControlPort,
+    setAudioInputId,
   } = useSettings();
 
   const [ctrl, setCtrl] = useState<ControlStatus>({ running: false, port: controlPort, clients: 0 });
   useEffect(() => {
     void window.jmswitch.control.getStatus().then(setCtrl);
     return window.jmswitch.control.onStatus(setCtrl);
+  }, []);
+
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const scanAudio = (): void => {
+    void listAudioInputs().then(setAudioDevices).catch(() => setAudioDevices([]));
+  };
+  useEffect(() => {
+    scanAudio();
   }, []);
 
   return (
@@ -78,6 +88,41 @@ export function SettingsView() {
         <section className="rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-5">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-[11px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
+              Programm-Audio
+            </h2>
+            <button
+              type="button"
+              onClick={scanAudio}
+              className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] hover:text-[var(--primary)]"
+            >
+              Geräte aktualisieren
+            </button>
+          </div>
+
+          <label className="flex flex-col gap-1.5 max-w-md">
+            <span className="text-sm font-bold">Audioquelle</span>
+            <select
+              value={audioInputId}
+              onChange={(e) => setAudioInputId(e.target.value)}
+              className="h-10 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-[var(--foreground)]"
+            >
+              <option value="">— Kein Ton (stille Spur) —</option>
+              {audioDevices.map((d, i) => (
+                <option key={d.deviceId || i} value={d.deviceId}>
+                  {d.label || `Audiogerät ${i + 1}`}
+                </option>
+              ))}
+            </select>
+            <span className="text-[11px] text-[var(--muted-foreground)]">
+              Mikro / Line-In / Capture-Ton. Wird in Aufnahme + Stream gemischt; Pegel &amp; Mute in der
+              Mischer-Leiste. Audio folgt (noch) nicht der Bildquelle — feste Programm-Audioquelle.
+            </span>
+          </label>
+        </section>
+
+        <section className="rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-5">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-[11px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
               Fernsteuerung (Bitfocus Companion)
             </h2>
             <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide">
@@ -131,4 +176,20 @@ export function SettingsView() {
       </div>
     </div>
   );
+}
+
+/** Audio-Eingänge auflisten; bei leeren Labels kurz Permission anfordern. */
+async function listAudioInputs(): Promise<MediaDeviceInfo[]> {
+  let devices = await navigator.mediaDevices.enumerateDevices();
+  const inputs = (): MediaDeviceInfo[] => devices.filter((d) => d.kind === 'audioinput');
+  if (inputs().length === 0 || inputs().every((d) => !d.label)) {
+    let probe: MediaStream | null = null;
+    try {
+      probe = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      devices = await navigator.mediaDevices.enumerateDevices();
+    } finally {
+      probe?.getTracks().forEach((t) => t.stop());
+    }
+  }
+  return inputs();
 }

@@ -10,6 +10,7 @@ import {
   type SourceInfo,
 } from '@/core/engine';
 import { OutputController, type OutputState } from '@/core/output';
+import { AudioController, type AudioState } from '@/core/audio';
 import { useSettings } from '@/store/settings';
 
 const PALETTE = ['#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#0891b2', '#ca8a04'];
@@ -41,14 +42,23 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
   const programRef = useRef<HTMLCanvasElement>(null);
   const ndiSourceIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<AudioController | null>(null);
+  if (!audioRef.current) audioRef.current = new AudioController();
+  const audio = audioRef.current;
   const outputRef = useRef<OutputController | null>(null);
-  if (!outputRef.current) outputRef.current = new OutputController(() => programRef.current);
+  if (!outputRef.current) {
+    outputRef.current = new OutputController(
+      () => programRef.current,
+      () => audio.getOutputTrack(),
+    );
+  }
   const output = outputRef.current;
   const [outputState, setOutputState] = useState<OutputState>(() => output.getState());
   const rtmpUrl = useSettings((s) => s.rtmpUrl);
   const streamBitrateKbps = useSettings((s) => s.streamBitrateKbps);
   const controlEnabled = useSettings((s) => s.controlEnabled);
   const controlPort = useSettings((s) => s.controlPort);
+  const audioInputId = useSettings((s) => s.audioInputId);
   const firstControlRun = useRef(true);
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
@@ -69,9 +79,15 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
       unsub();
       unsubOut();
       output.destroy();
+      audio.destroy();
       engine.destroy();
     };
-  }, [engine, output]);
+  }, [engine, output, audio]);
+
+  // Programm-Audioquelle gemäß Einstellungen setzen.
+  useEffect(() => {
+    void audio.setDevice(audioInputId);
+  }, [audio, audioInputId]);
 
   // NDI: Status + Frame-MessagePort (vom Main über die Preload-Bridge).
   useEffect(() => {
@@ -319,6 +335,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
       <OutputBar
         state={outputState}
         rtmpUrl={rtmpUrl}
+        audio={audio}
         onOpenSettings={onOpenSettings}
         onToggleRecording={toggleRecording}
         onToggleStreaming={toggleStreaming}
@@ -388,12 +405,14 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
 function OutputBar({
   state,
   rtmpUrl,
+  audio,
   onOpenSettings,
   onToggleRecording,
   onToggleStreaming,
 }: {
   state: OutputState;
   rtmpUrl: string;
+  audio: AudioController;
   onOpenSettings: () => void;
   onToggleRecording: () => void;
   onToggleStreaming: () => void;
@@ -432,6 +451,8 @@ function OutputBar({
         {state.streaming ? 'Stream stoppen' : 'Stream starten'}
       </button>
 
+      <AudioStrip controller={audio} onOpenSettings={onOpenSettings} />
+
       <div className="flex-1 min-w-0 text-xs">
         {hasTarget ? (
           <span className="text-[var(--muted-foreground)] truncate block" title={rtmpUrl}>
@@ -457,6 +478,85 @@ function OutputBar({
         {state.streaming && <span className="text-[var(--primary)]">● LIVE</span>}
       </div>
     </div>
+  );
+}
+
+function meterColor(level: number): string {
+  if (level >= 0.85) return 'var(--destructive)';
+  if (level >= 0.6) return 'var(--warning)';
+  return 'var(--success)';
+}
+
+function AudioStrip({
+  controller,
+  onOpenSettings,
+}: {
+  controller: AudioController;
+  onOpenSettings: () => void;
+}) {
+  const [s, setS] = useState<AudioState>(() => controller.getState());
+  useEffect(() => controller.subscribe(() => setS(controller.getState())), [controller]);
+
+  const shown = Math.min(1, s.level * 2.5); // RMS perzeptiv skalieren
+  const pct = Math.round(shown * 100);
+
+  if (!s.hasDevice) {
+    return (
+      <button
+        type="button"
+        onClick={onOpenSettings}
+        title="Programm-Audioquelle in den Einstellungen wählen"
+        className="shrink-0 flex items-center gap-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--primary)]"
+      >
+        <SpeakerIcon muted />
+        <span className="hidden md:inline underline underline-offset-2">Ton wählen</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="shrink-0 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => controller.setMuted(!s.muted)}
+        title={s.muted ? 'Stummschaltung aufheben' : 'Stummschalten'}
+        className={cn('shrink-0', s.muted ? 'text-[var(--destructive)]' : 'text-[var(--foreground)]')}
+      >
+        <SpeakerIcon muted={s.muted} />
+      </button>
+      <div className="w-24 h-2 rounded-full bg-[var(--input)] overflow-hidden">
+        <div
+          className="h-full rounded-full transition-[width] duration-75"
+          style={{ width: `${s.muted ? 0 : pct}%`, background: meterColor(shown) }}
+        />
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={1.5}
+        step={0.01}
+        value={s.gain}
+        onChange={(e) => controller.setGain(Number(e.target.value))}
+        title="Pegel"
+        className="w-20 accent-[var(--primary)]"
+      />
+    </div>
+  );
+}
+
+function SpeakerIcon({ muted }: { muted?: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      {muted ? (
+        <path d="M23 9l-6 6M17 9l6 6" />
+      ) : (
+        <>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+        </>
+      )}
+    </svg>
   );
 }
 

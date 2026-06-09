@@ -28,7 +28,8 @@ function pickMimeType(): string {
 
 export class OutputController {
   private getCanvas: () => HTMLCanvasElement | null;
-  private stream: MediaStream | null = null;
+  private getAudioTrack: () => MediaStreamTrack | null;
+  private canvasStream: MediaStream | null = null;
   private recRecorder: MediaRecorder | null = null;
   private streamRecorder: MediaRecorder | null = null;
   private state: OutputState = { recording: false, streaming: false, recPath: null, error: null };
@@ -36,8 +37,12 @@ export class OutputController {
   private offError: (() => void) | null = null;
   private offStatus: (() => void) | null = null;
 
-  constructor(getCanvas: () => HTMLCanvasElement | null) {
+  constructor(
+    getCanvas: () => HTMLCanvasElement | null,
+    getAudioTrack: () => MediaStreamTrack | null = () => null,
+  ) {
     this.getCanvas = getCanvas;
+    this.getAudioTrack = getAudioTrack;
     this.offError = window.jmswitch.output.onError((err) => {
       this.teardown(err.scope === 'record' ? 'rec' : 'stream');
       this.patch({ error: err.message });
@@ -68,12 +73,21 @@ export class OutputController {
     this.notify();
   }
 
-  private ensureStream(): MediaStream | null {
-    if (this.stream) return this.stream;
+  private ensureCanvasStream(): MediaStream | null {
+    if (this.canvasStream) return this.canvasStream;
     const c = this.getCanvas();
     if (!c) return null;
-    this.stream = c.captureStream(30);
-    return this.stream;
+    this.canvasStream = c.captureStream(30);
+    return this.canvasStream;
+  }
+
+  /** Frischen Output-Stream bauen: Program-Video + aktueller Audio-Track (falls). */
+  private buildOutputStream(): MediaStream | null {
+    const cv = this.ensureCanvasStream();
+    const video = cv?.getVideoTracks()[0];
+    if (!video) return null;
+    const audio = this.getAudioTrack();
+    return new MediaStream(audio ? [video, audio] : [video]);
   }
 
   /** Aufnahme mit Speicherdialog (UI-Button). */
@@ -90,7 +104,7 @@ export class OutputController {
     open: () => Promise<{ ok: boolean; path?: string; error?: string }>,
   ): Promise<void> {
     if (this.recRecorder) return;
-    const stream = this.ensureStream();
+    const stream = this.buildOutputStream();
     if (!stream) {
       this.patch({ error: 'Kein Program-Bild zum Aufnehmen.' });
       return;
@@ -118,12 +132,13 @@ export class OutputController {
 
   async startStreaming(url: string, bitrateKbps?: number): Promise<void> {
     if (this.streamRecorder) return;
-    const stream = this.ensureStream();
+    const stream = this.buildOutputStream();
     if (!stream) {
       this.patch({ error: 'Kein Program-Bild zum Streamen.' });
       return;
     }
-    const res = await window.jmswitch.output.streamStart(url, bitrateKbps);
+    const hasAudio = stream.getAudioTracks().length > 0;
+    const res = await window.jmswitch.output.streamStart(url, bitrateKbps, hasAudio);
     if (!res.ok) {
       this.patch({ error: res.error ?? 'Stream-Start fehlgeschlagen.' });
       return;
@@ -174,8 +189,8 @@ export class OutputController {
     this.teardown('stream');
     this.offError?.();
     this.offStatus?.();
-    this.stream?.getTracks().forEach((t) => t.stop());
-    this.stream = null;
+    this.canvasStream?.getTracks().forEach((t) => t.stop());
+    this.canvasStream = null;
     this.listeners.clear();
   }
 }

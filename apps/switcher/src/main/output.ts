@@ -105,13 +105,21 @@ export function registerOutputIpc(): void {
   ipcMain.on('output:recStop', () => closeRecording());
 
   // ---- Stream ----
-  ipcMain.handle('output:streamStart', (_e, opts: { url?: string; videoBitrateKbps?: number }) => {
+  ipcMain.handle(
+    'output:streamStart',
+    (_e, opts: { url?: string; videoBitrateKbps?: number; hasAudio?: boolean }) => {
     const url = (opts?.url ?? '').trim();
     if (!url) return { ok: false, error: 'Keine RTMP-URL angegeben' };
     if (streaming) return { ok: true };
 
     const vbr = Math.min(20000, Math.max(500, Math.round(opts?.videoBitrateKbps ?? 0) || 4500));
     streamAbort = new AbortController();
+    // Mit echter Tonspur (audio im WebM): 0:v + 0:a mappen. Ohne: stille
+    // anullsrc-Spur (an Echtzeit gekoppelt), damit YouTube/Twitch die FLV nehmen.
+    const audioInput = opts?.hasAudio
+      ? []
+      : ['-re', '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100'];
+    const audioMap = opts?.hasAudio ? ['-map', '0:a:0'] : ['-map', '1:a:0'];
     const args = [
       '-hide_banner',
       '-loglevel',
@@ -121,16 +129,10 @@ export function registerOutputIpc(): void {
       'webm',
       '-i',
       'pipe:0',
-      // Stille Stereo-Tonspur, an Echtzeit gekoppelt (-re), bis Audio-Mix kommt.
-      '-re',
-      '-f',
-      'lavfi',
-      '-i',
-      'anullsrc=channel_layout=stereo:sample_rate=44100',
+      ...audioInput,
       '-map',
       '0:v:0',
-      '-map',
-      '1:a:0',
+      ...audioMap,
       '-c:v',
       'libx264',
       '-preset',

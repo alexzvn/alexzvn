@@ -32,9 +32,14 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   in eine Datei (Speicherdialog, `.webm`; → JM Media Converter für MP4). **Stream**
   pipet dieselben Chunks in **ffmpeg** (`@jm/media`) → H.264 + stille AAC-Spur
   (`anullsrc`, damit YouTube/Twitch die FLV akzeptieren) → **RTMP**. Pro Output ein
-  eigener MediaRecorder (sauberer WebM-Header je Sink). Audio-Mix → v0.2.
+  eigener MediaRecorder (sauberer WebM-Header je Sink).
   **RTMP-Ziel + Bitrate** liegen im **Einstellungen-Tab** (persistiert); der
   Stream-Start-Button bleibt in der Mischer-Ansicht.
+- **v0.2 — Programm-Audio:** Eine **Audioquelle** (Mikro/Line-In/Capture-Ton, Wahl
+  im Einstellungen-Tab) läuft durch WebAudio (Gain/Mute + Pegelmeter in der
+  Mischer-Leiste) und wird als echte Tonspur in **Aufnahme + RTMP** gemischt
+  (ffmpeg mappt dann `0:a` statt der stillen `anullsrc`). Audio-follows-Video /
+  NDI-Audio-Mix = v0.3.
 - **Slice 6 (Fernsteuerung):** **TCP-Steuerserver** (Zeilenprotokoll
   [@jm/companion-protocol](../../packages/companion-protocol)) +
   **Bitfocus-Companion-Modul** ([packages/companion-jm-switcher](../../packages/companion-jm-switcher)).
