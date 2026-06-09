@@ -56,6 +56,18 @@ export interface PreviewResult {
   segmentSec: number;
 }
 
+/** Schneller Einzelbild-Abgriff (kein Encode) — für flüssiges Trim-Scrubbing. */
+export interface FrameRequest {
+  inputPath: string;
+  atSec: number;
+  /** Zielhöhe in px (optional) — sonst Originalauflösung (auf Anzeigebreite gekappt). */
+  scaleHeight?: number | null;
+}
+
+export interface FrameResult {
+  dataUrl: string;
+}
+
 export interface OfficeConvertSpec {
   jobId: string;
   inputPath: string;
@@ -94,6 +106,7 @@ export interface JmcApi {
   media: {
     probe: (path: string) => Promise<MediaInfo>;
     previewFrame: (req: PreviewRequest) => Promise<PreviewResult>;
+    frame: (req: FrameRequest) => Promise<FrameResult>;
   };
   encoders: {
     get: () => Promise<EncoderSupport>;

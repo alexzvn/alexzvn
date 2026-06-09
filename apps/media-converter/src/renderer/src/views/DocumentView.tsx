@@ -3,16 +3,13 @@ import type { OfficeConvertSpec } from '@shared/types';
 import { Button } from '@jm/ui';
 import { Card } from '@jm/ui';
 import { DropZone } from '@/components/DropZone';
-import { JobCard } from '@/components/JobCard';
 import { useJobs } from '@/store/jobs';
 import { basename } from '@/lib/format';
 
 const LIBREOFFICE_URL = 'https://www.libreoffice.org/download/download-libreoffice/';
 
 export function DocumentView() {
-  const jobs = useJobs((s) => s.jobs).filter((j) => j.kind === 'office');
   const addJob = useJobs((s) => s.add);
-  const clearFinished = useJobs((s) => s.clearFinished);
 
   const [staged, setStaged] = useState<string[]>([]);
   const [outputDir, setOutputDir] = useState<string | null>(null);
@@ -118,26 +115,6 @@ export function DocumentView() {
           <p className="mt-3 text-[11px] text-[var(--muted-foreground)]">LibreOffice erkannt: {soffice}</p>
         )}
       </Card>
-
-      {jobs.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-              Aufträge
-            </h2>
-            <button
-              type="button"
-              onClick={clearFinished}
-              className="text-[11px] uppercase tracking-wide font-extrabold text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-            >
-              Erledigte entfernen
-            </button>
-          </div>
-          {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

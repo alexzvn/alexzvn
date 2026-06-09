@@ -1,6 +1,6 @@
 {
   "name": "@jm/media-converter",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "description": "Jakobs Medien Media Converter — lokales Tool für Video-Codec-Konvertierung und Office→PDF",
   "author": "Jakobs Medien GmbH",

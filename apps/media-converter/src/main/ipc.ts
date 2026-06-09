@@ -1,11 +1,12 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import type {
+  FrameRequest,
   OfficeConvertSpec,
   PreviewRequest,
   VideoConvertSpec,
 } from '@shared/types';
 import { detectEncoders, probeMedia } from '@jm/media';
-import { previewFrame } from './ffmpeg/preview';
+import { grabFrame, previewFrame } from './ffmpeg/preview';
 import { cancelVideo, enqueueVideo, setVideoEmitter } from './ffmpeg/convert';
 import { enqueueOffice, setOfficeEmitter } from './office/convert';
 import { locateSoffice } from './office/locate';
@@ -64,6 +65,8 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('media:probe', (_event, filePath: string) => probeMedia(filePath));
 
   ipcMain.handle('media:previewFrame', (_event, req: PreviewRequest) => previewFrame(req));
+
+  ipcMain.handle('media:frame', (_event, req: FrameRequest) => grabFrame(req));
 
   ipcMain.handle('encoders:get', () => detectEncoders());
 

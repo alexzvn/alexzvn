@@ -14,7 +14,6 @@ import { Button } from '@jm/ui';
 import { Card } from '@jm/ui';
 import { DropZone } from '@/components/DropZone';
 import { Select } from '@/components/Select';
-import { JobCard } from '@/components/JobCard';
 import { PreviewModal } from '@/components/PreviewModal';
 import { useJobs } from '@/store/jobs';
 import { basename, formatBytes, formatDuration, parseDuration } from '@/lib/format';
@@ -47,23 +46,30 @@ const HW_LABEL: Record<string, string> = {
   vaapi: 'VAAPI',
 };
 
-const RATE_OPTIONS: { label: string; value: RateControl }[] = [
+// UI-Modus der Ratensteuerung. 'targetsize' ist rein in der UI — beim Konvertieren
+// wird daraus eine VBR-Bitrate berechnet (siehe effectiveRate).
+type RateMode = RateControl | 'targetsize';
+
+const RATE_OPTIONS: { label: string; value: RateMode }[] = [
   { label: 'Qualität (CRF)', value: 'quality' },
   { label: 'VBR (Ziel-Bitrate)', value: 'vbr' },
   { label: 'CBR (konstant)', value: 'cbr' },
+  { label: 'Zielgröße (MB/GB)', value: 'targetsize' },
 ];
 
+type SizeUnit = 'MB' | 'GB';
+
 export function VideoView() {
-  const jobs = useJobs((s) => s.jobs).filter((j) => j.kind === 'video');
   const addJob = useJobs((s) => s.add);
-  const clearFinished = useJobs((s) => s.clearFinished);
 
   const [staged, setStaged] = useState<Staged[]>([]);
   const [presetId, setPresetId] = useState(VIDEO_PRESETS[0].id);
   const [scaleHeight, setScaleHeight] = useState<number | null>(null);
-  const [rateControl, setRateControl] = useState<RateControl>('quality');
+  const [rateMode, setRateMode] = useState<RateMode>('quality');
   const [quality, setQuality] = useState<number>(VIDEO_PRESETS[0].defaultQuality ?? 20);
   const [bitrateKbps, setBitrateKbps] = useState<number>(defaultBitrateKbps(null));
+  const [targetSizeValue, setTargetSizeValue] = useState<number>(500);
+  const [targetSizeUnit, setTargetSizeUnit] = useState<SizeUnit>('MB');
   const [audioCodec, setAudioCodec] = useState('aac');
   const [audioBitrateKbps, setAudioBitrateKbps] = useState(192);
   const [useHardware, setUseHardware] = useState(false);
@@ -136,9 +142,35 @@ export function VideoView() {
     if (dir) setOutputDir(dir);
   }
 
+  // Übersetzt den UI-Rate-Modus in konkrete Encoder-Parameter. Bei „Zielgröße"
+  // wird aus Zielgröße + (beschnittener) Dauer − Audio-Reserve eine VBR-Bitrate
+  // berechnet (Single-Pass, daher näherungsweise).
+  function effectiveRate(outDurSec: number): {
+    rateControl: RateControl;
+    quality: number | null;
+    bitrateKbps: number | null;
+  } {
+    if (!rateControllable) return { rateControl: 'quality', quality: null, bitrateKbps: null };
+    if (rateMode === 'quality') return { rateControl: 'quality', quality, bitrateKbps: null };
+    if (rateMode === 'vbr' || rateMode === 'cbr') {
+      return { rateControl: rateMode, quality: null, bitrateKbps };
+    }
+    // targetsize
+    const unitBytes = targetSizeUnit === 'GB' ? 1024 ** 3 : 1024 ** 2;
+    const targetBytes = Math.max(0, targetSizeValue) * unitBytes;
+    const audioKbps =
+      audioCodec === 'none' ? 0 : usesAudioBitrate(audioCodec) ? audioBitrateKbps || 192 : 256;
+    const videoKbps =
+      outDurSec > 0
+        ? Math.max(100, Math.round((targetBytes * 8 * 0.98) / outDurSec / 1000 - audioKbps))
+        : 1000;
+    return { rateControl: 'vbr', quality: null, bitrateKbps: videoKbps };
+  }
+
   function specFor(s: Staged, jobId: string): VideoConvertSpec {
     const dur = s.info?.durationSec ?? 0;
     const { start, end } = trimOf(s);
+    const eff = effectiveRate(end - start);
     return {
       jobId,
       inputPath: s.path,
@@ -146,9 +178,9 @@ export function VideoView() {
       outputName: s.name,
       presetId,
       scaleHeight,
-      rateControl: rateControllable ? rateControl : 'quality',
-      quality: rateControllable && rateControl === 'quality' ? quality : null,
-      bitrateKbps: rateControllable && rateControl !== 'quality' ? bitrateKbps : null,
+      rateControl: eff.rateControl,
+      quality: eff.quality,
+      bitrateKbps: eff.bitrateKbps,
       audioCodec,
       audioBitrateKbps: usesAudioBitrate(audioCodec) ? audioBitrateKbps : null,
       trimStartSec: start > 0 ? start : undefined,
@@ -311,11 +343,11 @@ export function VideoView() {
             <>
               <Select
                 label="Ratensteuerung"
-                value={rateControl}
-                onChange={(e) => setRateControl(e.target.value as RateControl)}
+                value={rateMode}
+                onChange={(e) => setRateMode(e.target.value as RateMode)}
                 options={RATE_OPTIONS}
               />
-              {rateControl === 'quality' ? (
+              {rateMode === 'quality' ? (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-[var(--muted-foreground)]">
                     Qualität (CRF {quality}) · niedriger = besser
@@ -329,6 +361,30 @@ export function VideoView() {
                     onChange={(e) => setQuality(Number(e.target.value))}
                     className="h-10 accent-[var(--primary)]"
                   />
+                </div>
+              ) : rateMode === 'targetsize' ? (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] uppercase tracking-[0.12em] font-semibold text-[var(--muted-foreground)]">
+                    Zielgröße (pro Datei)
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      step={10}
+                      value={targetSizeValue.toString()}
+                      onChange={(e) => setTargetSizeValue(Math.max(1, Math.round(Number(e.target.value))))}
+                      className="h-10 flex-1 px-3 rounded-[var(--radius)] bg-[var(--input)] border border-[var(--border)] text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+                    />
+                    <select
+                      value={targetSizeUnit}
+                      onChange={(e) => setTargetSizeUnit(e.target.value as SizeUnit)}
+                      className="h-10 px-2 rounded-[var(--radius)] bg-[var(--input)] border border-[var(--border)] text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+                    >
+                      <option value="MB">MB</option>
+                      <option value="GB">GB</option>
+                    </select>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-1.5">
@@ -344,6 +400,12 @@ export function VideoView() {
                     className="h-10 px-3 rounded-[var(--radius)] bg-[var(--input)] border border-[var(--border)] text-sm focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
                   />
                 </div>
+              )}
+              {rateMode === 'targetsize' && (
+                <p className="md:col-span-2 -mt-2 text-[11px] text-[var(--muted-foreground)]">
+                  Die Bitrate wird aus Zielgröße und Cliplänge berechnet (Single-Pass, näherungsweise).
+                  Die „Vorschau" zeigt eine Größenschätzung.
+                </p>
               )}
             </>
           ) : (
@@ -411,42 +473,38 @@ export function VideoView() {
         </div>
       </Card>
 
-      {jobs.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-              Aufträge
-            </h2>
-            <button
-              type="button"
-              onClick={clearFinished}
-              className="text-[11px] uppercase tracking-wide font-extrabold text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-            >
-              Erledigte entfernen
-            </button>
-          </div>
-          {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
-      )}
-
-      {previewFile && previewFile.info && (
-        <PreviewModal
-          fileName={`${previewFile.name}.${preset.container}`}
-          baseReq={{
-            inputPath: previewFile.path,
-            durationSec: previewFile.info.durationSec,
-            presetId,
-            scaleHeight,
-            rateControl: rateControllable ? rateControl : 'quality',
-            quality: rateControllable && rateControl === 'quality' ? quality : null,
-            bitrateKbps: rateControllable && rateControl !== 'quality' ? bitrateKbps : null,
-            useHardware: useHardware && hwAvailable,
-          }}
-          onClose={() => setPreviewFile(null)}
-        />
-      )}
+      {previewFile && previewFile.info && (() => {
+        const t = trimOf(previewFile);
+        const eff = effectiveRate(t.end - t.start);
+        const pid = previewFile.path;
+        return (
+          <PreviewModal
+            fileName={`${previewFile.name}.${preset.container}`}
+            baseReq={{
+              inputPath: previewFile.path,
+              durationSec: previewFile.info.durationSec,
+              presetId,
+              scaleHeight,
+              rateControl: eff.rateControl,
+              quality: eff.quality,
+              bitrateKbps: eff.bitrateKbps,
+              useHardware: useHardware && hwAvailable,
+            }}
+            trimStart={t.start}
+            trimEnd={t.end}
+            onApplyTrim={(start, end) =>
+              setStaged((prev) =>
+                prev.map((x) =>
+                  x.path === pid
+                    ? { ...x, trimStartStr: formatDuration(start), trimEndStr: formatDuration(end) }
+                    : x,
+                ),
+              )
+            }
+            onClose={() => setPreviewFile(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

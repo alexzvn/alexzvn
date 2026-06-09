@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { PreviewRequest, PreviewResult } from '@shared/types';
+import type { FrameRequest, FrameResult, PreviewRequest, PreviewResult } from '@shared/types';
 import { getPreset } from '@shared/presets';
 import { detectEncoders, ffmpegPath } from '@jm/media';
 import { pickEncoder, scaleArgs, videoRateArgs } from './convert';
@@ -16,6 +16,34 @@ const DISPLAY_CAP = 900;
 
 function dataUrl(file: string): string {
   return existsSync(file) ? `data:image/png;base64,${readFileSync(file).toString('base64')}` : '';
+}
+
+/**
+ * Greift EIN Bild an der Position `atSec` ab — ohne Encode, daher schnell genug
+ * fürs Trim-Scrubbing (Issue #9). Skaliert auf die Zielhöhe (falls gesetzt) und
+ * kappt die Anzeigebreite, damit die Data-URL klein bleibt.
+ */
+export async function grabFrame(req: FrameRequest): Promise<FrameResult> {
+  const vf = [
+    ...(req.scaleHeight ? [`scale=-2:${req.scaleHeight}:flags=lanczos`] : []),
+    `scale='min(${DISPLAY_CAP},iw)':-2`,
+  ].join(',');
+  const tmp = mkdtempSync(path.join(tmpdir(), 'jmc-frame-'));
+  const png = path.join(tmp, 'f.png');
+  try {
+    await execFileAsync(
+      ffmpegPath(),
+      ['-y', '-ss', String(Math.max(0, req.atSec)), '-i', req.inputPath, '-frames:v', '1', '-vf', vf, '-loglevel', 'error', png],
+      OPTS,
+    );
+    return { dataUrl: dataUrl(png) };
+  } finally {
+    try {
+      rmSync(tmp, { recursive: true, force: true });
+    } catch {
+      // ignore cleanup failure
+    }
+  }
 }
 
 export async function previewFrame(req: PreviewRequest): Promise<PreviewResult> {

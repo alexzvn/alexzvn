@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
   ConvertProgress,
   ConvertResult,
+  FrameRequest,
   JmcApi,
   JobKind,
   OfficeConvertSpec,
@@ -19,6 +20,7 @@ const api: JmcApi = {
   media: {
     probe: (filePath) => ipcRenderer.invoke('media:probe', filePath),
     previewFrame: (req: PreviewRequest) => ipcRenderer.invoke('media:previewFrame', req),
+    frame: (req: FrameRequest) => ipcRenderer.invoke('media:frame', req),
   },
   encoders: {
     get: () => ipcRenderer.invoke('encoders:get'),
