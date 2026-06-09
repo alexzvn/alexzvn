@@ -53,7 +53,7 @@ button {
 .jm-range {
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
+  height: 8px;
   border-radius: 9999px;
   background: var(--muted);
   cursor: pointer;
@@ -62,8 +62,8 @@ button {
 .jm-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 9999px;
   background: var(--primary);
   border: 2px solid var(--card);

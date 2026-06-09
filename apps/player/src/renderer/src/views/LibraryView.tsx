@@ -508,32 +508,37 @@ function PlayerPanel() {
   };
 
   return (
-    <aside className="w-[400px] shrink-0 flex flex-col bg-[var(--card)]/30">
-      <div className="aspect-video bg-black grid place-items-center overflow-hidden">
+    <aside className="w-[440px] shrink-0 flex flex-col bg-[var(--card)]/30">
+      {/* Medienfläche füllt die verfügbare Höhe */}
+      <div className="flex-1 min-h-0 bg-black grid place-items-center overflow-hidden p-2">
         {!item ? (
-          <span className="text-xs text-[var(--muted-foreground)]">Kein Titel gewählt</span>
+          <span className="text-sm text-[var(--muted-foreground)]">Kein Titel gewählt</span>
         ) : item.kind === 'video' ? (
-          <video key={item.id} ref={setRef} src={src} autoPlay className="size-full" {...mediaEvents} />
+          <video key={item.id} ref={setRef} src={src} autoPlay className="max-h-full max-w-full" {...mediaEvents} />
         ) : (
-          <div className="flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
-            <NoteIcon large />
-            <span className="text-[10px] uppercase tracking-[0.14em] font-bold">Audio</span>
+          <div className="flex flex-col items-center gap-4 text-[var(--muted-foreground)]">
+            <span className={playing ? 'text-[var(--primary)]' : ''}>
+              <NoteIcon size={64} />
+            </span>
+            <span className="text-xs uppercase tracking-[0.2em] font-bold">Audio</span>
             <audio key={item.id} ref={setRef} src={src} autoPlay className="hidden" {...mediaEvents} />
           </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-[var(--border)]/60 flex flex-col gap-3">
+      <div className="p-6 border-t border-[var(--border)]/60 flex flex-col gap-5">
         <div>
-          <div className="text-sm font-extrabold truncate">{item ? item.title || item.fileName : '—'}</div>
-          <div className="text-[11px] text-[var(--muted-foreground)] truncate mt-0.5">
+          <div className="text-lg font-extrabold truncate leading-snug">
+            {item ? item.title || item.fileName : '—'}
+          </div>
+          <div className="text-xs text-[var(--muted-foreground)] truncate mt-1">
             {item ? basename(item.path) : 'Doppelklick auf einen Titel zum Abspielen'}
           </div>
         </div>
 
         {/* Seek */}
         <div className="flex items-center gap-3">
-          <span className="tabular text-[11px] text-[var(--muted-foreground)] w-10 text-right">
+          <span className="tabular text-xs text-[var(--muted-foreground)] w-12 text-right">
             {formatDuration(time)}
           </span>
           <input
@@ -547,15 +552,15 @@ function PlayerPanel() {
             onChange={(e) => seek(Number(e.target.value))}
             style={{ background: fill(seekPct) }}
           />
-          <span className="tabular text-[11px] text-[var(--muted-foreground)] w-10">
+          <span className="tabular text-xs text-[var(--muted-foreground)] w-12">
             {duration ? formatDuration(duration) : '–'}
           </span>
         </div>
 
         {/* Transport */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <TransportBtn title="Vorheriger" disabled={!item} onClick={() => playPrev()}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M6 6h2v12H6zM20 6v12L9 12z" />
             </svg>
           </TransportBtn>
@@ -566,24 +571,24 @@ function PlayerPanel() {
             disabled={!item}
             onClick={toggle}
             className={cn(
-              'grid place-items-center size-11 rounded-full transition-opacity',
+              'grid place-items-center size-16 rounded-full transition-opacity',
               'bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90',
               'disabled:opacity-40 disabled:cursor-not-allowed',
             )}
           >
             {playing ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
           </button>
 
           <TransportBtn title="Nächster" disabled={!item} onClick={() => playNext()}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M16 6h2v12h-2zM4 6l11 6L4 18z" />
             </svg>
           </TransportBtn>
@@ -591,18 +596,18 @@ function PlayerPanel() {
           <div className="ml-auto flex items-center gap-2">
             <TransportBtn title={muted ? 'Ton an' : 'Stumm'} onClick={() => setMuted((m) => !m)}>
               {muted || volume === 0 ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M11 5 6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6" />
                 </svg>
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M11 5 6 9H3v6h3l5 4zM16 9a4 4 0 0 1 0 6" />
                 </svg>
               )}
             </TransportBtn>
             <input
               type="range"
-              className="jm-range w-20"
+              className="jm-range w-28"
               min={0}
               max={1}
               step={0.05}
@@ -637,7 +642,7 @@ function TransportBtn({
       title={title}
       disabled={disabled}
       onClick={onClick}
-      className="grid place-items-center size-9 rounded-[var(--radius)] border border-[var(--border)]
+      className="grid place-items-center size-12 rounded-[var(--radius)] border border-[var(--border)]
                  text-[var(--foreground)] hover:bg-[var(--highlight)] transition-colors
                  disabled:opacity-40 disabled:cursor-not-allowed"
     >
@@ -763,8 +768,8 @@ function FilmIcon() {
     </svg>
   );
 }
-function NoteIcon({ large }: { large?: boolean }) {
-  const s = large ? 22 : 16;
+function NoteIcon({ large, size }: { large?: boolean; size?: number }) {
+  const s = size ?? (large ? 22 : 16);
   return (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M9 18V5l12-2v13" />
