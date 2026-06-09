@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, cn } from '@jm/ui';
-import type { ScreenSourceInfo } from '@shared/types';
+import type { NdiStatus, NdiVideoMessage, ScreenSourceInfo } from '@shared/types';
 import {
   SwitcherEngine,
   type EngineState,
@@ -37,8 +37,11 @@ export function SwitcherView() {
 
   const previewRef = useRef<HTMLCanvasElement>(null);
   const programRef = useRef<HTMLCanvasElement>(null);
+  const ndiSourceIdRef = useRef<string | null>(null);
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
+  const [ndiPicker, setNdiPicker] = useState(false);
+  const [ndiStatus, setNdiStatus] = useState<NdiStatus>({ state: 'idle', source: null });
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,6 +53,38 @@ export function SwitcherView() {
     return () => {
       unsub();
       engine.destroy();
+    };
+  }, [engine]);
+
+  // NDI: Status + Frame-MessagePort (vom Main über die Preload-Bridge).
+  useEffect(() => {
+    void window.jmswitch.ndi.getStatus().then(setNdiStatus);
+    const offStatus = window.jmswitch.ndi.onStatus((s) => {
+      setNdiStatus(s);
+      if (s.state === 'error' && s.source) setNotice(`NDI: ${s.source}`);
+    });
+
+    let port: MessagePort | null = null;
+    const onFrame = (e: MessageEvent): void => {
+      const m = e.data as NdiVideoMessage | null;
+      if (m && m.type === 'video' && ndiSourceIdRef.current) {
+        engine.updateNdiFrame(ndiSourceIdRef.current, m.data, m.width, m.height, m.lineStride);
+      }
+      port?.postMessage({ type: 'ack' }); // immer bestätigen → Utility liefert weiter
+    };
+    const onMessage = (e: MessageEvent): void => {
+      if (e.data === 'jmswitch:ndi-port' && e.ports[0]) {
+        port = e.ports[0];
+        port.onmessage = onFrame;
+        port.start();
+      }
+    };
+    window.addEventListener('message', onMessage);
+
+    return () => {
+      offStatus();
+      window.removeEventListener('message', onMessage);
+      if (port) port.onmessage = null;
     };
   }, [engine]);
 
@@ -83,6 +118,30 @@ export function SwitcherView() {
 
   const addScene = (): void => {
     engine.addScene(`Szene ${state.scenes.length + 1}`);
+  };
+
+  const connectNdi = async (source: string): Promise<void> => {
+    setNdiPicker(false);
+    try {
+      await window.jmswitch.ndi.connect(source);
+      // Eine NDI-Quelle gleichzeitig (Addon-Limit): bestehende umbenennen,
+      // sonst neu anlegen — so bleiben Ebenen, die sie referenzieren, erhalten.
+      if (ndiSourceIdRef.current) {
+        engine.renameSource(ndiSourceIdRef.current, source);
+      } else {
+        ndiSourceIdRef.current = engine.addNdiSource(source);
+      }
+    } catch (e) {
+      setNotice(`NDI-Verbindung fehlgeschlagen: ${(e as Error).message}`);
+    }
+  };
+
+  const removeSource = (id: string): void => {
+    if (id === ndiSourceIdRef.current) {
+      void window.jmswitch.ndi.disconnect();
+      ndiSourceIdRef.current = null;
+    }
+    engine.removeSource(id);
   };
 
   return (
@@ -154,14 +213,17 @@ export function SwitcherView() {
         <SourcesPanel
           sources={state.sources}
           canAddLayer={previewScene != null}
+          ndiStatus={ndiStatus}
           onAddColor={addColor}
           onAddScreen={() => setPicker(true)}
+          onAddNdi={() => setNdiPicker(true)}
           onAddToScene={(sourceId) => previewScene && engine.addLayer(previewScene.id, sourceId)}
-          onRemove={(id) => engine.removeSource(id)}
+          onRemove={removeSource}
         />
       </div>
 
       {picker && <ScreenPicker onPick={(s) => void pickScreen(s)} onClose={() => setPicker(false)} />}
+      {ndiPicker && <NdiPicker onPick={(s) => void connectNdi(s)} onClose={() => setNdiPicker(false)} />}
 
       {notice && (
         <div className="pointer-events-none fixed inset-x-0 bottom-5 flex justify-center px-6">
@@ -405,15 +467,19 @@ function LayersPanel({
 function SourcesPanel({
   sources,
   canAddLayer,
+  ndiStatus,
   onAddColor,
   onAddScreen,
+  onAddNdi,
   onAddToScene,
   onRemove,
 }: {
   sources: SourceInfo[];
   canAddLayer: boolean;
+  ndiStatus: NdiStatus;
   onAddColor: () => void;
   onAddScreen: () => void;
+  onAddNdi: () => void;
   onAddToScene: (sourceId: string) => void;
   onRemove: (id: string) => void;
 }) {
@@ -426,7 +492,32 @@ function SourcesPanel({
         <Button size="sm" variant="outline" onClick={onAddScreen}>
           + Bildschirm
         </Button>
+        <Button size="sm" variant="outline" onClick={onAddNdi}>
+          + NDI
+        </Button>
       </PanelHead>
+      {ndiStatus.state !== 'idle' && ndiStatus.state !== 'disconnected' && (
+        <div className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-semibold border-b border-[var(--border)]/40">
+          <span
+            className="size-2 rounded-full shrink-0"
+            style={{
+              background:
+                ndiStatus.state === 'connected'
+                  ? 'var(--success)'
+                  : ndiStatus.state === 'error'
+                    ? 'var(--destructive)'
+                    : 'var(--warning)',
+            }}
+          />
+          <span className="truncate text-[var(--muted-foreground)]">
+            {ndiStatus.state === 'connected'
+              ? `NDI verbunden: ${ndiStatus.source}`
+              : ndiStatus.state === 'connecting'
+                ? `NDI verbindet: ${ndiStatus.source ?? ''}`
+                : `NDI-Fehler: ${ndiStatus.source ?? ''}`}
+          </span>
+        </div>
+      )}
       <div className="flex-1 overflow-auto scroll-thin p-2 flex flex-col gap-1">
         {sources.length === 0 && (
           <p className="text-xs text-[var(--muted-foreground)] p-2">Noch keine Quellen.</p>
@@ -437,9 +528,14 @@ function SourcesPanel({
             className="group flex items-center gap-2 h-9 px-2 rounded-[var(--radius)] border border-[var(--border)]/60"
           >
             <span
-              className="size-4 rounded-sm shrink-0 border border-[var(--border)]"
-              style={{ background: s.kind === 'color' ? s.color : '#333' }}
-            />
+              className={cn(
+                'size-4 rounded-sm shrink-0 border border-[var(--border)] grid place-items-center text-[6px] font-extrabold',
+                s.kind === 'ndi' && 'bg-[var(--primary)] text-[var(--primary-foreground)]',
+              )}
+              style={{ background: s.kind === 'color' ? s.color : s.kind === 'ndi' ? undefined : '#333' }}
+            >
+              {s.kind === 'ndi' ? 'NDI' : ''}
+            </span>
             <span className="flex-1 truncate text-sm font-semibold">{s.name}</span>
             <button
               type="button"
@@ -513,6 +609,69 @@ function ScreenPicker({
                   )}
                 </div>
                 <div className="px-2.5 py-2 text-xs font-semibold truncate">{s.name}</div>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="mt-5 flex justify-end">
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Abbrechen
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: () => void }) {
+  const [sources, setSources] = useState<string[] | null>(null);
+  const [scanning, setScanning] = useState(false);
+
+  const scan = (): void => {
+    setScanning(true);
+    setSources(null);
+    window.jmswitch.ndi
+      .find(2000)
+      .then(setSources)
+      .catch(() => setSources([]))
+      .finally(() => setScanning(false));
+  };
+
+  useEffect(() => {
+    scan();
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm px-6" onClick={onClose}>
+      <div
+        className="w-full max-w-lg max-h-[80vh] overflow-auto scroll-thin rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold tracking-tight">NDI-Quelle wählen</h2>
+          <Button size="sm" variant="outline" onClick={scan} disabled={scanning}>
+            {scanning ? 'Suche…' : 'Neu suchen'}
+          </Button>
+        </div>
+        <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
+          Quellen im Studio-LAN (z. B. JM NDI Screen Capture, TriCaster, vMix). Ein Empfänger gleichzeitig.
+        </p>
+        {sources == null ? (
+          <p className="text-sm text-[var(--muted-foreground)] mt-4">Suche NDI-Quellen…</p>
+        ) : sources.length === 0 ? (
+          <p className="text-sm text-[var(--muted-foreground)] mt-4">
+            Keine NDI-Quellen gefunden. NDI-Sender aktiv? Gleiches Netz?
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2 mt-4">
+            {sources.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onPick(s)}
+                className="text-left rounded-[var(--radius-lg)] border border-[var(--border)] px-3.5 py-2.5 text-sm font-semibold hover:border-[var(--primary)]/60 hover:bg-[var(--highlight)] transition-colors truncate"
+              >
+                {s}
               </button>
             ))}
           </div>

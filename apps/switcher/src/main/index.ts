@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import path, { join } from 'node:path';
 import { registerIpc } from './ipc';
 import { installDisplayMediaHandler } from './capture-handler';
+import { attachNdiWindow, stopNdi } from './ndi-receive';
 
 declare const __dirname: string;
 
@@ -58,10 +59,12 @@ function createMainWindow(): BrowserWindow {
   });
 
   win.on('closed', () => {
+    stopNdi();
     mainWindow = null;
   });
 
   loadMain(win);
+  attachNdiWindow(win);
   mainWindow = win;
   return win;
 }

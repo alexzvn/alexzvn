@@ -4,7 +4,7 @@
 // Gezeichnet auf zwei Canvases per requestAnimationFrame. NDI/Capture-Karte
 // kommen als weitere Quelltypen in späteren Slices dazu.
 
-export type SourceKind = 'color' | 'screen';
+export type SourceKind = 'color' | 'screen' | 'ndi';
 
 export interface SourceInfo {
   id: string;
@@ -51,6 +51,12 @@ interface InternalSource {
   info: SourceInfo;
   video: HTMLVideoElement | null;
   stream: MediaStream | null;
+  // NDI: empfangene BGRA-Frames werden in dieses Offscreen-Canvas geschrieben
+  // und von dort wie ein <video> in die Ebene gezeichnet.
+  ndiCanvas?: HTMLCanvasElement;
+  ndiCtx?: CanvasRenderingContext2D | null;
+  ndiImage?: ImageData;
+  ndiReady?: boolean;
 }
 
 const RENDER_W = 1280;
@@ -139,6 +145,45 @@ export class SwitcherEngine {
     this.sources.push({ info: { id, name, kind: 'screen' }, video, stream });
     this.notify();
     return id;
+  }
+
+  /** Eine NDI-Quelle in den Pool legen (Frames kommen via updateNdiFrame). */
+  addNdiSource(name: string): string {
+    const id = this.nextId('src');
+    this.sources.push({ info: { id, name, kind: 'ndi' }, video: null, stream: null });
+    this.notify();
+    return id;
+  }
+
+  /**
+   * Ein empfangenes BGRA-Frame in das Offscreen-Canvas der NDI-Quelle schreiben.
+   * Bewusst OHNE notify() — der rAF-Loop liest das Canvas direkt; React muss
+   * nicht 30×/s neu rendern.
+   */
+  updateNdiFrame(id: string, data: Uint8Array, width: number, height: number, lineStride: number): void {
+    const src = this.sources.find((s) => s.info.id === id);
+    if (!src || src.info.kind !== 'ndi' || width <= 0 || height <= 0) return;
+    if (!src.ndiCanvas) src.ndiCanvas = document.createElement('canvas');
+    if (src.ndiCanvas.width !== width || src.ndiCanvas.height !== height) {
+      src.ndiCanvas.width = width;
+      src.ndiCanvas.height = height;
+      src.ndiCtx = src.ndiCanvas.getContext('2d');
+      src.ndiImage = src.ndiCtx?.createImageData(width, height) ?? undefined;
+    }
+    const ctx = src.ndiCtx;
+    const img = src.ndiImage;
+    if (!ctx || !img) return;
+    bgraToRgba(data, img.data, width, height, lineStride);
+    ctx.putImageData(img, 0, 0);
+    src.ndiReady = true;
+  }
+
+  renameSource(id: string, name: string): void {
+    const src = this.sources.find((s) => s.info.id === id);
+    if (src) {
+      src.info.name = name;
+      this.notify();
+    }
   }
 
   removeSource(id: string): void {
@@ -321,11 +366,51 @@ export class SwitcherEngine {
       if (src.info.kind === 'color' && src.info.color) {
         ctx.fillStyle = src.info.color;
         ctx.fillRect(dx, dy, dw, dh);
+      } else if (src.info.kind === 'ndi') {
+        if (src.ndiReady && src.ndiCanvas) {
+          drawContainInto(ctx, src.ndiCanvas, src.ndiCanvas.width, src.ndiCanvas.height, dx, dy, dw, dh);
+        }
       } else if (src.video && src.video.readyState >= 2 && src.video.videoWidth > 0) {
         drawContainInto(ctx, src.video, src.video.videoWidth, src.video.videoHeight, dx, dy, dw, dh);
       }
     }
     ctx.globalAlpha = 1;
+  }
+}
+
+/**
+ * BGRA → RGBA (Canvas-ImageData erwartet RGBA). Schneller Pfad per Uint32 (eine
+ * Operation/Pixel) wenn dicht gepackt; sonst Byte-Schleife mit Stride-Beachtung.
+ * Little-Endian-Layout der Quelle: Bits 0-7 = B, 8-15 = G, 16-23 = R, 24-31 = A.
+ */
+function bgraToRgba(
+  src: Uint8Array,
+  dst: Uint8ClampedArray,
+  w: number,
+  h: number,
+  stride: number,
+): void {
+  if (stride === w * 4 && src.byteOffset % 4 === 0 && src.byteLength >= w * h * 4) {
+    const s32 = new Uint32Array(src.buffer, src.byteOffset, w * h);
+    const d32 = new Uint32Array(dst.buffer, dst.byteOffset, w * h);
+    for (let i = 0; i < s32.length; i++) {
+      const p = s32[i];
+      // A + G bleiben; B (Bits 0-7) → 16-23, R (Bits 16-23) → 0-7.
+      d32[i] = (p & 0xff00ff00) | ((p & 0xff) << 16) | ((p >>> 16) & 0xff);
+    }
+    return;
+  }
+  for (let y = 0; y < h; y++) {
+    let s = y * stride;
+    let d = y * w * 4;
+    for (let x = 0; x < w; x++) {
+      dst[d] = src[s + 2]; // R
+      dst[d + 1] = src[s + 1]; // G
+      dst[d + 2] = src[s]; // B
+      dst[d + 3] = src[s + 3]; // A
+      s += 4;
+      d += 4;
+    }
   }
 }
 

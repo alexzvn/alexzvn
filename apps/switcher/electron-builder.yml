@@ -19,6 +19,13 @@ extraResources:
 
 asar: true
 
+# Der NDI-Empfänger nutzt das native @jm/ndi-Addon (lokal auf Windows gebaut;
+# NDI-SDK nicht in CI). electron ist im Workspace ans Root gehoistet → npmRebuild
+# aus, electronVersion fix; das Addon + die Runtime-DLL werden via bundle-ndi nach
+# resources/bin/win gestaged. electronVersion bei Electron-Upgrade nachziehen.
+electronVersion: 33.4.11
+npmRebuild: false
+
 mac:
   target:
     - target: dmg
