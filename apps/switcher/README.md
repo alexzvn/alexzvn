@@ -16,10 +16,12 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   Layout-Presets: Vollbild / PiP-Ecken / Hälften) → **PiP** in Sekunden baubar.
   Seit v0.2 zusätzlich **Drag/Resize direkt auf dem Preview-Monitor** (Ebene
   anklicken → ziehen = verschieben, Eck-Griffe = skalieren, live ins Bild).
-- **Slice 3 (NDI-Empfang):** **NDI-Quelle** im Pool. „+ NDI" sucht Quellen im
-  Studio-LAN (JM NDI Screen Capture, TriCaster, vMix …) und verbindet **einen**
-  Empfänger (Addon-Limit). Der native `@jm/ndi`-Empfänger läuft in einem
-  **utilityProcess** (`receive()` pollt blockierend) → Frames per **Kopie** über
+- **Slice 3 (NDI-Empfang):** **NDI-Quelle(n)** im Pool. „+ NDI" sucht Quellen im
+  Studio-LAN (JM NDI Screen Capture, TriCaster, vMix …) und verbindet sie. Seit
+  v0.2 **mehrere NDI-Empfänger gleichzeitig** — ein eigener `@jm/ndi`-
+  **utilityProcess pro Quelle** (Status-Punkt je Quelle), Suche über einen
+  kurzlebigen Finder-Prozess. Der Empfänger läuft im utilityProcess
+  (`receive()` pollt blockierend) → Frames per **Kopie** über
   den Main an den Renderer-Compositor (Copy-not-transfer-Disziplin aus der NDI
   Screen Capture); 1-Frame-Backpressure (Ack) hält Latenz/Speicher im Zaum. BGRA
   → RGBA-Swizzle im Renderer (Uint32-Fastpath) in ein Offscreen-Canvas, das wie

@@ -1,27 +1,34 @@
-// NDI-Empfangs-Bridge im Main:
-//   utilityProcess (ndi-recv.cjs)  ⇄  Main  ⇄  Renderer
+// NDI-Empfangs-Bridge im Main — MEHRERE Empfänger gleichzeitig.
 //
-// Steuerung läuft über IPC (find/connect/disconnect/status). Frames laufen über
-// einen MessageChannelMain: `port1` geht an den Renderer, `port2` bleibt hier.
-//   - Videoframes: Utility → Main (child 'message') → port2.postMessage → Renderer.
-//   - Ack:         Renderer → port2 ('message') → child.postMessage.
-// Buffer werden bei jedem Hop KOPIERT (kein Transfer) — sonst kämen ArrayBuffer
-// über die Port-/Prozessgrenzen als null an (Lehre aus der NDI Screen Capture).
+// Das native Addon hat pro Prozess genau einen Receiver (globaler g_recv).
+// Darum: EIN utilityProcess pro NDI-Quelle (jeder mit eigener NDI-Runtime +
+// Receiver), gekeyed per `recvId` (= Engine-Source-id). Suchen läuft in einem
+// kurzlebigen Finder-Prozess (braucht keinen Receiver).
+//
+//   utilityProcess(recvId)  ⇄  Main  ⇄  Renderer (eigener Frame-Port je recvId)
+//
+// Frames laufen wie gehabt per KOPIE (kein Transfer) mit 1-Frame-Ack-Backpressure.
 import { MessageChannelMain, utilityProcess, type BrowserWindow, type UtilityProcess } from 'electron';
 import { join } from 'node:path';
 import type { NdiStatus } from '@shared/types';
 
 declare const __dirname: string;
 
-let child: UtilityProcess | null = null;
-let port2: Electron.MessagePortMain | null = null;
-let targetWindow: BrowserWindow | null = null;
-let status: NdiStatus = { state: 'idle', source: null };
-let pendingFinds: ((list: string[]) => void)[] = [];
+interface Receiver {
+  child: UtilityProcess;
+  port2: Electron.MessagePortMain;
+}
 
-/** Einmalig beim Fenster-Erzeugen aufrufen. */
+const receivers = new Map<string, Receiver>();
+const statuses = new Map<string, NdiStatus>();
+let targetWindow: BrowserWindow | null = null;
+
 export function attachNdiWindow(win: BrowserWindow): void {
   targetWindow = win;
+}
+
+function utilityPath(): string {
+  return join(__dirname, 'ndi-recv.cjs');
 }
 
 function mapState(state: string): NdiStatus['state'] {
@@ -36,92 +43,95 @@ function mapState(state: string): NdiStatus['state'] {
   }
 }
 
-function onChildMessage(msg: unknown): void {
-  const m = msg as { type?: string; [k: string]: unknown } | null;
-  if (!m || typeof m !== 'object') return;
-
-  if (m.type === 'video') {
-    // Unverändert an den Renderer weiterreichen (Kopie, kein Transfer).
-    port2?.postMessage(m);
-    return;
-  }
-  if (m.type === 'status') {
-    status = { state: mapState(String(m.state)), source: (m.message as string) ?? null };
-    targetWindow?.webContents.send('ndi:status', status);
-    return;
-  }
-  if (m.type === 'sources') {
-    const cbs = pendingFinds;
-    pendingFinds = [];
-    const list = Array.isArray(m.list) ? (m.list as string[]) : [];
-    for (const cb of cbs) cb(list);
-    return;
-  }
+function sendStatus(recvId: string, state: NdiStatus['state'], source: string | null): void {
+  const status: NdiStatus = { recvId, state, source };
+  if (state === 'idle') statuses.delete(recvId);
+  else statuses.set(recvId, status);
+  targetWindow?.webContents.send('ndi:status', status);
 }
 
-function ensureChild(): UtilityProcess | null {
-  if (child) return child;
-  if (!targetWindow) return null;
+/** Sichtbare NDI-Quellen suchen — kurzlebiger Finder-Prozess (kein Receiver). */
+export function ndiFind(timeoutMs = 1500): Promise<string[]> {
+  return new Promise((resolve) => {
+    const finder = utilityProcess.fork(utilityPath());
+    let done = false;
+    const finish = (list: string[]): void => {
+      if (done) return;
+      done = true;
+      try {
+        finder.kill();
+      } catch {
+        // egal
+      }
+      resolve(list);
+    };
+    finder.on('message', (msg: unknown) => {
+      const m = msg as { type?: string; list?: string[] } | null;
+      if (m && m.type === 'sources') finish(Array.isArray(m.list) ? m.list : []);
+    });
+    finder.on('exit', () => finish([]));
+    finder.postMessage({ type: 'find', timeoutMs });
+    setTimeout(() => finish([]), timeoutMs + 4000);
+  });
+}
 
-  child = utilityProcess.fork(join(__dirname, 'ndi-recv.cjs'));
-  child.on('message', onChildMessage);
+export function ndiConnect(recvId: string, source: string): void {
+  if (!targetWindow) return;
+  ndiDisconnect(recvId);
+
+  const child = utilityProcess.fork(utilityPath());
+  const { port1, port2 } = new MessageChannelMain();
+  port2.on('message', (e) => child.postMessage(e.data)); // Ack vom Renderer → Utility
+  port2.start();
+
+  child.on('message', (msg: unknown) => {
+    const m = msg as { type?: string; state?: string; message?: string } | null;
+    if (!m || typeof m !== 'object') return;
+    if (m.type === 'video') {
+      port2.postMessage(m); // Kopie → Renderer
+    } else if (m.type === 'status') {
+      sendStatus(recvId, mapState(String(m.state)), (m.message as string) ?? null);
+    }
+  });
   child.on('exit', () => {
-    child = null;
-    port2 = null;
-    if (status.state !== 'idle') {
-      status = { state: 'idle', source: null };
-      targetWindow?.webContents.send('ndi:status', status);
+    if (receivers.get(recvId)?.child === child) {
+      receivers.delete(recvId);
+      sendStatus(recvId, 'idle', null);
     }
   });
 
-  // Frame-Kanal: port1 an den Renderer, port2 hier zum Bridgen.
-  const { port1, port2: p2 } = new MessageChannelMain();
-  port2 = p2;
-  port2.on('message', (e) => {
-    // Renderer → Utility (z. B. Ack). Kopie, kein Transfer.
-    child?.postMessage(e.data);
-  });
-  port2.start();
-  targetWindow.webContents.postMessage('jmswitch:ndi-port', null, [port1]);
-
-  return child;
+  receivers.set(recvId, { child, port2 });
+  child.postMessage({ type: 'connect', source });
+  // recvId mitgeben, damit der Renderer den Port der richtigen Quelle zuordnet.
+  targetWindow.webContents.postMessage('jmswitch:ndi-port', { recvId }, [port1]);
 }
 
-export function ndiFind(timeoutMs = 1500): Promise<string[]> {
-  const c = ensureChild();
-  if (!c) return Promise.resolve([]);
-  return new Promise((resolve) => {
-    pendingFinds.push(resolve);
-    c.postMessage({ type: 'find', timeoutMs });
-    // Sicherheitsnetz, falls der Utility nicht antwortet.
-    setTimeout(() => {
-      const i = pendingFinds.indexOf(resolve);
-      if (i >= 0) {
-        pendingFinds.splice(i, 1);
-        resolve([]);
-      }
-    }, timeoutMs + 4000);
-  });
-}
-
-export function ndiConnect(source: string): void {
-  ensureChild()?.postMessage({ type: 'connect', source });
-}
-
-export function ndiDisconnect(): void {
-  child?.postMessage({ type: 'disconnect' });
-}
-
-export function ndiStatus(): NdiStatus {
-  return status;
-}
-
-/** Beim Beenden/Fenster-Schließen aufrufen. */
-export function stopNdi(): void {
-  if (child) {
-    child.kill();
-    child = null;
+export function ndiDisconnect(recvId: string): void {
+  const r = receivers.get(recvId);
+  if (!r) return;
+  receivers.delete(recvId);
+  try {
+    r.child.postMessage({ type: 'disconnect' });
+    r.child.kill();
+  } catch {
+    // egal
   }
-  port2 = null;
-  status = { state: 'idle', source: null };
+  sendStatus(recvId, 'idle', null);
+}
+
+export function ndiStatus(): NdiStatus[] {
+  return [...statuses.values()];
+}
+
+/** Beim Beenden/Fenster-Schließen alle Empfänger stoppen. */
+export function stopNdi(): void {
+  for (const [, r] of receivers) {
+    try {
+      r.child.kill();
+    } catch {
+      // egal
+    }
+  }
+  receivers.clear();
+  statuses.clear();
 }

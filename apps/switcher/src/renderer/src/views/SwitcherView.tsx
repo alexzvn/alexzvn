@@ -40,7 +40,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
 
   const previewRef = useRef<HTMLCanvasElement>(null);
   const programRef = useRef<HTMLCanvasElement>(null);
-  const ndiSourceIdRef = useRef<string | null>(null);
+  const ndiPortsRef = useRef<Map<string, MessagePort>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<AudioController | null>(null);
   if (!audioRef.current) audioRef.current = new AudioController();
@@ -64,7 +64,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
   const [picker, setPicker] = useState(false);
   const [ndiPicker, setNdiPicker] = useState(false);
   const [capturePicker, setCapturePicker] = useState(false);
-  const [ndiStatus, setNdiStatus] = useState<NdiStatus>({ state: 'idle', source: null });
+  const [ndiStatusById, setNdiStatusById] = useState<Record<string, NdiStatus['state']>>({});
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,35 +89,52 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
     void audio.setDevice(audioInputId);
   }, [audio, audioInputId]);
 
-  // NDI: Status + Frame-MessagePort (vom Main über die Preload-Bridge).
+  // NDI: Status (je recvId) + ein Frame-MessagePort pro Empfänger.
   useEffect(() => {
-    void window.jmswitch.ndi.getStatus().then(setNdiStatus);
+    const ports = ndiPortsRef.current;
+    void window.jmswitch.ndi.getStatus().then((arr) => {
+      setNdiStatusById(Object.fromEntries(arr.map((s) => [s.recvId, s.state])));
+    });
     const offStatus = window.jmswitch.ndi.onStatus((s) => {
-      setNdiStatus(s);
+      setNdiStatusById((prev) => {
+        const next = { ...prev };
+        if (s.state === 'idle') delete next[s.recvId];
+        else next[s.recvId] = s.state;
+        return next;
+      });
       if (s.state === 'error' && s.source) setNotice(`NDI: ${s.source}`);
     });
 
-    let port: MessagePort | null = null;
-    const onFrame = (e: MessageEvent): void => {
-      const m = e.data as NdiVideoMessage | null;
-      if (m && m.type === 'video' && ndiSourceIdRef.current) {
-        engine.updateNdiFrame(ndiSourceIdRef.current, m.data, m.width, m.height, m.lineStride);
-      }
-      port?.postMessage({ type: 'ack' }); // immer bestätigen → Utility liefert weiter
-    };
     const onMessage = (e: MessageEvent): void => {
-      if (e.data === 'jmswitch:ndi-port' && e.ports[0]) {
-        port = e.ports[0];
-        port.onmessage = onFrame;
-        port.start();
-      }
+      const data = e.data as { kind?: string; recvId?: string } | null;
+      if (!data || data.kind !== 'jmswitch:ndi-port' || !data.recvId || !e.ports[0]) return;
+      const recvId = data.recvId;
+      const port = e.ports[0];
+      ports.get(recvId)?.close?.(); // alten Port dieser recvId ablösen
+      ports.set(recvId, port);
+      port.onmessage = (ev: MessageEvent): void => {
+        const m = ev.data as NdiVideoMessage | null;
+        if (m && m.type === 'video') {
+          engine.updateNdiFrame(recvId, m.data, m.width, m.height, m.lineStride);
+        }
+        port.postMessage({ type: 'ack' }); // immer bestätigen → Utility liefert weiter
+      };
+      port.start();
     };
     window.addEventListener('message', onMessage);
 
     return () => {
       offStatus();
       window.removeEventListener('message', onMessage);
-      if (port) port.onmessage = null;
+      for (const p of ports.values()) {
+        p.onmessage = null;
+        try {
+          p.close();
+        } catch {
+          // egal
+        }
+      }
+      ports.clear();
     };
   }, [engine]);
 
@@ -246,24 +263,30 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
 
   const connectNdi = async (source: string): Promise<void> => {
     setNdiPicker(false);
+    // Jede NDI-Quelle = eigener Empfänger (recvId = Engine-Source-id).
+    const id = engine.addNdiSource(source);
     try {
-      await window.jmswitch.ndi.connect(source);
-      // Eine NDI-Quelle gleichzeitig (Addon-Limit): bestehende umbenennen,
-      // sonst neu anlegen — so bleiben Ebenen, die sie referenzieren, erhalten.
-      if (ndiSourceIdRef.current) {
-        engine.renameSource(ndiSourceIdRef.current, source);
-      } else {
-        ndiSourceIdRef.current = engine.addNdiSource(source);
-      }
+      await window.jmswitch.ndi.connect(id, source);
     } catch (e) {
+      engine.removeSource(id);
       setNotice(`NDI-Verbindung fehlgeschlagen: ${(e as Error).message}`);
     }
   };
 
   const removeSource = (id: string): void => {
-    if (id === ndiSourceIdRef.current) {
-      void window.jmswitch.ndi.disconnect();
-      ndiSourceIdRef.current = null;
+    const src = state.sources.find((s) => s.id === id);
+    if (src?.kind === 'ndi') {
+      void window.jmswitch.ndi.disconnect(id);
+      const p = ndiPortsRef.current.get(id);
+      if (p) {
+        p.onmessage = null;
+        try {
+          p.close();
+        } catch {
+          // egal
+        }
+        ndiPortsRef.current.delete(id);
+      }
     }
     engine.removeSource(id);
   };
@@ -364,7 +387,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
         <SourcesPanel
           sources={state.sources}
           canAddLayer={previewScene != null}
-          ndiStatus={ndiStatus}
+          ndiStatusById={ndiStatusById}
           onAddColor={addColor}
           onAddScreen={() => setPicker(true)}
           onAddNdi={() => setNdiPicker(true)}
@@ -935,10 +958,17 @@ function LayersPanel({
   );
 }
 
+function ndiDotColor(state: NdiStatus['state'] | undefined): string {
+  if (state === 'connected') return 'var(--success)';
+  if (state === 'error') return 'var(--destructive)';
+  if (state === 'connecting') return 'var(--warning)';
+  return 'var(--muted-foreground)';
+}
+
 function SourcesPanel({
   sources,
   canAddLayer,
-  ndiStatus,
+  ndiStatusById,
   onAddColor,
   onAddScreen,
   onAddNdi,
@@ -951,7 +981,7 @@ function SourcesPanel({
 }: {
   sources: SourceInfo[];
   canAddLayer: boolean;
-  ndiStatus: NdiStatus;
+  ndiStatusById: Record<string, NdiStatus['state']>;
   onAddColor: () => void;
   onAddScreen: () => void;
   onAddNdi: () => void;
@@ -984,28 +1014,6 @@ function SourcesPanel({
           + Bild
         </Button>
       </div>
-      {ndiStatus.state !== 'idle' && ndiStatus.state !== 'disconnected' && (
-        <div className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-semibold border-b border-[var(--border)]/40">
-          <span
-            className="size-2 rounded-full shrink-0"
-            style={{
-              background:
-                ndiStatus.state === 'connected'
-                  ? 'var(--success)'
-                  : ndiStatus.state === 'error'
-                    ? 'var(--destructive)'
-                    : 'var(--warning)',
-            }}
-          />
-          <span className="truncate text-[var(--muted-foreground)]">
-            {ndiStatus.state === 'connected'
-              ? `NDI verbunden: ${ndiStatus.source}`
-              : ndiStatus.state === 'connecting'
-                ? `NDI verbindet: ${ndiStatus.source ?? ''}`
-                : `NDI-Fehler: ${ndiStatus.source ?? ''}`}
-          </span>
-        </div>
-      )}
       <div className="flex-1 overflow-auto scroll-thin p-2 flex flex-col gap-1">
         {sources.length === 0 && (
           <p className="text-xs text-[var(--muted-foreground)] p-2">Noch keine Quellen.</p>
@@ -1064,6 +1072,13 @@ function SourcesPanel({
               >
                 {s.name}
               </span>
+            )}
+            {s.kind === 'ndi' && (
+              <span
+                className="size-2 rounded-full shrink-0"
+                title={`NDI: ${ndiStatusById[s.id] ?? 'getrennt'}`}
+                style={{ background: ndiDotColor(ndiStatusById[s.id]) }}
+              />
             )}
             <button
               type="button"
@@ -1182,7 +1197,7 @@ function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: 
           </Button>
         </div>
         <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
-          Quellen im Studio-LAN (z. B. JM NDI Screen Capture, TriCaster, vMix). Ein Empfänger gleichzeitig.
+          Quellen im Studio-LAN (z. B. JM NDI Screen Capture, TriCaster, vMix). Mehrere gleichzeitig möglich.
         </p>
         {sources == null ? (
           <p className="text-sm text-[var(--muted-foreground)] mt-4">Suche NDI-Quellen…</p>

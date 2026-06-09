@@ -12,8 +12,8 @@ import type { ControlCommand, SwitcherStateMsg } from '@jm/companion-protocol';
 // Den vom Main übertragenen NDI-Frame-MessagePort in den Renderer-Main-World
 // durchreichen — contextBridge kann MessagePorts nicht direkt übergeben, daher
 // der dokumentierte window.postMessage-Transfer (Empfang: window 'message').
-ipcRenderer.on('jmswitch:ndi-port', (e) => {
-  window.postMessage('jmswitch:ndi-port', '*', e.ports);
+ipcRenderer.on('jmswitch:ndi-port', (e, payload: { recvId?: string } | undefined) => {
+  window.postMessage({ kind: 'jmswitch:ndi-port', recvId: payload?.recvId }, '*', e.ports);
 });
 
 const api: JmswitchApi = {
@@ -22,9 +22,9 @@ const api: JmswitchApi = {
   armCapture: (sourceId) => ipcRenderer.invoke('capture:arm', sourceId) as Promise<void>,
   ndi: {
     find: (timeoutMs) => ipcRenderer.invoke('ndi:find', timeoutMs) as Promise<string[]>,
-    connect: (source) => ipcRenderer.invoke('ndi:connect', source) as Promise<void>,
-    disconnect: () => ipcRenderer.invoke('ndi:disconnect') as Promise<void>,
-    getStatus: () => ipcRenderer.invoke('ndi:status') as Promise<NdiStatus>,
+    connect: (recvId, source) => ipcRenderer.invoke('ndi:connect', recvId, source) as Promise<void>,
+    disconnect: (recvId) => ipcRenderer.invoke('ndi:disconnect', recvId) as Promise<void>,
+    getStatus: () => ipcRenderer.invoke('ndi:status') as Promise<NdiStatus[]>,
     onStatus: (cb) => {
       const listener = (_event: unknown, s: NdiStatus) => cb(s);
       ipcRenderer.on('ndi:status', listener);

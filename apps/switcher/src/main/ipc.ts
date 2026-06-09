@@ -11,8 +11,8 @@ export function registerIpc(): void {
   ipcMain.handle('capture:arm', (_e, sourceId: string) => armCapture(sourceId));
 
   ipcMain.handle('ndi:find', (_e, timeoutMs?: number) => ndiFind(timeoutMs));
-  ipcMain.handle('ndi:connect', (_e, source: string) => ndiConnect(source));
-  ipcMain.handle('ndi:disconnect', () => ndiDisconnect());
+  ipcMain.handle('ndi:connect', (_e, recvId: string, source: string) => ndiConnect(recvId, source));
+  ipcMain.handle('ndi:disconnect', (_e, recvId: string) => ndiDisconnect(recvId));
   ipcMain.handle('ndi:status', () => ndiStatus());
 
   registerOutputIpc();

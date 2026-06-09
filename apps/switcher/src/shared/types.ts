@@ -8,8 +8,10 @@ export interface ScreenSourceInfo {
 
 export type NdiState = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error';
 
-/** Zustand des (einen) NDI-Empfängers, gespiegelt in den Renderer. */
+/** Zustand EINES NDI-Empfängers (Slice: mehrere gleichzeitig), per recvId. */
 export interface NdiStatus {
+  /** Empfänger-Kennung (= Engine-Source-id). */
+  recvId: string;
   state: NdiState;
   /** verbundener Quellname bzw. Fehlertext bei state === 'error'. */
   source: string | null;
@@ -27,16 +29,16 @@ export interface NdiVideoMessage {
   fpsD: number;
 }
 
-/** NDI-Teil-API auf window.jmswitch — ein Empfänger gleichzeitig (Addon-Limit). */
+/** NDI-Teil-API auf window.jmswitch — mehrere Empfänger gleichzeitig (je recvId). */
 export interface JmswitchNdiApi {
   /** Sichtbare NDI-Quellen im Netz suchen (Quellnamen). */
   find: (timeoutMs?: number) => Promise<string[]>;
-  /** Mit einer Quelle verbinden (ersetzt einen bestehenden Empfänger). */
-  connect: (source: string) => Promise<void>;
-  /** Empfänger trennen. */
-  disconnect: () => Promise<void>;
-  /** Aktuellen Empfänger-Status abfragen. */
-  getStatus: () => Promise<NdiStatus>;
+  /** Empfänger `recvId` mit einer Quelle verbinden (eigener utilityProcess). */
+  connect: (recvId: string, source: string) => Promise<void>;
+  /** Empfänger `recvId` trennen. */
+  disconnect: (recvId: string) => Promise<void>;
+  /** Status aller Empfänger abfragen. */
+  getStatus: () => Promise<NdiStatus[]>;
   /** Auf Status-Änderungen hören. Gibt die Abmeldefunktion zurück. */
   onStatus: (cb: (s: NdiStatus) => void) => () => void;
 }
