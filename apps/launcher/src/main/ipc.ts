@@ -7,6 +7,7 @@ import { getAllStates } from './install-state';
 import { checkToolUpdates, checkLauncherUpdate } from './updates';
 import { openTool } from './launch';
 import { installTool, updateLauncher } from './installer';
+import { uninstallTool } from './uninstall';
 import { getSettingsView, setSettings } from './settings';
 import { submitFeedback } from './feedback';
 
@@ -38,6 +39,7 @@ export function registerIpc(): void {
     );
   ipcMain.handle('tool:install', runInstall);
   ipcMain.handle('tool:update', runInstall);
+  ipcMain.handle('tool:uninstall', (_e, id: string) => withTool(id, uninstallTool));
 
   // Launcher-Self-Update: Info abfragen + Download/Install (beendet die App).
   ipcMain.handle('launcher:update-info', () => checkLauncherUpdate(getTools()));

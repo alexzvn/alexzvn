@@ -49,6 +49,18 @@ export function recordInstalled(id: string, version: string): void {
   writeFileSync(recordsFile(), JSON.stringify(records, null, 2));
 }
 
+/** Entfernt den Versions-Record eines Tools (nach Deinstallation, Issue #7). */
+export function forgetInstalled(id: string): void {
+  const records = readRecords();
+  if (records[id] === undefined) return;
+  delete records[id];
+  try {
+    writeFileSync(recordsFile(), JSON.stringify(records, null, 2));
+  } catch {
+    // nicht schreibbar → ignorieren (Status folgt ohnehin der Datei-Existenz)
+  }
+}
+
 /**
  * Installationsstatus: maßgeblich ist immer, ob die App-Datei wirklich auf der
  * Platte liegt (sonst meldete der Launcher „installiert", sobald der Installer

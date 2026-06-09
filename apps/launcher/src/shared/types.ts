@@ -70,6 +70,7 @@ export interface JmpsApi {
   open: (id: string) => Promise<ActionResult>;
   install: (id: string) => Promise<ActionResult>;
   update: (id: string) => Promise<ActionResult>;
+  uninstall: (id: string) => Promise<ActionResult>;
   getLauncherUpdate: () => Promise<LauncherUpdate | null>;
   updateLauncher: () => Promise<ActionResult>;
   openExternal: (url: string) => Promise<void>;

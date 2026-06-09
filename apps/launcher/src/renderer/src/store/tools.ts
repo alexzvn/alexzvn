@@ -32,6 +32,7 @@ interface ToolsStore {
   open: (id: string) => Promise<void>;
   install: (id: string) => Promise<void>;
   update: (id: string) => Promise<void>;
+  uninstall: (id: string) => Promise<void>;
   setNotice: (notice: string | null) => void;
   openSettings: () => void;
   closeSettings: () => void;
@@ -139,6 +140,7 @@ export const useTools = create<ToolsStore>((set) => {
     open: (id) => run(id, () => window.jmps.open(id)),
     install: (id) => run(id, () => window.jmps.install(id), true),
     update: (id) => run(id, () => window.jmps.update(id), true),
+    uninstall: (id) => run(id, () => window.jmps.uninstall(id), true),
     setNotice: (notice) => set({ notice }),
 
     openSettings: () => set({ settingsOpen: true }),

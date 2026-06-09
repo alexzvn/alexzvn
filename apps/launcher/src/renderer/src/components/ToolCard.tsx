@@ -15,6 +15,7 @@ export function ToolCard({ tool, state }: Props) {
   const open = useTools((s) => s.open);
   const install = useTools((s) => s.install);
   const update = useTools((s) => s.update);
+  const uninstall = useTools((s) => s.uninstall);
   const showProgress = busy && progress && progress.phase !== 'done' && progress.phase !== 'error';
 
   return (
@@ -61,6 +62,7 @@ export function ToolCard({ tool, state }: Props) {
             onOpen={() => open(tool.id)}
             onInstall={() => install(tool.id)}
             onUpdate={() => update(tool.id)}
+            onUninstall={() => uninstall(tool.id)}
           />
         </div>
       )}
@@ -107,35 +109,58 @@ function Actions({
   onOpen,
   onInstall,
   onUpdate,
+  onUninstall,
 }: {
   status: ToolState['status'];
   busy: boolean;
   onOpen: () => void;
   onInstall: () => void;
   onUpdate: () => void;
+  onUninstall: () => void;
 }) {
-  if (status === 'installed') {
+  if (status === 'not-installed') {
     return (
-      <Button size="sm" variant="primary" disabled={busy} onClick={onOpen}>
-        Öffnen
+      <Button size="sm" variant="outline" disabled={busy} onClick={onInstall}>
+        Installieren
       </Button>
     );
   }
-  if (status === 'update-available') {
-    return (
-      <div className="flex items-center gap-2">
-        <Button size="sm" variant="outline" disabled={busy} onClick={onOpen}>
-          Öffnen
-        </Button>
+  // installiert (ggf. mit Update): Deinstallieren + Öffnen (+ Update).
+  const isUpdate = status === 'update-available';
+  return (
+    <div className="flex items-center gap-2">
+      <UninstallButton busy={busy} onClick={onUninstall} />
+      <Button size="sm" variant={isUpdate ? 'outline' : 'primary'} disabled={busy} onClick={onOpen}>
+        Öffnen
+      </Button>
+      {isUpdate && (
         <Button size="sm" variant="primary" disabled={busy} onClick={onUpdate}>
           Update
         </Button>
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
+}
+
+function UninstallButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
   return (
-    <Button size="sm" variant="outline" disabled={busy} onClick={onInstall}>
-      Installieren
-    </Button>
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      aria-label="Deinstallieren"
+      title="Deinstallieren"
+      className={cn(
+        'grid place-items-center size-8 shrink-0 rounded-[var(--radius)]',
+        'border border-[var(--border)] text-[var(--muted-foreground)] transition-colors',
+        'hover:border-[var(--destructive)]/50 hover:bg-[var(--destructive)]/10 hover:text-[var(--destructive)]',
+        'disabled:opacity-50 disabled:pointer-events-none',
+      )}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+        <path d="M10 11v6M14 11v6" />
+      </svg>
+    </button>
   );
 }

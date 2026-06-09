@@ -21,6 +21,7 @@ const api: JmpsApi = {
   open: (id) => invoke<ActionResult>('tool:open', id),
   install: (id) => invoke<ActionResult>('tool:install', id),
   update: (id) => invoke<ActionResult>('tool:update', id),
+  uninstall: (id) => invoke<ActionResult>('tool:uninstall', id),
   getLauncherUpdate: () => invoke<LauncherUpdate | null>('launcher:update-info'),
   updateLauncher: () => invoke<ActionResult>('launcher:update'),
   openExternal: (url) => invoke<void>('shell:openExternal', url),
