@@ -269,6 +269,14 @@ export class SwitcherEngine {
     this.notify();
   }
 
+  /** Program direkt auf eine Szene setzen (harter Schnitt, z. B. Fernsteuerung). */
+  setProgramScene(id: string): void {
+    if (!this.scenes.some((s) => s.id === id)) return;
+    this.programSceneId = id;
+    this.transition = null;
+    this.notify();
+  }
+
   // ---- Ebenen ----
 
   /** Quelle als Ebene in eine Szene legen. Erste Ebene = Vollbild, weitere = PiP. */

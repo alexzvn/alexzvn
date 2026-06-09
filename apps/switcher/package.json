@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/companion-protocol": "*",
     "@jm/media": "*",
     "@jm/ndi": "*",
     "@jm/ui": "*",

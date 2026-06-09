@@ -1,7 +1,24 @@
+import { useEffect, useState } from 'react';
 import { useSettings } from '@/store/settings';
+import type { ControlStatus } from '@shared/types';
 
 export function SettingsView() {
-  const { rtmpUrl, streamBitrateKbps, setRtmpUrl, setStreamBitrateKbps } = useSettings();
+  const {
+    rtmpUrl,
+    streamBitrateKbps,
+    controlEnabled,
+    controlPort,
+    setRtmpUrl,
+    setStreamBitrateKbps,
+    setControlEnabled,
+    setControlPort,
+  } = useSettings();
+
+  const [ctrl, setCtrl] = useState<ControlStatus>({ running: false, port: controlPort, clients: 0 });
+  useEffect(() => {
+    void window.jmswitch.control.getStatus().then(setCtrl);
+    return window.jmswitch.control.onStatus(setCtrl);
+  }, []);
 
   return (
     <div className="h-full overflow-auto scroll-thin px-6 py-8">
@@ -55,6 +72,49 @@ export function SettingsView() {
             Auflösung: <span className="font-semibold text-[var(--foreground)]">1280×720 @ 30 fps</span> ·
             Ton: stille AAC-Spur (Audio-Mix kommt in v0.2). Der Stream wird aus dem Program-Bild
             kodiert (libx264, zerolatency).
+          </p>
+        </section>
+
+        <section className="rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-5">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-[11px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
+              Fernsteuerung (Bitfocus Companion)
+            </h2>
+            <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide">
+              <span
+                className="size-2 rounded-full"
+                style={{ background: ctrl.running ? 'var(--success)' : 'var(--muted-foreground)' }}
+              />
+              {ctrl.running ? `aktiv · Port ${ctrl.port} · ${ctrl.clients} Client(s)` : 'aus'}
+            </span>
+          </div>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={controlEnabled}
+              onChange={(e) => setControlEnabled(e.target.checked)}
+              className="size-4 accent-[var(--primary)]"
+            />
+            <span className="text-sm font-bold">TCP-Steuerserver aktivieren</span>
+          </label>
+
+          <label className="flex flex-col gap-1.5 max-w-xs">
+            <span className="text-sm font-bold">Port</span>
+            <input
+              type="number"
+              min={1}
+              max={65535}
+              value={controlPort}
+              onChange={(e) => setControlPort(Number(e.target.value))}
+              className="h-10 w-32 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-center tabular text-[var(--foreground)]"
+            />
+          </label>
+
+          <p className="text-[11px] text-[var(--muted-foreground)] leading-relaxed border-t border-[var(--border)]/60 pt-4">
+            Zeilenprotokoll (PREVIEW/PROGRAM/CUT/AUTO/RECORD/STREAM) für ein Stream-Deck via
+            Bitfocus Companion — Modul: <span className="font-semibold text-[var(--foreground)]">packages/companion-jm-switcher</span>.
+            Im Companion-Modul Host (IP dieses Rechners) + Port eintragen.
           </p>
         </section>
 

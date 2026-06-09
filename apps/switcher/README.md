@@ -35,12 +35,21 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   eigener MediaRecorder (sauberer WebM-Header je Sink). Audio-Mix → v0.2.
   **RTMP-Ziel + Bitrate** liegen im **Einstellungen-Tab** (persistiert); der
   Stream-Start-Button bleibt in der Mischer-Ansicht.
-- **Slice 6:** **TCP-Steuerserver** + **@jm/companion-protocol** + Bitfocus-
-  **Companion-Modul** (`packages/companion-jm-switcher`): PREVIEW/PROGRAM/CUT/
-  AUTO/RECORD/STREAM + State-Feedback.
+- **Slice 6 (Fernsteuerung):** **TCP-Steuerserver** (Zeilenprotokoll
+  [@jm/companion-protocol](../../packages/companion-protocol)) +
+  **Bitfocus-Companion-Modul** ([packages/companion-jm-switcher](../../packages/companion-jm-switcher)).
+  Befehle PREVIEW/PROGRAM/CUT/AUTO/RECORD/STREAM, Status-Feedback (program/preview/
+  recording/streaming/scenes). Aktivieren im **Einstellungen-Tab** (Port 8723).
+  RECORD via Fernsteuerung schreibt ohne Dialog in den Videos-Ordner.
 
 ATEM-Hardware-Steuerung, SRT, mehrere Karten gleichzeitig, mehrere NDI-Empfänger,
 Keying, Audio-Mischmatrix = v0.2+.
+
+### Fernsteuerung / Companion (Slice 6)
+Einstellungen-Tab → **Fernsteuerung** aktivieren. Das Companion-Modul (Host = IP
+dieses Rechners, Port 8723) sendet das Zeilenprotokoll. Headless/Skript-Start des
+Servers: Env `JMSWITCH_CONTROL_PORT=8723`. Schnelltest:
+`printf 'STATE?\n' | nc <ip> 8723` → liefert eine `STATE …`-Zeile.
 
 ## Entwicklung
 ```bash

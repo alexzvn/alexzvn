@@ -3,6 +3,8 @@ import { listScreens } from './sources';
 import { armCapture } from './capture-handler';
 import { ndiConnect, ndiDisconnect, ndiFind, ndiStatus } from './ndi-receive';
 import { registerOutputIpc } from './output';
+import { controlStatus, pushState, startControlServer, stopControlServer } from './control-server';
+import type { SwitcherStateMsg } from '@jm/companion-protocol';
 
 export function registerIpc(): void {
   ipcMain.handle('sources:listScreens', () => listScreens());
@@ -14,4 +16,11 @@ export function registerIpc(): void {
   ipcMain.handle('ndi:status', () => ndiStatus());
 
   registerOutputIpc();
+
+  ipcMain.handle('control:start', (_e, port: number) => startControlServer(port));
+  ipcMain.handle('control:stop', () => {
+    stopControlServer();
+  });
+  ipcMain.handle('control:status', () => controlStatus());
+  ipcMain.on('control:pushState', (_e, state: SwitcherStateMsg) => pushState(state));
 }

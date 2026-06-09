@@ -7,8 +7,9 @@
 //               (anullsrc, damit YouTube/Twitch & Co. die FLV akzeptieren) → RTMP.
 // Pro Output läuft ein eigener MediaRecorder im Renderer → jeder Sink bekommt
 // einen sauberen WebM-Header (kein Late-Join-Problem).
-import { BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { createWriteStream, type WriteStream } from 'node:fs';
+import { join } from 'node:path';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { spawnFfmpeg } from '@jm/media';
 
@@ -57,6 +58,32 @@ export function registerOutputIpc(): void {
     if (res.canceled || !res.filePath) return { ok: false };
     try {
       recPath = res.filePath;
+      recStream = createWriteStream(recPath);
+      recStream.on('error', (e) => {
+        emitError('record', e.message);
+        closeRecording();
+      });
+      emitStatus();
+      return { ok: true, path: recPath };
+    } catch (e) {
+      recStream = null;
+      recPath = null;
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  });
+
+  // Aufnahme ohne Dialog (Fernsteuerung via Companion) — Standardordner + Zeitstempel.
+  ipcMain.handle('output:recStartAuto', () => {
+    if (recStream) return { ok: false, error: 'Aufnahme läuft bereits' };
+    const ts = new Date().toISOString().replace(/:/g, '-').replace('T', '_').slice(0, 19);
+    let dir: string;
+    try {
+      dir = app.getPath('videos');
+    } catch {
+      dir = app.getPath('userData');
+    }
+    try {
+      recPath = join(dir, `JM-Switcher-${ts}.webm`);
       recStream = createWriteStream(recPath);
       recStream.on('error', (e) => {
         emitError('record', e.message);

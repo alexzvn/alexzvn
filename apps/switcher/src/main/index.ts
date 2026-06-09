@@ -4,6 +4,7 @@ import { registerIpc } from './ipc';
 import { installDisplayMediaHandler } from './capture-handler';
 import { attachNdiWindow, stopNdi } from './ndi-receive';
 import { attachOutputWindow, stopOutput } from './output';
+import { attachControlWindow, startControlServer, stopControlServer } from './control-server';
 
 declare const __dirname: string;
 
@@ -62,12 +63,22 @@ function createMainWindow(): BrowserWindow {
   win.on('closed', () => {
     stopNdi();
     stopOutput();
+    stopControlServer();
     mainWindow = null;
   });
 
   loadMain(win);
   attachNdiWindow(win);
   attachOutputWindow(win);
+  attachControlWindow(win);
+
+  // Dev/Headless: Steuerserver per Env automatisch starten (zum Skripten/Testen
+  // ohne den Einstellungen-Toggle). Sonst startet ihn der Renderer nach Settings.
+  const envPort = Number(process.env['JMSWITCH_CONTROL_PORT']);
+  if (Number.isFinite(envPort) && envPort > 0) {
+    win.webContents.once('did-finish-load', () => void startControlServer(envPort));
+  }
+
   mainWindow = win;
   return win;
 }

@@ -47,6 +47,9 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
   const [outputState, setOutputState] = useState<OutputState>(() => output.getState());
   const rtmpUrl = useSettings((s) => s.rtmpUrl);
   const streamBitrateKbps = useSettings((s) => s.streamBitrateKbps);
+  const controlEnabled = useSettings((s) => s.controlEnabled);
+  const controlPort = useSettings((s) => s.controlPort);
+  const firstControlRun = useRef(true);
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
   const [ndiPicker, setNdiPicker] = useState(false);
@@ -120,6 +123,71 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
     if (outputState.streaming) output.stopStreaming();
     else void output.startStreaming(rtmpUrl, streamBitrateKbps);
   };
+
+  // Fernsteuer-Befehle (TCP/Companion) auf Engine/Output anwenden.
+  useEffect(() => {
+    return window.jmswitch.control.onCommand((cmd) => {
+      const scenes = engine.getState().scenes;
+      switch (cmd.type) {
+        case 'preview': {
+          const sc = scenes[cmd.scene - 1];
+          if (sc) engine.setPreviewScene(sc.id);
+          break;
+        }
+        case 'program': {
+          const sc = scenes[cmd.scene - 1];
+          if (sc) engine.setProgramScene(sc.id);
+          break;
+        }
+        case 'cut':
+          engine.cut();
+          break;
+        case 'auto':
+          engine.auto(cmd.ms);
+          break;
+        case 'record':
+          if (cmd.on) void output.startRecordingAuto();
+          else output.stopRecording();
+          break;
+        case 'stream':
+          if (cmd.on) {
+            const s = useSettings.getState();
+            void output.startStreaming(s.rtmpUrl, s.streamBitrateKbps);
+          } else {
+            output.stopStreaming();
+          }
+          break;
+      }
+    });
+  }, [engine, output]);
+
+  // Switcher-Zustand bei jeder Änderung an den Steuerserver melden (Feedback).
+  useEffect(() => {
+    const idx = (id: string | null): number => {
+      const i = state.scenes.findIndex((s) => s.id === id);
+      return i < 0 ? 0 : i + 1;
+    };
+    window.jmswitch.control.pushState({
+      program: idx(state.programSceneId),
+      preview: idx(state.previewSceneId),
+      recording: outputState.recording,
+      streaming: outputState.streaming,
+      scenes: state.scenes.length,
+    });
+  }, [state, outputState]);
+
+  // Steuerserver gemäß Einstellungen starten/stoppen. Beim allerersten Lauf nicht
+  // stoppen (sonst würde ein per Env (JMSWITCH_CONTROL_PORT) gestarteter Server gekillt).
+  useEffect(() => {
+    if (controlEnabled) {
+      void window.jmswitch.control.start(controlPort).then((r) => {
+        if (!r.ok) setNotice(`Steuerserver konnte nicht starten: ${r.error ?? ''}`);
+      });
+    } else if (!firstControlRun.current) {
+      void window.jmswitch.control.stop();
+    }
+    firstControlRun.current = false;
+  }, [controlEnabled, controlPort]);
 
   const previewScene = state.scenes.find((s) => s.id === state.previewSceneId) ?? null;
   const programScene = state.scenes.find((s) => s.id === state.programSceneId) ?? null;

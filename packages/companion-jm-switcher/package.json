@@ -1,0 +1,18 @@
+{
+  "name": "jm-switcher",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Bitfocus Companion module for the JM Switcher (PREVIEW/PROGRAM/CUT/AUTO/RECORD/STREAM)",
+  "main": "main.js",
+  "scripts": {
+    "build": "companion-module-build",
+    "dev": "companion-module-build dev"
+  },
+  "dependencies": {
+    "@companion-module/base": "~1.8.0",
+    "@jm/companion-protocol": "*"
+  },
+  "devDependencies": {
+    "@companion-module/tools": "~1.5.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@jm/companion-protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteiltes TCP-Zeilenprotokoll für die JM-Switcher-Fernsteuerung (Bitfocus Companion)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "selftest": "node --experimental-strip-types test/selftest.ts"
+  }
+}

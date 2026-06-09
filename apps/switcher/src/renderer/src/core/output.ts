@@ -76,14 +76,26 @@ export class OutputController {
     return this.stream;
   }
 
-  async startRecording(): Promise<void> {
+  /** Aufnahme mit Speicherdialog (UI-Button). */
+  startRecording(): Promise<void> {
+    return this.beginRecording(() => window.jmswitch.output.recStart());
+  }
+
+  /** Aufnahme ohne Dialog (Fernsteuerung): Standardordner + Zeitstempel. */
+  startRecordingAuto(): Promise<void> {
+    return this.beginRecording(() => window.jmswitch.output.recStartAuto());
+  }
+
+  private async beginRecording(
+    open: () => Promise<{ ok: boolean; path?: string; error?: string }>,
+  ): Promise<void> {
     if (this.recRecorder) return;
     const stream = this.ensureStream();
     if (!stream) {
       this.patch({ error: 'Kein Program-Bild zum Aufnehmen.' });
       return;
     }
-    const res = await window.jmswitch.output.recStart();
+    const res = await open();
     if (!res.ok) {
       if (res.error) this.patch({ error: res.error });
       return; // abgebrochen

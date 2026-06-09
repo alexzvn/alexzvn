@@ -1,11 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
+  ControlStatus,
   JmswitchApi,
   NdiStatus,
   OutputError,
   OutputStatus,
   ScreenSourceInfo,
 } from '@shared/types';
+import type { ControlCommand, SwitcherStateMsg } from '@jm/companion-protocol';
 
 // Den vom Main übertragenen NDI-Frame-MessagePort in den Renderer-Main-World
 // durchreichen — contextBridge kann MessagePorts nicht direkt übergeben, daher
@@ -32,6 +34,12 @@ const api: JmswitchApi = {
   output: {
     recStart: () =>
       ipcRenderer.invoke('output:recStart') as Promise<{ ok: boolean; path?: string; error?: string }>,
+    recStartAuto: () =>
+      ipcRenderer.invoke('output:recStartAuto') as Promise<{
+        ok: boolean;
+        path?: string;
+        error?: string;
+      }>,
     recChunk: (chunk) => ipcRenderer.send('output:recChunk', chunk),
     recStop: () => ipcRenderer.send('output:recStop'),
     streamStart: (url, videoBitrateKbps) =>
@@ -51,6 +59,27 @@ const api: JmswitchApi = {
       ipcRenderer.on('output:error', listener);
       return () => ipcRenderer.off('output:error', listener);
     },
+  },
+  control: {
+    start: (port) =>
+      ipcRenderer.invoke('control:start', port) as Promise<{
+        ok: boolean;
+        error?: string;
+        port?: number;
+      }>,
+    stop: () => ipcRenderer.invoke('control:stop') as Promise<void>,
+    getStatus: () => ipcRenderer.invoke('control:status') as Promise<ControlStatus>,
+    onStatus: (cb) => {
+      const listener = (_event: unknown, s: ControlStatus) => cb(s);
+      ipcRenderer.on('control:status', listener);
+      return () => ipcRenderer.off('control:status', listener);
+    },
+    onCommand: (cb) => {
+      const listener = (_event: unknown, cmd: ControlCommand) => cb(cmd);
+      ipcRenderer.on('control:command', listener);
+      return () => ipcRenderer.off('control:command', listener);
+    },
+    pushState: (state: SwitcherStateMsg) => ipcRenderer.send('control:pushState', state),
   },
 };
 

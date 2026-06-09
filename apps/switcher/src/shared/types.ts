@@ -54,10 +54,33 @@ export interface OutputError {
   message: string;
 }
 
+import type { ControlCommand, SwitcherStateMsg } from '@jm/companion-protocol';
+
+/** Status des TCP-Steuerservers (Slice 6). */
+export interface ControlStatus {
+  running: boolean;
+  port: number;
+  clients: number;
+}
+
+/** TCP-Fernsteuerung (Bitfocus Companion). */
+export interface JmswitchControlApi {
+  start: (port: number) => Promise<{ ok: boolean; error?: string; port?: number }>;
+  stop: () => Promise<void>;
+  getStatus: () => Promise<ControlStatus>;
+  onStatus: (cb: (s: ControlStatus) => void) => () => void;
+  /** Eingehende Fernsteuer-Befehle (Renderer wendet sie an). */
+  onCommand: (cb: (cmd: ControlCommand) => void) => () => void;
+  /** Aktuellen Switcher-Zustand an den Server melden (→ Clients). */
+  pushState: (state: SwitcherStateMsg) => void;
+}
+
 /** Aufnahme (WebM-Datei) + RTMP-Stream (ffmpeg) des Program-Outputs. */
 export interface JmswitchOutputApi {
   /** Speicherort wählen + Datei öffnen. */
   recStart: () => Promise<{ ok: boolean; path?: string; error?: string }>;
+  /** Aufnahme ohne Dialog (Fernsteuerung): Standardordner + Zeitstempel. */
+  recStartAuto: () => Promise<{ ok: boolean; path?: string; error?: string }>;
   /** WebM-Chunk in die Aufnahmedatei schreiben. */
   recChunk: (chunk: Uint8Array) => void;
   /** Aufnahme abschließen. */
@@ -83,4 +106,6 @@ export interface JmswitchApi {
   ndi: JmswitchNdiApi;
   /** Aufnahme + RTMP des Program-Outputs (Slice 5). */
   output: JmswitchOutputApi;
+  /** TCP-Fernsteuerung / Companion (Slice 6). */
+  control: JmswitchControlApi;
 }

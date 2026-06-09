@@ -5,9 +5,9 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
-// @jm/media als Quelle bündeln (kein Laufzeit-require); @jm/ndi bleibt EXTERN
-// (natives Addon, zur Laufzeit geladen).
-const internalPackages = ['@jm/media'];
+// @jm/media + @jm/companion-protocol als Quelle bündeln (kein Laufzeit-require);
+// @jm/ndi bleibt EXTERN (natives Addon, zur Laufzeit geladen).
+const internalPackages = ['@jm/media', '@jm/companion-protocol'];
 
 export default defineConfig({
   main: {
