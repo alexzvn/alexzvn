@@ -7,10 +7,14 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
 
 ## Status — in Slices gebaut
 
-- **Slice 1 (jetzt):** Compositor-Kern. Program/Preview-Monitore, Quell-Bus,
-  **Cut** + **Auto (Dissolve)**. Quellen: **Farbe/Test** und **Bildschirm/Fenster**
-  (Electron `desktopCapturer` + `getDisplayMedia` → `<video>` → Canvas-Compositing,
-  rAF). Verifiziert per typecheck/build/xvfb.
+- **Slice 1:** Compositor-Kern. Program/Preview-Monitore, **Cut** + **Auto
+  (Dissolve)**. Quellen: **Farbe/Test** und **Bildschirm/Fenster** (Electron
+  `desktopCapturer` + `getDisplayMedia` → `<video>` → Canvas-Compositing, rAF).
+- **Slice 2 (OBS-Szenen/PiP):** Modell jetzt **Quellen-Pool → Szenen (geordnete
+  Ebenen mit Position/Größe) → Program/Preview schaltet Szenen**. Szenen-Panel
+  (anlegen/umbenennen/löschen), Ebenen-Editor (Sichtbarkeit, Z-Reihenfolge,
+  Layout-Presets: Vollbild / PiP-Ecken / Hälften) → **PiP** in Sekunden baubar.
+  Drag-/Resize-Editing direkt auf dem Monitor = v0.2.
 - **Slice 2 (geplant):** **NDI-Empfang** als Quelle (packages/ndi RECEIVE ist schon
   da) — Frames im utilityProcess pollen, per Kopie an den Renderer-Compositor
   (Copy-not-transfer-Disziplin aus der NDI Screen Capture).

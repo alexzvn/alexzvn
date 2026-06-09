@@ -1,9 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, cn } from '@jm/ui';
 import type { ScreenSourceInfo } from '@shared/types';
-import { SwitcherEngine, type EngineState, type SourceInfo } from '@/core/engine';
+import {
+  SwitcherEngine,
+  type EngineState,
+  type LayerInfo,
+  type Rect,
+  type SceneInfo,
+  type SourceInfo,
+} from '@/core/engine';
 
 const PALETTE = ['#1d4ed8', '#dc2626', '#16a34a', '#9333ea', '#0891b2', '#ca8a04'];
+
+const LAYER_PRESETS: { key: string; label: string; rect: Rect }[] = [
+  { key: 'full', label: 'Vollbild', rect: { x: 0, y: 0, w: 1, h: 1 } },
+  { key: 'tl', label: 'PiP oben links', rect: { x: 0.04, y: 0.06, w: 0.3, h: 0.3 } },
+  { key: 'tr', label: 'PiP oben rechts', rect: { x: 0.66, y: 0.06, w: 0.3, h: 0.3 } },
+  { key: 'bl', label: 'PiP unten links', rect: { x: 0.04, y: 0.64, w: 0.3, h: 0.3 } },
+  { key: 'br', label: 'PiP unten rechts', rect: { x: 0.66, y: 0.64, w: 0.3, h: 0.3 } },
+  { key: 'left', label: 'Hälfte links', rect: { x: 0, y: 0, w: 0.5, h: 1 } },
+  { key: 'right', label: 'Hälfte rechts', rect: { x: 0.5, y: 0, w: 0.5, h: 1 } },
+];
+
+function rectKey(r: { x: number; y: number; w: number; h: number }): string {
+  return `${r.x.toFixed(2)},${r.y.toFixed(2)},${r.w.toFixed(2)},${r.h.toFixed(2)}`;
+}
+const PRESET_BY_KEY = new Map(LAYER_PRESETS.map((p) => [rectKey(p.rect), p.key]));
+function currentPreset(l: LayerInfo): string {
+  return PRESET_BY_KEY.get(rectKey(l)) ?? 'custom';
+}
 
 export function SwitcherView() {
   const engineRef = useRef<SwitcherEngine | null>(null);
@@ -34,10 +59,11 @@ export function SwitcherView() {
     return () => clearTimeout(t);
   }, [notice]);
 
-  const programSource = state.sources.find((s) => s.id === state.programId) ?? null;
-  const previewSource = state.sources.find((s) => s.id === state.previewId) ?? null;
-  const canTake = state.previewId != null;
-  const canAuto = state.previewId != null && state.previewId !== state.programId && !state.transitioning;
+  const previewScene = state.scenes.find((s) => s.id === state.previewSceneId) ?? null;
+  const programScene = state.scenes.find((s) => s.id === state.programSceneId) ?? null;
+  const canTake = state.previewSceneId != null;
+  const canAuto =
+    state.previewSceneId != null && state.previewSceneId !== state.programSceneId && !state.transitioning;
 
   const addColor = (): void => {
     const n = state.sources.filter((s) => s.kind === 'color').length;
@@ -55,11 +81,15 @@ export function SwitcherView() {
     }
   };
 
+  const addScene = (): void => {
+    engine.addScene(`Szene ${state.scenes.length + 1}`);
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Monitore + Transition */}
       <div className="flex-1 min-h-0 flex items-center gap-5 px-6 py-5">
-        <Monitor label="Preview" tone="preview" canvasRef={previewRef} sourceName={previewSource?.name} />
+        <Monitor label="Preview" tone="preview" canvasRef={previewRef} sceneName={previewScene?.name} />
 
         <div className="shrink-0 flex flex-col items-center justify-center gap-3 w-28">
           <button
@@ -97,50 +127,38 @@ export function SwitcherView() {
                 onChange={(e) => engine.setAutoMs(Number(e.target.value))}
                 className="h-8 w-16 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-2 text-sm text-center tabular text-[var(--foreground)]"
               />
-              <span className="text-[var(--muted-foreground)]">ms</span>
+              <span>ms</span>
             </span>
           </label>
         </div>
 
-        <Monitor label="Program" tone="program" canvasRef={programRef} sourceName={programSource?.name} />
+        <Monitor label="Program" tone="program" canvasRef={programRef} sceneName={programScene?.name} />
       </div>
 
-      {/* Quell-Bus */}
-      <div className="shrink-0 border-t border-[var(--border)]/60 px-6 py-4">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-[10px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
-            Quellen
-          </span>
-          <span className="text-[11px] text-[var(--muted-foreground)]">
-            Klick = in Preview · Cut/Auto schaltet auf Program
-          </span>
-          <div className="ml-auto flex gap-2">
-            <Button size="sm" variant="outline" onClick={addColor}>
-              + Farbe
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setPicker(true)}>
-              + Bildschirm
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2.5">
-          {state.sources.length === 0 && (
-            <span className="text-sm text-[var(--muted-foreground)] py-4">
-              Noch keine Quelle — füge eine Farbe oder einen Bildschirm hinzu.
-            </span>
-          )}
-          {state.sources.map((s) => (
-            <SourceChip
-              key={s.id}
-              source={s}
-              isPreview={s.id === state.previewId}
-              isProgram={s.id === state.programId}
-              onClick={() => engine.setPreview(s.id)}
-              onRemove={() => engine.removeSource(s.id)}
-            />
-          ))}
-        </div>
+      {/* Szenen / Ebenen / Quellen */}
+      <div className="shrink-0 h-[300px] border-t border-[var(--border)]/60 grid grid-cols-[1fr_1.4fr_1fr] divide-x divide-[var(--border)]/60">
+        <ScenesPanel
+          scenes={state.scenes}
+          previewId={state.previewSceneId}
+          programId={state.programSceneId}
+          onSelect={(id) => engine.setPreviewScene(id)}
+          onRemove={(id) => engine.removeScene(id)}
+          onRename={(id, name) => engine.renameScene(id, name)}
+          onAdd={addScene}
+        />
+        <LayersPanel
+          scene={previewScene}
+          sources={state.sources}
+          engine={engine}
+        />
+        <SourcesPanel
+          sources={state.sources}
+          canAddLayer={previewScene != null}
+          onAddColor={addColor}
+          onAddScreen={() => setPicker(true)}
+          onAddToScene={(sourceId) => previewScene && engine.addLayer(previewScene.id, sourceId)}
+          onRemove={(id) => engine.removeSource(id)}
+        />
       </div>
 
       {picker && <ScreenPicker onPick={(s) => void pickScreen(s)} onClose={() => setPicker(false)} />}
@@ -160,12 +178,12 @@ function Monitor({
   label,
   tone,
   canvasRef,
-  sourceName,
+  sceneName,
 }: {
   label: string;
   tone: 'preview' | 'program';
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  sourceName?: string;
+  sceneName?: string;
 }) {
   const accent = tone === 'program' ? 'var(--destructive)' : 'var(--success)';
   return (
@@ -174,9 +192,7 @@ function Monitor({
         <span className="text-xs font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}>
           {label}
         </span>
-        <span className="text-[11px] text-[var(--muted-foreground)] truncate ml-3">
-          {sourceName ?? '—'}
-        </span>
+        <span className="text-[11px] text-[var(--muted-foreground)] truncate ml-3">{sceneName ?? '—'}</span>
       </div>
       <div
         className="relative w-full aspect-video rounded-[var(--radius-lg)] overflow-hidden bg-black border-2"
@@ -188,62 +204,263 @@ function Monitor({
   );
 }
 
-function SourceChip({
-  source,
-  isPreview,
-  isProgram,
-  onClick,
+function PanelHead({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 px-4 h-11 border-b border-[var(--border)]/60 shrink-0">
+      <span className="text-[10px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
+        {title}
+      </span>
+      <div className="ml-auto flex items-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function ScenesPanel({
+  scenes,
+  previewId,
+  programId,
+  onSelect,
+  onRemove,
+  onRename,
+  onAdd,
+}: {
+  scenes: SceneInfo[];
+  previewId: string | null;
+  programId: string | null;
+  onSelect: (id: string) => void;
+  onRemove: (id: string) => void;
+  onRename: (id: string, name: string) => void;
+  onAdd: () => void;
+}) {
+  const [editing, setEditing] = useState<{ id: string; value: string } | null>(null);
+
+  return (
+    <div className="flex flex-col min-h-0">
+      <PanelHead title="Szenen">
+        <Button size="sm" variant="outline" onClick={onAdd}>
+          + Szene
+        </Button>
+      </PanelHead>
+      <div className="flex-1 overflow-auto scroll-thin p-2 flex flex-col gap-1">
+        {scenes.length === 0 && (
+          <p className="text-xs text-[var(--muted-foreground)] p-2">Erstelle eine Szene.</p>
+        )}
+        {scenes.map((sc) => {
+          const isProgram = sc.id === programId;
+          const isPreview = sc.id === previewId;
+          return (
+            <div
+              key={sc.id}
+              onClick={() => onSelect(sc.id)}
+              className={cn(
+                'group flex items-center gap-2 h-9 px-2.5 rounded-[var(--radius)] cursor-pointer text-sm font-semibold border',
+                isPreview ? 'border-[var(--primary)] bg-[var(--highlight)]' : 'border-transparent hover:bg-[var(--highlight)]',
+              )}
+            >
+              {editing?.id === sc.id ? (
+                <input
+                  autoFocus
+                  value={editing.value}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => setEditing({ id: sc.id, value: e.target.value })}
+                  onBlur={() => {
+                    if (editing.value.trim()) onRename(sc.id, editing.value.trim());
+                    setEditing(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    if (e.key === 'Escape') setEditing(null);
+                  }}
+                  className="flex-1 h-7 rounded border border-[var(--border)] bg-[var(--input)] px-2 text-sm"
+                />
+              ) : (
+                <span
+                  className="flex-1 truncate"
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setEditing({ id: sc.id, value: sc.name });
+                  }}
+                >
+                  {sc.name}
+                </span>
+              )}
+              {isProgram && (
+                <span className="px-1 rounded text-[9px] font-extrabold bg-[var(--destructive)] text-[var(--destructive-foreground)]">
+                  PGM
+                </span>
+              )}
+              {isPreview && (
+                <span className="px-1 rounded text-[9px] font-extrabold bg-[var(--primary)] text-[var(--primary-foreground)]">
+                  PVW
+                </span>
+              )}
+              <button
+                type="button"
+                title="Szene löschen"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(sc.id);
+                }}
+                className="opacity-0 group-hover:opacity-100 text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+              >
+                <XIcon />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LayersPanel({
+  scene,
+  sources,
+  engine,
+}: {
+  scene: SceneInfo | null;
+  sources: SourceInfo[];
+  engine: SwitcherEngine;
+}) {
+  const display = scene ? [...scene.layers].reverse() : []; // vorn = oben
+  const nameOf = (id: string): string => sources.find((s) => s.id === id)?.name ?? '—';
+
+  return (
+    <div className="flex flex-col min-h-0">
+      <PanelHead title={scene ? `Ebenen · ${scene.name}` : 'Ebenen'} />
+      <div className="flex-1 overflow-auto scroll-thin p-2 flex flex-col gap-1">
+        {!scene && <p className="text-xs text-[var(--muted-foreground)] p-2">Keine Szene gewählt.</p>}
+        {scene && display.length === 0 && (
+          <p className="text-xs text-[var(--muted-foreground)] p-2">
+            Klick rechts eine Quelle, um sie als Ebene hinzuzufügen (1. Ebene = Vollbild, weitere = PiP).
+          </p>
+        )}
+        {scene &&
+          display.map((layer, di) => {
+            const isFront = di === 0;
+            const isBack = di === display.length - 1;
+            return (
+              <div
+                key={layer.id}
+                className="flex items-center gap-2 h-9 px-2 rounded-[var(--radius)] border border-[var(--border)]/60 bg-[var(--card)]/40"
+              >
+                <button
+                  type="button"
+                  title={layer.visible ? 'Ebene ausblenden' : 'Ebene einblenden'}
+                  onClick={() => engine.setLayerVisible(scene.id, layer.id, !layer.visible)}
+                  className={cn('shrink-0', layer.visible ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]/40')}
+                >
+                  <EyeIcon off={!layer.visible} />
+                </button>
+                <span className="flex-1 truncate text-sm font-semibold">{nameOf(layer.sourceId)}</span>
+                <select
+                  value={currentPreset(layer)}
+                  onChange={(e) => {
+                    const p = LAYER_PRESETS.find((x) => x.key === e.target.value);
+                    if (p) engine.setLayerRect(scene.id, layer.id, p.rect);
+                  }}
+                  className="h-7 rounded border border-[var(--border)] bg-[var(--input)] px-1.5 text-xs"
+                >
+                  {currentPreset(layer) === 'custom' && <option value="custom">Eigene</option>}
+                  {LAYER_PRESETS.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  title="nach vorn"
+                  disabled={isFront}
+                  onClick={() => engine.moveLayer(scene.id, layer.id, 1)}
+                  className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30"
+                >
+                  <ArrowIcon up />
+                </button>
+                <button
+                  type="button"
+                  title="nach hinten"
+                  disabled={isBack}
+                  onClick={() => engine.moveLayer(scene.id, layer.id, -1)}
+                  className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30"
+                >
+                  <ArrowIcon />
+                </button>
+                <button
+                  type="button"
+                  title="Ebene entfernen"
+                  onClick={() => engine.removeLayer(scene.id, layer.id)}
+                  className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+                >
+                  <XIcon />
+                </button>
+              </div>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
+function SourcesPanel({
+  sources,
+  canAddLayer,
+  onAddColor,
+  onAddScreen,
+  onAddToScene,
   onRemove,
 }: {
-  source: SourceInfo;
-  isPreview: boolean;
-  isProgram: boolean;
-  onClick: () => void;
-  onRemove: () => void;
+  sources: SourceInfo[];
+  canAddLayer: boolean;
+  onAddColor: () => void;
+  onAddScreen: () => void;
+  onAddToScene: (sourceId: string) => void;
+  onRemove: (id: string) => void;
 }) {
-  const ring = isProgram
-    ? 'border-[var(--destructive)]'
-    : isPreview
-      ? 'border-[var(--primary)]'
-      : 'border-[var(--border)] hover:bg-[var(--highlight)]';
   return (
-    <div className="relative group">
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'h-16 w-32 rounded-[var(--radius)] border-2 overflow-hidden relative flex items-end justify-start',
-          ring,
+    <div className="flex flex-col min-h-0">
+      <PanelHead title="Quellen-Pool">
+        <Button size="sm" variant="outline" onClick={onAddColor}>
+          + Farbe
+        </Button>
+        <Button size="sm" variant="outline" onClick={onAddScreen}>
+          + Bildschirm
+        </Button>
+      </PanelHead>
+      <div className="flex-1 overflow-auto scroll-thin p-2 flex flex-col gap-1">
+        {sources.length === 0 && (
+          <p className="text-xs text-[var(--muted-foreground)] p-2">Noch keine Quellen.</p>
         )}
-        style={source.kind === 'color' ? { background: source.color } : { background: '#1a1a1a' }}
-      >
-        <span className="m-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[11px] font-bold truncate max-w-[110px]">
-          {source.name}
-        </span>
-        <div className="absolute top-1 right-1 flex gap-1">
-          {isProgram && (
-            <span className="px-1 rounded text-[9px] font-extrabold bg-[var(--destructive)] text-[var(--destructive-foreground)]">
-              PGM
-            </span>
-          )}
-          {isPreview && (
-            <span className="px-1 rounded text-[9px] font-extrabold bg-[var(--primary)] text-[var(--primary-foreground)]">
-              PVW
-            </span>
-          )}
-        </div>
-      </button>
-      <button
-        type="button"
-        title="Quelle entfernen"
-        onClick={onRemove}
-        className="absolute -top-2 -left-2 size-5 grid place-items-center rounded-full bg-[var(--card)] border border-[var(--border)]
-                   text-[var(--muted-foreground)] hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
+        {sources.map((s) => (
+          <div
+            key={s.id}
+            className="group flex items-center gap-2 h-9 px-2 rounded-[var(--radius)] border border-[var(--border)]/60"
+          >
+            <span
+              className="size-4 rounded-sm shrink-0 border border-[var(--border)]"
+              style={{ background: s.kind === 'color' ? s.color : '#333' }}
+            />
+            <span className="flex-1 truncate text-sm font-semibold">{s.name}</span>
+            <button
+              type="button"
+              title={canAddLayer ? 'Als Ebene in Preview-Szene' : 'Erst eine Szene wählen'}
+              disabled={!canAddLayer}
+              onClick={() => onAddToScene(s.id)}
+              className="shrink-0 h-7 px-2 rounded-[var(--radius)] border border-[var(--border)] text-xs font-bold hover:bg-[var(--highlight)] disabled:opacity-40"
+            >
+              + Ebene
+            </button>
+            <button
+              type="button"
+              title="Quelle löschen"
+              onClick={() => onRemove(s.id)}
+              className="shrink-0 opacity-0 group-hover:opacity-100 text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+            >
+              <XIcon />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -261,12 +478,8 @@ function ScreenPicker({
     let alive = true;
     window.jmswitch
       .listScreens()
-      .then((s) => {
-        if (alive) setScreens(s);
-      })
-      .catch(() => {
-        if (alive) setScreens([]);
-      });
+      .then((s) => alive && setScreens(s))
+      .catch(() => alive && setScreens([]));
     return () => {
       alive = false;
     };
@@ -311,5 +524,29 @@ function ScreenPicker({
         </div>
       </div>
     </div>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+function ArrowIcon({ up }: { up?: boolean }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={up ? undefined : { transform: 'rotate(180deg)' }}>
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  );
+}
+function EyeIcon({ off }: { off?: boolean }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+      {off && <path d="M3 3l18 18" />}
+    </svg>
   );
 }
