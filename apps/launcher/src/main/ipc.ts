@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron';
+import { app, ipcMain, shell } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import type { ActionResult, FeedbackInput, InstallProgress, SuiteSettingsInput } from '@shared/types';
 import type { ToolManifest } from '@jm/suite-manifest';
@@ -20,6 +20,9 @@ function withTool(
 }
 
 export function registerIpc(): void {
+  // Eigene Launcher-Version (für die Anzeige im Header, Issue #12).
+  ipcMain.handle('app:version', () => app.getVersion());
+
   ipcMain.handle('suite:list', () => getTools());
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
   // Live-Update-Prüfung gegen die Releases (online, sonst unveränderte Zustände).

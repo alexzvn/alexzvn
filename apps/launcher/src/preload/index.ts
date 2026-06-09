@@ -14,6 +14,7 @@ import type {
 
 const api: JmpsApi = {
   platform: process.platform,
+  getVersion: () => invoke<string>('app:version'),
   listTools: () => invoke<ToolManifest[]>('suite:list'),
   getState: () => invoke<ToolState[]>('suite:state'),
   checkUpdates: () => invoke<ToolState[]>('suite:check-updates'),

@@ -23,6 +23,7 @@ interface ToolsStore {
   settingsOpen: boolean;
   loading: boolean;
   notice: string | null;
+  version: string | null;
   launcherUpdate: LauncherUpdate | null;
   load: () => Promise<void>;
   checkUpdates: () => Promise<void>;
@@ -76,6 +77,7 @@ export const useTools = create<ToolsStore>((set) => {
     feedbackOpen: false,
     loading: true,
     notice: null,
+    version: null,
     launcherUpdate: null,
 
     load: async () => {
@@ -103,12 +105,13 @@ export const useTools = create<ToolsStore>((set) => {
           void useTools.getState().loadLauncherUpdate();
         });
       }
-      const [tools, states, settings] = await Promise.all([
+      const [tools, states, settings, version] = await Promise.all([
         window.jmps.listTools(),
         window.jmps.getState(),
         window.jmps.getSettings(),
+        window.jmps.getVersion(),
       ]);
-      set({ tools, states: byId(states), settings, loading: false });
+      set({ tools, states: byId(states), settings, version, loading: false });
       // Zustände sofort rendern, die (langsameren, online) Prüfungen danach.
       void useTools.getState().checkUpdates();
       void useTools.getState().loadLauncherUpdate();

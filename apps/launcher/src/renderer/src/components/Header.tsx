@@ -6,6 +6,7 @@ export function Header() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const openSettings = useTools((s) => s.openSettings);
   const openFeedback = useTools((s) => s.openFeedback);
+  const version = useTools((s) => s.version);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -32,7 +33,18 @@ export function Header() {
       <div className="flex items-center gap-3">
         <Logo size={30} />
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-extrabold tracking-[0.06em]">JM PRODUCTION SUITE</span>
+          <span className="flex items-center gap-2">
+            <span className="text-sm font-extrabold tracking-[0.06em]">JM PRODUCTION SUITE</span>
+            {version && (
+              <span
+                title={`Launcher-Version ${version}`}
+                className="rounded-[var(--radius-full)] border border-[var(--border)] px-1.5 py-px
+                           text-[10px] font-bold tabular-nums text-[var(--muted-foreground)]"
+              >
+                v{version}
+              </span>
+            )}
+          </span>
           <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
             Werkzeugkasten für Media Operators
           </span>

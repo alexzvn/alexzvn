@@ -3,6 +3,7 @@ import { Button } from '@jm/ui';
 import type { ToolCategory } from '@shared/types';
 import { Header } from '@/components/Header';
 import { CategoryChips, type CategoryFilter } from '@/components/CategoryChips';
+import { StatusChips, type StatusFilter } from '@/components/StatusChips';
 import { ToolCard } from '@/components/ToolCard';
 import { SettingsModal } from '@/components/SettingsModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
@@ -19,6 +20,7 @@ export function App() {
   const setNotice = useTools((s) => s.setNotice);
 
   const [filter, setFilter] = useState<CategoryFilter>('Alle');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('Alle');
 
   useEffect(() => {
     void load();
@@ -35,9 +37,29 @@ export function App() {
     return ['Alle', ...present];
   }, [tools]);
 
-  const visible = useMemo(
+  // Erst nach Kategorie, dann nach Installationsstatus filtern (Issues #14).
+  const byCategory = useMemo(
     () => (filter === 'Alle' ? tools : tools.filter((t) => t.category === filter)),
     [tools, filter],
+  );
+
+  const statusCounts = useMemo<Record<StatusFilter, number>>(() => {
+    const counts: Record<StatusFilter, number> = {
+      Alle: byCategory.length,
+      installed: 0,
+      'update-available': 0,
+      'not-installed': 0,
+    };
+    for (const t of byCategory) counts[states[t.id]?.status ?? 'not-installed'] += 1;
+    return counts;
+  }, [byCategory, states]);
+
+  const visible = useMemo(
+    () =>
+      statusFilter === 'Alle'
+        ? byCategory
+        : byCategory.filter((t) => (states[t.id]?.status ?? 'not-installed') === statusFilter),
+    [byCategory, statusFilter, states],
   );
 
   const installedCount = Object.values(states).filter((s) => s.status === 'installed').length;
@@ -59,12 +81,15 @@ export function App() {
                   : `${tools.length} Tools · ${installedCount} installiert`}
               </p>
             </div>
-            <CategoryChips categories={categories} active={filter} onChange={setFilter} />
+            <div className="flex flex-col items-end gap-2">
+              <CategoryChips categories={categories} active={filter} onChange={setFilter} />
+              <StatusChips active={statusFilter} counts={statusCounts} onChange={setStatusFilter} />
+            </div>
           </div>
 
           {!loading && visible.length === 0 && (
             <p className="text-sm text-[var(--muted-foreground)]">
-              Keine Tools in dieser Kategorie.
+              Keine Tools für diese Auswahl.
             </p>
           )}
 

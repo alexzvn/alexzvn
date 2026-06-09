@@ -62,6 +62,8 @@ export type AppEvent =
 /** Die unter `window.jmps` bereitgestellte Launcher-API. */
 export interface JmpsApi {
   platform: NodeJS.Platform;
+  /** Eigene Version des Launchers (z. B. "0.1.12"). */
+  getVersion: () => Promise<string>;
   listTools: () => Promise<ToolManifest[]>;
   getState: () => Promise<ToolState[]>;
   checkUpdates: () => Promise<ToolState[]>;
