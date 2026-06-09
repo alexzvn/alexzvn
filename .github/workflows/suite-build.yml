@@ -1,0 +1,77 @@
+name: Suite Build (artifacts)
+
+# Baut Workspace-Tools für macOS + Windows und lädt die Installer als
+# herunterladbare Artefakte hoch (kein Release, keine Signatur).
+# - workflow_dispatch: genau EIN Tool über die Eingabe `app`
+# - push auf den Feature-Branch: baut ALLE Tools (Matrix) zum Testen
+#   (temporär — vor dem Merge nach main wieder eindampfen).
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Workspace-Tool (Ordnername unter apps/, z. B. launcher, media-converter, copy)"
+        default: "launcher"
+        type: string
+  push:
+    branches: ["feat/jm-production-suite"]
+    paths-ignore:
+      - "**/*.md"
+
+jobs:
+  build:
+    name: ${{ matrix.app }} · ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        # Bei Dispatch genau das eingegebene Tool; bei Push nur der Launcher
+        # (zum schnellen Testen). Die ganze Suite wurde mit Lauf 27010978032
+        # einmalig grün gebaut — für erneute Vollbauten dispatch je Tool.
+        app: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', github.event.inputs.app) || '["launcher"]') }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Install (workspaces)
+        run: npm ci
+
+      - name: Build renderer/main (electron-vite)
+        run: npm run build -w @jm/${{ matrix.app }}
+        env:
+          JMPS_PROXY_KEY: ${{ secrets.JMPS_PROXY_KEY }}
+
+      # electron ist im Workspace ans Root gehoistet → Version in die Config
+      # schreiben (shell-sicher, statt -c.electronVersion am CLI; pwsh zerlegt das).
+      # npmRebuild: false → überspringt "installing production dependencies" im
+      # appDir, das seit der Root-Hoisting-Lockfile die einzige 7zip-bin-Kopie
+      # zerstört ("ENOENT chmod 7za"). Apps sind reines JS (vite bündelt in out/).
+      - name: Inject electron version + disable npmRebuild into config
+        shell: bash
+        run: |
+          ver=$(node -p "require('electron/package.json').version")
+          printf '\nelectronVersion: %s\nnpmRebuild: false\n' "$ver" >> "apps/${{ matrix.app }}/electron-builder.yml"
+          echo "electronVersion=$ver npmRebuild=false"
+
+      # Tool-spezifische Vorbereitung (z. B. media-converter bündelt ffmpeg).
+      # Tools ohne `prepackage`-Script werden dank --if-present übersprungen.
+      - name: Prepare bundled binaries (if any)
+        run: npm run prepackage -w @jm/${{ matrix.app }} --if-present
+
+      - name: Package (electron-builder, unsigniert)
+        working-directory: apps/${{ matrix.app }}
+        run: npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: jm-${{ matrix.app }}-${{ matrix.os }}
+          if-no-files-found: warn
+          path: |
+            apps/${{ matrix.app }}/release/*.dmg
+            apps/${{ matrix.app }}/release/*.exe

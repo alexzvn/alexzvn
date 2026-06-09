@@ -1,0 +1,50 @@
+appId: gmbh.jakobs.copy
+productName: JM Copy
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.utilities
+  icon: build/icon.png
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Copy
+
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true

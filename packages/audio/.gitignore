@@ -1,0 +1,5 @@
+build/
+*.node
+# PortAudio-Build + ASIO-SDK niemals einchecken (ASIO-SDK ist nicht redistribuierbar)
+vendor/
+sdk/

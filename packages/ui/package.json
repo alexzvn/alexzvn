@@ -1,0 +1,20 @@
+{
+  "name": "@jm/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteilte JM-Designsprache: Tokens, Basis-Styles und UI-Komponenten",
+  "exports": {
+    ".": "./src/index.ts",
+    "./base.css": "./src/base.css",
+    "./tokens/colors.css": "./src/tokens/colors.css",
+    "./tokens/typography.css": "./src/tokens/typography.css"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.1.1"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

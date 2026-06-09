@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "NDI: Build Native Addon",
+      "type": "shell",
+      "command": "npm install --workspace @jm/ndi",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "NDI: Electron Rebuild",
+      "type": "shell",
+      "command": "npm exec --workspace @jm/ndi -- electron-rebuild --only @jm/ndi",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "NDI: Full Native Build",
+      "type": "shell",
+      "command": "npm install && npm exec --workspace @jm/ndi -- electron-rebuild --only @jm/ndi",
+      "group": "build",
+      "dependsOn": [
+        "NDI: Build Native Addon",
+        "NDI: Electron Rebuild"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "App: Start Dev",
+      "type": "shell",
+      "command": "npm run dev --workspace apps/ndi-screen-capture",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "App: Build Dist (Windows)",
+      "type": "shell",
+      "command": "npm run dist:win --workspace apps/ndi-screen-capture",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

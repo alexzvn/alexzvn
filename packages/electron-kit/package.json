@@ -1,0 +1,14 @@
+{
+  "name": "@jm/electron-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteilte Electron-Boilerplate: Fenster-Factory, Single-Instance-Lock, Preload-Bridge-Helfer",
+  "exports": {
+    ".": "./src/index.ts",
+    "./preload": "./src/preload.ts"
+  },
+  "peerDependencies": {
+    "electron": ">=30"
+  }
+}

@@ -1,0 +1,59 @@
+appId: gmbh.jakobs.recorder
+productName: JM Audio Recorder
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+# Das native @jm/audio-Addon wird LOKAL auf Windows gebaut (PortAudio/ASIO-SDK
+# nicht in CI; der suite-release-Workflow überspringt dieses Tool). bundle-audio
+# stuft jm_audio.node + portaudio.dll nach resources/bin/win (vom @jm/audio-Loader
+# dort gefunden). electron ist im Workspace ans Root gehoistet → electron-builder
+# findet die Version sonst nicht; npmRebuild aus, da das Addon bereits via
+# electron-rebuild gebaut + gestaged ist. electronVersion bei Upgrade nachziehen.
+electronVersion: 33.4.11
+npmRebuild: false
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.music
+  icon: build/icon.png
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Audio Recorder
+
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true

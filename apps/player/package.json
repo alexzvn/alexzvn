@@ -1,0 +1,51 @@
+{
+  "name": "@jm/player",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Jakobs Medien Player — Video-/Audio-Player mit lokaler Bibliothek, Playlists (Lounge-/Einlass-Musik) und Soundboard-Sofort-Cues",
+  "author": "Jakobs Medien GmbH",
+  "main": "out/main/index.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "start:codespace": "unset ELECTRON_RUN_AS_NODE && xvfb-run -a node_modules/.bin/electron out/main/index.cjs",
+    "rebuild:native": "electron-rebuild --only better-sqlite3",
+    "postinstall": "electron-rebuild --only better-sqlite3 || true",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "prepackage": "node tools/bundle-ffmpeg.mjs",
+    "dist": "electron-vite build && npm run prepackage && electron-builder",
+    "dist:dir": "electron-vite build && electron-builder --dir",
+    "dist:win": "electron-vite build && npm run prepackage && electron-builder --win",
+    "dist:mac": "electron-vite build && npm run prepackage && electron-builder --mac"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/media": "*",
+    "@jm/media-library": "*",
+    "@jm/ui": "*",
+    "better-sqlite3": "^11.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "electron": "^33.0.0",
+    "electron-builder": "24.13.3",
+    "electron-vite": "^2.3.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

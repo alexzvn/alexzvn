@@ -1,0 +1,4 @@
+build/
+*.node
+# NDI-SDK niemals einchecken (Header/Libs nicht redistribuierbar)
+sdk/

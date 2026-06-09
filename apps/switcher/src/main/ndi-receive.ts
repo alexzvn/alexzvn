@@ -1,0 +1,137 @@
+// NDI-Empfangs-Bridge im Main — MEHRERE Empfänger gleichzeitig.
+//
+// Das native Addon hat pro Prozess genau einen Receiver (globaler g_recv).
+// Darum: EIN utilityProcess pro NDI-Quelle (jeder mit eigener NDI-Runtime +
+// Receiver), gekeyed per `recvId` (= Engine-Source-id). Suchen läuft in einem
+// kurzlebigen Finder-Prozess (braucht keinen Receiver).
+//
+//   utilityProcess(recvId)  ⇄  Main  ⇄  Renderer (eigener Frame-Port je recvId)
+//
+// Frames laufen wie gehabt per KOPIE (kein Transfer) mit 1-Frame-Ack-Backpressure.
+import { MessageChannelMain, utilityProcess, type BrowserWindow, type UtilityProcess } from 'electron';
+import { join } from 'node:path';
+import type { NdiStatus } from '@shared/types';
+
+declare const __dirname: string;
+
+interface Receiver {
+  child: UtilityProcess;
+  port2: Electron.MessagePortMain;
+}
+
+const receivers = new Map<string, Receiver>();
+const statuses = new Map<string, NdiStatus>();
+let targetWindow: BrowserWindow | null = null;
+
+export function attachNdiWindow(win: BrowserWindow): void {
+  targetWindow = win;
+}
+
+function utilityPath(): string {
+  return join(__dirname, 'ndi-recv.cjs');
+}
+
+function mapState(state: string): NdiStatus['state'] {
+  switch (state) {
+    case 'connecting':
+    case 'connected':
+    case 'disconnected':
+    case 'error':
+      return state;
+    default:
+      return 'idle';
+  }
+}
+
+function sendStatus(recvId: string, state: NdiStatus['state'], source: string | null): void {
+  const status: NdiStatus = { recvId, state, source };
+  if (state === 'idle') statuses.delete(recvId);
+  else statuses.set(recvId, status);
+  targetWindow?.webContents.send('ndi:status', status);
+}
+
+/** Sichtbare NDI-Quellen suchen — kurzlebiger Finder-Prozess (kein Receiver). */
+export function ndiFind(timeoutMs = 1500): Promise<string[]> {
+  return new Promise((resolve) => {
+    const finder = utilityProcess.fork(utilityPath());
+    let done = false;
+    const finish = (list: string[]): void => {
+      if (done) return;
+      done = true;
+      try {
+        finder.kill();
+      } catch {
+        // egal
+      }
+      resolve(list);
+    };
+    finder.on('message', (msg: unknown) => {
+      const m = msg as { type?: string; list?: string[] } | null;
+      if (m && m.type === 'sources') finish(Array.isArray(m.list) ? m.list : []);
+    });
+    finder.on('exit', () => finish([]));
+    finder.postMessage({ type: 'find', timeoutMs });
+    setTimeout(() => finish([]), timeoutMs + 4000);
+  });
+}
+
+export function ndiConnect(recvId: string, source: string): void {
+  if (!targetWindow) return;
+  ndiDisconnect(recvId);
+
+  const child = utilityProcess.fork(utilityPath());
+  const { port1, port2 } = new MessageChannelMain();
+  port2.on('message', (e) => child.postMessage(e.data)); // Ack vom Renderer → Utility
+  port2.start();
+
+  child.on('message', (msg: unknown) => {
+    const m = msg as { type?: string; state?: string; message?: string } | null;
+    if (!m || typeof m !== 'object') return;
+    if (m.type === 'video') {
+      port2.postMessage(m); // Kopie → Renderer
+    } else if (m.type === 'status') {
+      sendStatus(recvId, mapState(String(m.state)), (m.message as string) ?? null);
+    }
+  });
+  child.on('exit', () => {
+    if (receivers.get(recvId)?.child === child) {
+      receivers.delete(recvId);
+      sendStatus(recvId, 'idle', null);
+    }
+  });
+
+  receivers.set(recvId, { child, port2 });
+  child.postMessage({ type: 'connect', source });
+  // recvId mitgeben, damit der Renderer den Port der richtigen Quelle zuordnet.
+  targetWindow.webContents.postMessage('jmswitch:ndi-port', { recvId }, [port1]);
+}
+
+export function ndiDisconnect(recvId: string): void {
+  const r = receivers.get(recvId);
+  if (!r) return;
+  receivers.delete(recvId);
+  try {
+    r.child.postMessage({ type: 'disconnect' });
+    r.child.kill();
+  } catch {
+    // egal
+  }
+  sendStatus(recvId, 'idle', null);
+}
+
+export function ndiStatus(): NdiStatus[] {
+  return [...statuses.values()];
+}
+
+/** Beim Beenden/Fenster-Schließen alle Empfänger stoppen. */
+export function stopNdi(): void {
+  for (const [, r] of receivers) {
+    try {
+      r.child.kill();
+    } catch {
+      // egal
+    }
+  }
+  receivers.clear();
+  statuses.clear();
+}

@@ -1,0 +1,187 @@
+import { useEffect, useState } from 'react';
+import { Logo, cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
+import type { DisplayInfo, PresentationState } from '@shared/types';
+import { useProject } from '@/store/project';
+import { getExpandPptxBuilds, setExpandPptxBuilds } from '@/lib/settings';
+
+const btn =
+  'h-9 px-3 rounded-md text-sm font-semibold whitespace-nowrap border border-[var(--border)] bg-[var(--card)] ' +
+  'hover:bg-[var(--highlight)] transition-colors disabled:opacity-40 disabled:pointer-events-none';
+
+export function Toolbar() {
+  const doc = useProject((s) => s.doc);
+  const busy = useProject((s) => s.busy);
+  const dirty = useProject((s) => s.dirty);
+  const selectedId = useProject((s) => s.selectedId);
+  const importDocs = useProject((s) => s.importDocs);
+  const importOffice = useProject((s) => s.importOffice);
+  const openProject = useProject((s) => s.openProject);
+  const saveProject = useProject((s) => s.saveProject);
+  const exportPdf = useProject((s) => s.exportPdf);
+  const buildPayload = useProject((s) => s.buildPayload);
+  const setError = useProject((s) => s.setError);
+
+  const [displays, setDisplays] = useState<DisplayInfo[]>([]);
+  const [audienceDisplay, setAudienceDisplay] = useState<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [expandBuilds, setExpandBuildsState] = useState(getExpandPptxBuilds());
+  const [present, setPresent] = useState<PresentationState>({
+    active: false,
+    index: 0,
+    total: 0,
+    screen: 'live',
+  });
+
+  useEffect(() => {
+    void window.jmpr.present.displays().then((d) => {
+      setDisplays(d);
+      // Default the audience to a non-primary screen when present.
+      const secondary = d.find((x) => !x.primary);
+      setAudienceDisplay(secondary?.id ?? d[0]?.id ?? null);
+    });
+    void window.jmpr.present.getState().then(setPresent);
+    return window.jmpr.present.onState(setPresent);
+  }, []);
+
+  const visibleCount = doc.slides.filter((s) => !s.hidden).length;
+
+  const startPresentation = async (): Promise<void> => {
+    if (visibleCount === 0) {
+      setError('Keine sichtbaren Folien zum Präsentieren.');
+      return;
+    }
+    const visible = doc.slides.filter((s) => !s.hidden);
+    const startIndex = Math.max(
+      0,
+      visible.findIndex((s) => s.id === selectedId),
+    );
+    const payload = buildPayload(startIndex);
+    await window.jmpr.present.start(payload, audienceDisplay);
+  };
+
+  return (
+    <header
+      style={dragRegion}
+      className={cn(
+        'h-14 flex items-center gap-3 pr-4 border-b border-[var(--border)]/60 bg-[var(--card)]/60 backdrop-blur-md',
+        isElectronMac ? 'pl-20' : 'pl-4',
+      )}
+    >
+      <div className="flex items-center gap-2.5 pr-2">
+        <Logo size={26} />
+        <div className="hidden md:flex flex-col leading-tight">
+          <span className="text-xs font-extrabold tracking-[0.06em]">JM PRESENTER</span>
+          <span className="text-[9px] uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+            Folien-Editor & Präsentation
+          </span>
+        </div>
+      </div>
+
+      <div className="h-6 w-px bg-[var(--border)]" />
+
+      <div className="flex items-center gap-1.5" style={noDragRegion}>
+        <button type="button" className={btn} disabled={busy.active} onClick={() => void importDocs()}>
+          + PDF / Bilder
+        </button>
+        <button type="button" className={btn} disabled={busy.active} onClick={() => void importOffice()}>
+          + Office
+        </button>
+        <button type="button" className={btn} disabled={busy.active} onClick={() => void openProject()}>
+          Öffnen
+        </button>
+        <button type="button" className={btn} disabled={busy.active} onClick={() => void saveProject()}>
+          Speichern{dirty ? ' •' : ''}
+        </button>
+        <button
+          type="button"
+          className={btn}
+          disabled={busy.active || visibleCount === 0}
+          onClick={() => void exportPdf()}
+        >
+          PDF-Export
+        </button>
+      </div>
+
+      <div className="ml-auto flex items-center gap-2" style={noDragRegion}>
+        {busy.active && (
+          <span className="text-xs text-[var(--muted-foreground)] animate-pulse">{busy.label}</span>
+        )}
+
+        <select
+          value={audienceDisplay ?? ''}
+          onChange={(e) => setAudienceDisplay(e.target.value ? Number(e.target.value) : null)}
+          title="Publikums-Bildschirm"
+          className="h-9 max-w-[200px] rounded-md bg-[var(--card)] border border-[var(--border)] px-2 text-xs"
+        >
+          {displays.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.label}
+            </option>
+          ))}
+        </select>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowSettings((v) => !v)}
+            title="Einstellungen"
+            className={cn(btn, showSettings && 'bg-[var(--highlight)]')}
+          >
+            ⚙︎
+          </button>
+          {showSettings && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowSettings(false)} />
+              <div className="absolute right-0 top-full mt-2 z-20 w-80 rounded-lg bg-[var(--card)] ring-1 ring-[var(--border)] shadow-xl p-4 text-sm">
+                <div className="font-bold mb-2">Einstellungen</div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={expandBuilds}
+                    onChange={(e) => {
+                      setExpandPptxBuilds(e.target.checked);
+                      setExpandBuildsState(e.target.checked);
+                    }}
+                    className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  />
+                  <span>
+                    <span className="font-semibold">PPTX-Aufbau-Animationen als Einzelschritte</span>{' '}
+                    <span className="text-[10px] uppercase tracking-wide text-[var(--primary)]">
+                      experimentell
+                    </span>
+                    <span className="block text-xs text-[var(--muted-foreground)] mt-0.5">
+                      Splittet On-Click-Animationen beim Office-Import in einzelne Folien. Bei
+                      Problemen wird automatisch auf das flache PDF zurückgefallen.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </>
+          )}
+        </div>
+
+        {present.active ? (
+          <button
+            type="button"
+            onClick={() => void window.jmpr.present.stop()}
+            className={cn(btn, 'bg-[var(--destructive)] text-white border-[var(--destructive)]')}
+          >
+            ■ Beenden
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void startPresentation()}
+            disabled={busy.active || visibleCount === 0}
+            className={cn(
+              btn,
+              'bg-[var(--primary)] text-[var(--brand-dark)] border-[var(--primary)] font-bold',
+            )}
+          >
+            ▶ Präsentieren
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}

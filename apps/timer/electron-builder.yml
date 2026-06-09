@@ -1,0 +1,65 @@
+appId: gmbh.jakobs.timer
+productName: JM Timer
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.productivity
+  icon: build/icon.png
+  hardenedRuntime: false           # set true + add entitlements once notarising
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+  category: AudioVideo
+  icon: build/icon.png
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Timer
+
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true

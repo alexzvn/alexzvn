@@ -1,0 +1,18 @@
+{
+  "name": "@jm/media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteilte FFmpeg-Infrastruktur der JM Production Suite: Binary-Locate, Probe, Encoder-Erkennung, Progress-Spawn + Binary-Bundling",
+  "exports": {
+    ".": "./src/index.ts",
+    "./bundle-ffmpeg.mjs": "./bundle-ffmpeg.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0"
+  },
+  "peerDependencies": {
+    "electron": ">=30"
+  }
+}

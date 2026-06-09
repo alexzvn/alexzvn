@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "@jm/ui/base.css";
+
+/*
+ * Die @jm/ui-Komponenten liegen außerhalb des automatisch gescannten Renderer-Roots
+ * (als Workspace-Paket). Tailwind v4 muss ihre Klassen explizit als Quelle kennen.
+ */
+@source "../../../../../packages/ui/src";
+
+@keyframes jm-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.jm-fade-in {
+  animation: jm-fade-in 0.25s ease-out both;
+}

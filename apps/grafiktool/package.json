@@ -1,0 +1,48 @@
+{
+  "name": "@jm/grafiktool",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Jakobs Medien Grafiktool — schlanker Ebenen-Grafikeditor für Bauchbinden, Hintergründe und Freistellen (Magic Mask)",
+  "author": "Jakobs Medien GmbH",
+  "main": "out/main/index.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "start:codespace": "unset ELECTRON_RUN_AS_NODE && xvfb-run -a node_modules/.bin/electron out/main/index.cjs",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "dist": "electron-vite build && electron-builder",
+    "dist:dir": "electron-vite build && electron-builder --dir",
+    "dist:win": "electron-vite build && electron-builder --win",
+    "dist:mac": "electron-vite build && electron-builder --mac"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/ui": "*",
+    "ag-psd": "^30.1.1",
+    "fflate": "^0.8.3",
+    "font-list": "^2.1.0",
+    "onnxruntime-node": "^1.26.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "utif": "^3.1.0",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "electron": "^33.0.0",
+    "electron-builder": "24.13.3",
+    "electron-vite": "^2.3.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

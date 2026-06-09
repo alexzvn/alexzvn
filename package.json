@@ -1,0 +1,33 @@
+{
+  "name": "jm-production-suite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JM Production Suite — Werkzeugkasten-Launcher und geteilte Pakete für die Jakobs-Medien-Tools",
+  "author": "Jakobs Medien GmbH",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "!packages/companion-jm-switcher"
+  ],
+  "scripts": {
+    "launcher:dev": "npm run dev -w @jm/launcher",
+    "launcher:build": "npm run build -w @jm/launcher",
+    "launcher:dist": "npm run dist -w @jm/launcher",
+    "presenter:dev": "npm run dev -w @jm/presenter",
+    "presenter:build": "npm run build -w @jm/presenter",
+    "presenter:dist": "npm run dist -w @jm/presenter",
+    "ndi:dev": "npm run dev -w @jm/ndi-screen-capture",
+    "ndi:build": "npm run build -w @jm/ndi-screen-capture",
+    "ndi:dist": "npm run dist -w @jm/ndi-screen-capture",
+    "player:dev": "npm run dev -w @jm/player",
+    "player:build": "npm run build -w @jm/player",
+    "player:dist": "npm run dist -w @jm/player",
+    "recorder:dev": "npm run dev -w @jm/recorder",
+    "recorder:build": "npm run build -w @jm/recorder",
+    "recorder:dist": "npm run dist -w @jm/recorder",
+    "switcher:dev": "npm run dev -w @jm/switcher",
+    "switcher:build": "npm run build -w @jm/switcher",
+    "switcher:dist": "npm run dist -w @jm/switcher",
+    "typecheck": "npm run typecheck -w @jm/launcher"
+  }
+}

@@ -1,0 +1,115 @@
+export type JobKind = 'video' | 'office';
+export type JobStatus = 'queued' | 'running' | 'done' | 'error' | 'canceled';
+
+// Generische Medien-/Encoder-Typen leben jetzt in @jm/media (geteilt mit
+// Player/Recorder/Switcher). Import + Re-Export, damit sie sowohl lokal (JmcApi)
+// nutzbar sind als auch bestehende @shared/types-Importe unverändert laufen.
+import type { MediaStreamInfo, MediaInfo, HwKind, EncoderSupport } from '@jm/media';
+export type { MediaStreamInfo, MediaInfo, HwKind, EncoderSupport };
+
+export type RateControl = 'quality' | 'vbr' | 'cbr';
+
+export interface VideoConvertSpec {
+  jobId: string;
+  inputPath: string;
+  outputDir: string;
+  /** Base output name without extension; defaults to the input basename. */
+  outputName?: string;
+  presetId: string;
+  /** Target height in px; null/undefined keeps original resolution. */
+  scaleHeight?: number | null;
+  rateControl: RateControl;
+  /** CRF/CQ value for rateControl='quality'; null uses the preset default. */
+  quality?: number | null;
+  /** Target video bitrate (kbps) for rateControl='vbr'|'cbr'. */
+  bitrateKbps?: number | null;
+  /** Audio codec id ('aac','libmp3lame','ac3','alac','pcm_s16le','copy','none'). */
+  audioCodec: string;
+  /** Audio bitrate (kbps) for lossy audio codecs. */
+  audioBitrateKbps?: number | null;
+  /** Trim start in seconds (cut off the beginning); 0/undefined = from start. */
+  trimStartSec?: number;
+  /** Trim end in seconds (cut off after this point); undefined = to the end. */
+  trimEndSec?: number;
+  useHardware: boolean;
+  /** Full source duration in seconds. */
+  durationSec: number;
+}
+
+export interface PreviewRequest {
+  inputPath: string;
+  atSec: number;
+  presetId: string;
+  scaleHeight?: number | null;
+  rateControl: RateControl;
+  quality?: number | null;
+  bitrateKbps?: number | null;
+  useHardware: boolean;
+  durationSec: number;
+}
+
+export interface PreviewResult {
+  originalDataUrl: string;
+  encodedDataUrl: string;
+  /** Extrapolated full-length output size estimate in bytes (video stream). */
+  estimatedBytes: number;
+  segmentSec: number;
+}
+
+export interface OfficeConvertSpec {
+  jobId: string;
+  inputPath: string;
+  outputDir: string;
+}
+
+export interface ConvertProgress {
+  jobId: string;
+  /** 0..100, or -1 when indeterminate (e.g. LibreOffice). */
+  percent: number;
+  fps?: number;
+  speed?: string;
+  etaSec?: number;
+}
+
+export interface ConvertResult {
+  jobId: string;
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+  canceled?: boolean;
+}
+
+export interface OfficeDetectResult {
+  path: string | null;
+}
+
+/** Shape exposed on `window.jmc` by the preload bridge. */
+export interface JmcApi {
+  platform: NodeJS.Platform;
+  pathForFile: (file: File) => string;
+  dialog: {
+    pickFiles: (kind: JobKind) => Promise<string[]>;
+    pickDir: () => Promise<string | null>;
+  };
+  media: {
+    probe: (path: string) => Promise<MediaInfo>;
+    previewFrame: (req: PreviewRequest) => Promise<PreviewResult>;
+  };
+  encoders: {
+    get: () => Promise<EncoderSupport>;
+  };
+  video: {
+    enqueue: (spec: VideoConvertSpec) => Promise<void>;
+    cancel: (jobId: string) => Promise<void>;
+  };
+  office: {
+    detect: () => Promise<OfficeDetectResult>;
+    enqueue: (spec: OfficeConvertSpec) => Promise<void>;
+  };
+  shell: {
+    reveal: (path: string) => Promise<void>;
+    openExternal: (url: string) => Promise<void>;
+  };
+  onProgress: (cb: (p: ConvertProgress) => void) => () => void;
+  onDone: (cb: (r: ConvertResult) => void) => () => void;
+}

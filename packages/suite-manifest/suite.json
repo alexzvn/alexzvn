@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-05T00:00:00.000Z",
+  "tools": [
+    {
+      "id": "jm-copy",
+      "name": "JM Copy",
+      "tagline": "Verified Offload",
+      "description": "Kopier-Verifikation per xxHash64, MHL-Sidecar und Baukasten-Masterordner. Sicheres Offloading von Drehmaterial auf mehrere Ziele.",
+      "category": "Ingest",
+      "appId": "gmbh.jakobs.copy",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Copy-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Copy.app"
+        },
+        "win": {
+          "artifact": "JM Copy-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Copy\\JM Copy.exe"
+        }
+      },
+      "app": "copy"
+    },
+    {
+      "id": "jm-grafiktool",
+      "name": "JM Grafiktool",
+      "tagline": "Layer-Grafikeditor",
+      "description": "Photoshop-/GIMP-artiger Editor für Bauchbinden und Freistellen via lokaler Magic-Mask-KI. PSD-Lesen und -Schreiben mit Ebenen.",
+      "category": "Grafik",
+      "appId": "gmbh.jakobs.grafiktool",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Grafiktool-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Grafiktool.app"
+        },
+        "win": {
+          "artifact": "JM Grafiktool-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Grafiktool\\JM Grafiktool.exe"
+        }
+      },
+      "app": "grafiktool"
+    },
+    {
+      "id": "jm-studio-control",
+      "name": "JM Studio Control",
+      "tagline": "Studio- & TriCaster-Steuerung",
+      "description": "Zentrale Steuerung der Studioumgebung inkl. TriCaster, Nutzerverwaltung mit Rollen und geplanter NDI-PGM-Vorschau.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.studio-control",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Studio Control-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Studio Control.app"
+        },
+        "win": {
+          "artifact": "JM Studio Control-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Studio Control\\JM Studio Control.exe"
+        }
+      },
+      "app": "studio-control"
+    },
+    {
+      "id": "jm-media-converter",
+      "name": "JM Media Converter",
+      "tagline": "Video-Codecs & Office→PDF",
+      "description": "FFmpeg-basierte Video-Codec-Konvertierung und Office-zu-PDF-Umwandlung für gleichbleibende Lieferformate.",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.media-converter",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Media Converter-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Media Converter.app"
+        },
+        "win": {
+          "artifact": "JM Media Converter-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Media Converter\\JM Media Converter.exe"
+        }
+      },
+      "app": "media-converter"
+    },
+    {
+      "id": "jm-player",
+      "name": "JM Player",
+      "tagline": "Player · Bibliothek · Soundboard",
+      "description": "Video-/Audio-Player mit lokaler Bibliothek und Playlists (Lounge-/Einlass-Musik) sowie einem Soundboard mit Sofort-Cues auf Hotkeys (z. B. Theatergong).",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.player",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Player-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Player.app"
+        },
+        "win": {
+          "artifact": "JM Player-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Player\\JM Player.exe"
+        }
+      },
+      "app": "player"
+    },
+    {
+      "id": "jm-recorder",
+      "name": "JM Audio Recorder",
+      "tagline": "Mehrkanal-Aufnahme · Dante/ASIO",
+      "description": "Audio-Recorder für Standard-Eingänge, System-Audio und Dante (über die Dante Virtual Soundcard via ASIO). Mehrkanalige WAV-Aufnahme mit Pegelmetern.",
+      "category": "Ingest",
+      "appId": "gmbh.jakobs.recorder",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Audio Recorder-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Audio Recorder.app"
+        },
+        "win": {
+          "artifact": "JM Audio Recorder-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Audio Recorder\\JM Audio Recorder.exe"
+        }
+      },
+      "app": "recorder"
+    },
+    {
+      "id": "jm-switcher",
+      "name": "JM Switcher",
+      "tagline": "Video-Mischer · Program/Preview",
+      "description": "Softwarebasierter Video-Mischer mit Program/Preview, Cut und Auto-Dissolve. Quellen: Bildschirm/Fenster, NDI und Capture-Karte. Aufnahme + RTMP-Ausgabe, steuerbar per Companion.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.switcher",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Switcher-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Switcher.app"
+        },
+        "win": {
+          "artifact": "JM Switcher-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Switcher\\JM Switcher.exe"
+        }
+      },
+      "app": "switcher"
+    },
+    {
+      "id": "jm-sync",
+      "name": "JM Sync",
+      "tagline": "A/V-Lipsync-Messung",
+      "description": "Softwarebasierte Messung des Audio-/Video-Versatzes (Lipsync) — Ersatz für Sync-It-Plus. Generator mit Blitz und Beep, Ein-Takt-Messung.",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.sync",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Sync-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Sync.app"
+        },
+        "win": {
+          "artifact": "JM Sync-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Sync\\JM Sync.exe"
+        }
+      },
+      "app": "sync"
+    },
+    {
+      "id": "jm-timer",
+      "name": "JM Timer",
+      "tagline": "Countdown & Sprecher-Timer",
+      "description": "Countdown- und Produktions-Timer mit Sprecherfenster und Fernsteuerung für Live-Events.",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.timer",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Timer-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Timer.app"
+        },
+        "win": {
+          "artifact": "JM Timer-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Timer\\JM Timer.exe"
+        }
+      },
+      "app": "timer"
+    },
+    {
+      "id": "jm-presenter",
+      "name": "JM Presenter",
+      "tagline": "PDF-Presenter & Folien-Editor",
+      "description": "PDFs, Bilder und Office-Dokumente zu Folien aufbereiten, neu anordnen und mit Overlays versehen. Präsentationsmodus mit Referenten- und Publikumsansicht auf zwei Bildschirmen inkl. Notizen, Uhr/Timer und Folienübersicht.",
+      "category": "Utilities",
+      "appId": "gmbh.jakobs.presenter",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.3.1",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Presenter-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Presenter.app"
+        },
+        "win": {
+          "artifact": "JM Presenter-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Presenter\\JM Presenter.exe"
+        }
+      },
+      "app": "presenter"
+    },
+    {
+      "id": "jm-ndi-screen-capture",
+      "name": "JM NDI Screen Capture",
+      "tagline": "Bildschirm als NDI-Quelle",
+      "description": "Sendet einen Monitor oder ein einzelnes Fenster inkl. System-Audio als NDI-Quelle ins Studio-LAN — nutzbar als Eingang in TriCaster, vMix oder OBS, ohne separate NDI-Tools-Installation.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.ndi-screen-capture",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.1",
+      "platforms": {
+        "mac": {
+          "artifact": "JM NDI Screen Capture-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM NDI Screen Capture.app"
+        },
+        "win": {
+          "artifact": "JM NDI Screen Capture-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM NDI Screen Capture\\JM NDI Screen Capture.exe"
+        }
+      },
+      "app": "ndi-screen-capture"
+    }
+  ]
+}
