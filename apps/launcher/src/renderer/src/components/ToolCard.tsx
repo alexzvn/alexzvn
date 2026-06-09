@@ -1,6 +1,7 @@
 import { Badge, Button, Card, cn } from '@jm/ui';
 import type { ToolManifest, ToolState } from '@shared/types';
 import { monogram } from '@/lib/monogram';
+import { changelogFor } from '@/data/changelog';
 import { useTools } from '@/store/tools';
 
 interface Props {
@@ -16,6 +17,8 @@ export function ToolCard({ tool, state }: Props) {
   const install = useTools((s) => s.install);
   const update = useTools((s) => s.update);
   const uninstall = useTools((s) => s.uninstall);
+  const openPatchNotes = useTools((s) => s.openPatchNotes);
+  const hasNotes = Boolean(changelogFor(tool.app));
   const showProgress = busy && progress && progress.phase !== 'done' && progress.phase !== 'error';
 
   return (
@@ -51,7 +54,19 @@ export function ToolCard({ tool, state }: Props) {
       ) : (
         <div className="flex items-center justify-between gap-3 pt-1">
           <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-            v{state?.installedVersion ?? tool.latestVersion} · {tool.category}
+            {hasNotes ? (
+              <button
+                type="button"
+                onClick={() => openPatchNotes({ app: tool.app })}
+                title="Patch Notes anzeigen"
+                className="underline-offset-2 hover:text-[var(--foreground)] hover:underline transition-colors"
+              >
+                v{state?.installedVersion ?? tool.latestVersion}
+              </button>
+            ) : (
+              <>v{state?.installedVersion ?? tool.latestVersion}</>
+            )}{' '}
+            · {tool.category}
             {status === 'update-available' && state?.latestAvailable
               ? ` · Update auf ${state.latestAvailable}`
               : ''}

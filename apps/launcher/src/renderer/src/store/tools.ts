@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { entryFor } from '@/data/changelog';
 import type {
   ActionResult,
   FeedbackInput,
@@ -41,6 +42,20 @@ interface ToolsStore {
   openFeedback: () => void;
   closeFeedback: () => void;
   submitFeedback: (input: FeedbackInput) => Promise<ActionResult>;
+  /** Sichtbare Patch Notes: { app, optional hervorgehobene Version } oder null. */
+  patchNotes: { app: string; highlight?: string } | null;
+  openPatchNotes: (view?: { app: string; highlight?: string }) => void;
+  closePatchNotes: () => void;
+}
+
+const SEEN_VERSION_KEY = 'jmps:lastSeenVersion';
+
+function readSeenVersion(): string | null {
+  try {
+    return localStorage.getItem(SEEN_VERSION_KEY);
+  } catch {
+    return null;
+  }
 }
 
 let progressSubscribed = false;
@@ -80,6 +95,7 @@ export const useTools = create<ToolsStore>((set) => {
     notice: null,
     version: null,
     launcherUpdate: null,
+    patchNotes: null,
 
     load: async () => {
       if (!progressSubscribed) {
@@ -113,6 +129,11 @@ export const useTools = create<ToolsStore>((set) => {
         window.jmps.getVersion(),
       ]);
       set({ tools, states: byId(states), settings, version, loading: false });
+      // „Was ist neu?" nach einem Launcher-Update (oder beim ersten Start dieser
+      // Version) genau einmal zeigen — sofern für die Version Notes vorliegen.
+      if (version && readSeenVersion() !== version && entryFor('launcher', version)) {
+        set({ patchNotes: { app: 'launcher', highlight: version } });
+      }
       // Zustände sofort rendern, die (langsameren, online) Prüfungen danach.
       void useTools.getState().checkUpdates();
       void useTools.getState().loadLauncherUpdate();
@@ -158,5 +179,19 @@ export const useTools = create<ToolsStore>((set) => {
       if (res.ok) set({ feedbackOpen: false });
       return res;
     },
+
+    openPatchNotes: (view) => set({ patchNotes: view ?? { app: 'launcher' } }),
+    closePatchNotes: () =>
+      set((s) => {
+        // Launcher-Notes als „gesehen" merken → erscheinen nicht erneut für diese Version.
+        if (s.patchNotes?.app === 'launcher' && s.version) {
+          try {
+            localStorage.setItem(SEEN_VERSION_KEY, s.version);
+          } catch {
+            // localStorage nicht verfügbar → ignorieren
+          }
+        }
+        return { patchNotes: null };
+      }),
   };
 });

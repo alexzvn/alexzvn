@@ -7,6 +7,7 @@ import { StatusChips, type StatusFilter } from '@/components/StatusChips';
 import { ToolCard } from '@/components/ToolCard';
 import { SettingsModal } from '@/components/SettingsModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
+import { PatchNotesModal } from '@/components/PatchNotesModal';
 import { useTools } from '@/store/tools';
 
 const CATEGORY_ORDER: ToolCategory[] = ['Ingest', 'Grafik', 'Studio', 'Utilities'];
@@ -114,6 +115,7 @@ export function App() {
 
       <SettingsModal />
       <FeedbackModal />
+      <PatchNotesModal />
     </div>
   );
 }

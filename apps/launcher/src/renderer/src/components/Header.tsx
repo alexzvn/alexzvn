@@ -6,6 +6,7 @@ export function Header() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const openSettings = useTools((s) => s.openSettings);
   const openFeedback = useTools((s) => s.openFeedback);
+  const openPatchNotes = useTools((s) => s.openPatchNotes);
   const version = useTools((s) => s.version);
 
   useEffect(() => {
@@ -36,13 +37,17 @@ export function Header() {
           <span className="flex items-center gap-2">
             <span className="text-sm font-extrabold tracking-[0.06em]">JM PRODUCTION SUITE</span>
             {version && (
-              <span
-                title={`Launcher-Version ${version}`}
+              <button
+                type="button"
+                onClick={() => openPatchNotes({ app: 'launcher' })}
+                style={noDragRegion}
+                title={`Launcher-Version ${version} — Patch Notes anzeigen`}
                 className="rounded-[var(--radius-full)] border border-[var(--border)] px-1.5 py-px
-                           text-[10px] font-bold tabular-nums text-[var(--muted-foreground)]"
+                           text-[10px] font-bold tabular-nums text-[var(--muted-foreground)]
+                           hover:border-[var(--primary)]/50 hover:text-[var(--foreground)] transition-colors"
               >
                 v{version}
-              </span>
+              </button>
             )}
           </span>
           <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
@@ -52,6 +57,22 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2" style={noDragRegion}>
+        <button
+          type="button"
+          onClick={() => openPatchNotes()}
+          aria-label="Patch Notes"
+          title="Patch Notes / Was ist neu?"
+          className={cn(
+            'grid place-items-center size-8 rounded-[var(--radius)]',
+            'border border-[var(--border)] text-[var(--foreground)]',
+            'hover:bg-[var(--highlight)] transition-colors',
+          )}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6M9 13h6M9 17h4" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={openFeedback}
