@@ -8,6 +8,9 @@ import type {
   Playlist,
   PlaylistItem,
   PlaylistKind,
+  Show,
+  ShowCue,
+  ShowCuePatch,
 } from '@shared/types';
 import { mediaUrl } from '@shared/media-url';
 
@@ -43,6 +46,20 @@ const api: JmplayApi = {
     list: (playlistId) => ipcRenderer.invoke('cues:list', playlistId) as Promise<Cue[]>,
     assign: (input: CueInput) => ipcRenderer.invoke('cues:assign', input) as Promise<Cue>,
     clear: (playlistId, slot) => ipcRenderer.invoke('cues:clear', playlistId, slot) as Promise<void>,
+  },
+  shows: {
+    list: () => ipcRenderer.invoke('shows:list') as Promise<Show[]>,
+    create: (name) => ipcRenderer.invoke('shows:create', name) as Promise<Show>,
+    rename: (id, name) => ipcRenderer.invoke('shows:rename', id, name) as Promise<void>,
+    remove: (id) => ipcRenderer.invoke('shows:remove', id) as Promise<void>,
+    cues: (showId) => ipcRenderer.invoke('shows:cues', showId) as Promise<ShowCue[]>,
+    addCues: (showId, mediaIds) =>
+      ipcRenderer.invoke('shows:addCues', showId, mediaIds) as Promise<void>,
+    removeCue: (cueId) => ipcRenderer.invoke('shows:removeCue', cueId) as Promise<void>,
+    reorder: (showId, orderedCueIds) =>
+      ipcRenderer.invoke('shows:reorder', showId, orderedCueIds) as Promise<void>,
+    updateCue: (cueId, patch: ShowCuePatch) =>
+      ipcRenderer.invoke('shows:updateCue', cueId, patch) as Promise<ShowCue>,
   },
   shell: {
     reveal: (filePath) => ipcRenderer.invoke('shell:reveal', filePath) as Promise<void>,

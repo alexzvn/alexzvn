@@ -60,6 +60,44 @@ export interface CueInput {
   loop?: boolean;
 }
 
+// ---- Cue-Show (QLab-artig) ----
+
+export interface Show {
+  id: number;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Ein Cue innerhalb einer Show inkl. Timing + eingebettetem Medium (JOIN). */
+export interface ShowCue {
+  id: number;
+  showId: number;
+  mediaId: number | null;
+  label: string;
+  position: number;
+  /** Vorlaufzeit in s: nach GO wartet der Cue, bevor er startet. */
+  preWaitSec: number;
+  /** Beim Ende dieses Cues automatisch den nächsten feuern. */
+  autoContinue: boolean;
+  fadeInSec: number;
+  fadeOutSec: number;
+  gainDb: number;
+  loop: boolean;
+  media: MediaItem | null;
+}
+
+/** Teil-Update der editierbaren Felder eines Show-Cues. */
+export interface ShowCuePatch {
+  label?: string;
+  preWaitSec?: number;
+  autoContinue?: boolean;
+  fadeInSec?: number;
+  fadeOutSec?: number;
+  gainDb?: number;
+  loop?: boolean;
+}
+
 export interface ImportResult {
   added: number;
   skipped: number;
@@ -101,6 +139,17 @@ export interface JmplayApi {
     list: (playlistId: number) => Promise<Cue[]>;
     assign: (input: CueInput) => Promise<Cue>;
     clear: (playlistId: number, slot: number) => Promise<void>;
+  };
+  shows: {
+    list: () => Promise<Show[]>;
+    create: (name: string) => Promise<Show>;
+    rename: (id: number, name: string) => Promise<void>;
+    remove: (id: number) => Promise<void>;
+    cues: (showId: number) => Promise<ShowCue[]>;
+    addCues: (showId: number, mediaIds: number[]) => Promise<void>;
+    removeCue: (cueId: number) => Promise<void>;
+    reorder: (showId: number, orderedCueIds: number[]) => Promise<void>;
+    updateCue: (cueId: number, patch: ShowCuePatch) => Promise<ShowCue>;
   };
   shell: {
     reveal: (path: string) => Promise<void>;

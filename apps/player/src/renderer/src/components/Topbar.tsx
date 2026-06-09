@@ -11,6 +11,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { id: 'library', label: 'Bibliothek', hint: 'Medien · Playlists' },
   { id: 'soundboard', label: 'Soundboard', hint: 'Sofort-Cues · Hotkeys' },
+  { id: 'show', label: 'Cue-Show', hint: 'GO · QLab-Stil' },
 ];
 
 interface Props {

@@ -12,6 +12,9 @@ import type {
   Playlist,
   PlaylistItem,
   PlaylistKind,
+  Show,
+  ShowCue,
+  ShowCuePatch,
 } from '@shared/types';
 
 const VIDEO_EXT = new Set([
@@ -378,4 +381,135 @@ export function assignCue(input: CueInput): Cue {
 
 export function clearCue(playlistId: number, slot: number): void {
   database().prepare('DELETE FROM cues WHERE playlist_id = ? AND slot = ?').run(playlistId, slot);
+}
+
+// ---- Cue-Shows ----
+
+interface ShowRow {
+  id: number;
+  name: string;
+  created_at: number;
+  updated_at: number;
+}
+
+function toShow(r: ShowRow): Show {
+  return { id: r.id, name: r.name, createdAt: r.created_at, updatedAt: r.updated_at };
+}
+
+interface ShowCueRow {
+  id: number;
+  show_id: number;
+  media_id: number | null;
+  label: string;
+  position: number;
+  pre_wait_sec: number;
+  auto_continue: number;
+  fade_in_sec: number;
+  fade_out_sec: number;
+  gain_db: number;
+  loop: number;
+}
+
+function toShowCue(r: ShowCueRow): ShowCue {
+  return {
+    id: r.id,
+    showId: r.show_id,
+    mediaId: r.media_id,
+    label: r.label,
+    position: r.position,
+    preWaitSec: r.pre_wait_sec,
+    autoContinue: r.auto_continue !== 0,
+    fadeInSec: r.fade_in_sec,
+    fadeOutSec: r.fade_out_sec,
+    gainDb: r.gain_db,
+    loop: r.loop !== 0,
+    media: r.media_id != null ? getItem(r.media_id) : null,
+  };
+}
+
+export function listShows(): Show[] {
+  const rows = database()
+    .prepare('SELECT * FROM shows ORDER BY LOWER(name)')
+    .all() as ShowRow[];
+  return rows.map(toShow);
+}
+
+export function createShow(name: string): Show {
+  const now = Date.now();
+  const info = database()
+    .prepare('INSERT INTO shows (name, created_at, updated_at) VALUES (?, ?, ?)')
+    .run(name, now, now);
+  return { id: Number(info.lastInsertRowid), name, createdAt: now, updatedAt: now };
+}
+
+export function renameShow(id: number, name: string): void {
+  database().prepare('UPDATE shows SET name = ?, updated_at = ? WHERE id = ?').run(name, Date.now(), id);
+}
+
+export function removeShow(id: number): void {
+  // show_cues hängt per ON DELETE CASCADE dran.
+  database().prepare('DELETE FROM shows WHERE id = ?').run(id);
+}
+
+export function showCues(showId: number): ShowCue[] {
+  const rows = database()
+    .prepare('SELECT * FROM show_cues WHERE show_id = ? ORDER BY position, id')
+    .all(showId) as ShowCueRow[];
+  return rows.map(toShowCue);
+}
+
+export function addShowCues(showId: number, mediaIds: number[]): void {
+  const dbi = database();
+  const max = dbi
+    .prepare('SELECT COALESCE(MAX(position), -1) AS m FROM show_cues WHERE show_id = ?')
+    .get(showId) as { m: number };
+  const insert = dbi.prepare(
+    'INSERT INTO show_cues (show_id, media_id, label, position) VALUES (?, ?, ?, ?)',
+  );
+  let pos = max.m + 1;
+  const tx = dbi.transaction((ids: number[]) => {
+    for (const mediaId of ids) {
+      const item = getItem(mediaId);
+      const label = item ? item.title || item.fileName : '';
+      insert.run(showId, mediaId, label, pos++);
+    }
+    dbi.prepare('UPDATE shows SET updated_at = ? WHERE id = ?').run(Date.now(), showId);
+  });
+  tx(mediaIds);
+}
+
+export function removeShowCue(cueId: number): void {
+  database().prepare('DELETE FROM show_cues WHERE id = ?').run(cueId);
+}
+
+export function reorderShow(showId: number, orderedCueIds: number[]): void {
+  const dbi = database();
+  const upd = dbi.prepare('UPDATE show_cues SET position = ? WHERE id = ? AND show_id = ?');
+  const tx = dbi.transaction((ids: number[]) => {
+    ids.forEach((id, i) => upd.run(i, id, showId));
+    dbi.prepare('UPDATE shows SET updated_at = ? WHERE id = ?').run(Date.now(), showId);
+  });
+  tx(orderedCueIds);
+}
+
+export function updateShowCue(cueId: number, patch: ShowCuePatch): ShowCue {
+  const dbi = database();
+  const sets: string[] = [];
+  const vals: (string | number)[] = [];
+  const add = (col: string, val: string | number): void => {
+    sets.push(`${col} = ?`);
+    vals.push(val);
+  };
+  if (patch.label !== undefined) add('label', patch.label);
+  if (patch.preWaitSec !== undefined) add('pre_wait_sec', patch.preWaitSec);
+  if (patch.autoContinue !== undefined) add('auto_continue', patch.autoContinue ? 1 : 0);
+  if (patch.fadeInSec !== undefined) add('fade_in_sec', patch.fadeInSec);
+  if (patch.fadeOutSec !== undefined) add('fade_out_sec', patch.fadeOutSec);
+  if (patch.gainDb !== undefined) add('gain_db', patch.gainDb);
+  if (patch.loop !== undefined) add('loop', patch.loop ? 1 : 0);
+  if (sets.length > 0) {
+    dbi.prepare(`UPDATE show_cues SET ${sets.join(', ')} WHERE id = ?`).run(...vals, cueId);
+  }
+  const row = dbi.prepare('SELECT * FROM show_cues WHERE id = ?').get(cueId) as ShowCueRow;
+  return toShowCue(row);
 }

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Topbar } from '@/components/Topbar';
 import { LibraryView } from '@/views/LibraryView';
 import { SoundboardView } from '@/views/SoundboardView';
+import { ShowView } from '@/views/ShowView';
 import { usePlayer } from '@/store/player';
 
-export type Section = 'library' | 'soundboard';
+export type Section = 'library' | 'soundboard' | 'show';
 
 export function App() {
   const load = usePlayer((s) => s.load);
@@ -26,7 +27,13 @@ export function App() {
     <div className="h-full flex flex-col">
       <Topbar section={section} onSection={setSection} />
       <main className="flex-1 overflow-hidden">
-        {section === 'library' ? <LibraryView /> : <SoundboardView />}
+        {section === 'library' ? (
+          <LibraryView />
+        ) : section === 'soundboard' ? (
+          <SoundboardView />
+        ) : (
+          <ShowView />
+        )}
       </main>
 
       {notice && (

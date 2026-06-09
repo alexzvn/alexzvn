@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
 
 /** Aktuelle Schema-Version (PRAGMA user_version) für künftige Migrationen. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /**
  * Legt das Medienbibliotheks-Schema an (idempotent). Wird von openLibrary()
@@ -54,6 +54,31 @@ export function migrate(db: Database.Database): void {
       loop INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS cues_idx ON cues(playlist_id, slot);
+
+    -- Cue-Shows (QLab-artig): geordnete Cue-Liste je Show, mit Timing pro Cue.
+    -- Bewusst eigene Tabellen (nicht über playlists), damit Shows klar getrennt
+    -- sind und keine bestehende CHECK-Constraint angefasst werden muss.
+    CREATE TABLE IF NOT EXISTS shows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS show_cues (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      show_id INTEGER NOT NULL REFERENCES shows(id) ON DELETE CASCADE,
+      media_id INTEGER REFERENCES media_items(id) ON DELETE SET NULL,
+      label TEXT NOT NULL DEFAULT '',
+      position INTEGER NOT NULL DEFAULT 0,
+      pre_wait_sec REAL NOT NULL DEFAULT 0,
+      auto_continue INTEGER NOT NULL DEFAULT 0,
+      fade_in_sec REAL NOT NULL DEFAULT 0,
+      fade_out_sec REAL NOT NULL DEFAULT 0,
+      gain_db REAL NOT NULL DEFAULT 0,
+      loop INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS show_cues_idx ON show_cues(show_id, position);
 
     CREATE TABLE IF NOT EXISTS tags (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

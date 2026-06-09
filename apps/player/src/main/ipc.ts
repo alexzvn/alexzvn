@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import type { CueInput, PlaylistKind } from '@shared/types';
+import type { CueInput, PlaylistKind, ShowCuePatch } from '@shared/types';
 import * as lib from './library';
 import { ensureThumb } from './thumbs';
 
@@ -45,6 +45,20 @@ export function registerIpc(_getWin: () => BrowserWindow | null): void {
   ipcMain.handle('cues:list', (_e, playlistId: number) => lib.listCues(playlistId));
   ipcMain.handle('cues:assign', (_e, input: CueInput) => lib.assignCue(input));
   ipcMain.handle('cues:clear', (_e, playlistId: number, slot: number) => lib.clearCue(playlistId, slot));
+
+  ipcMain.handle('shows:list', () => lib.listShows());
+  ipcMain.handle('shows:create', (_e, name: string) => lib.createShow(name));
+  ipcMain.handle('shows:rename', (_e, id: number, name: string) => lib.renameShow(id, name));
+  ipcMain.handle('shows:remove', (_e, id: number) => lib.removeShow(id));
+  ipcMain.handle('shows:cues', (_e, showId: number) => lib.showCues(showId));
+  ipcMain.handle('shows:addCues', (_e, showId: number, mediaIds: number[]) =>
+    lib.addShowCues(showId, mediaIds),
+  );
+  ipcMain.handle('shows:removeCue', (_e, cueId: number) => lib.removeShowCue(cueId));
+  ipcMain.handle('shows:reorder', (_e, showId: number, ids: number[]) => lib.reorderShow(showId, ids));
+  ipcMain.handle('shows:updateCue', (_e, cueId: number, patch: ShowCuePatch) =>
+    lib.updateShowCue(cueId, patch),
+  );
 
   ipcMain.handle('shell:reveal', (_e, p: string) => {
     shell.showItemInFolder(p);
