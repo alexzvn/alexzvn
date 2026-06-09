@@ -14,7 +14,8 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   Ebenen mit Position/Größe) → Program/Preview schaltet Szenen**. Szenen-Panel
   (anlegen/umbenennen/löschen), Ebenen-Editor (Sichtbarkeit, Z-Reihenfolge,
   Layout-Presets: Vollbild / PiP-Ecken / Hälften) → **PiP** in Sekunden baubar.
-  Drag-/Resize-Editing direkt auf dem Monitor = v0.2.
+  Seit v0.2 zusätzlich **Drag/Resize direkt auf dem Preview-Monitor** (Ebene
+  anklicken → ziehen = verschieben, Eck-Griffe = skalieren, live ins Bild).
 - **Slice 3 (NDI-Empfang):** **NDI-Quelle** im Pool. „+ NDI" sucht Quellen im
   Studio-LAN (JM NDI Screen Capture, TriCaster, vMix …) und verbindet **einen**
   Empfänger (Addon-Limit). Der native `@jm/ndi`-Empfänger läuft in einem

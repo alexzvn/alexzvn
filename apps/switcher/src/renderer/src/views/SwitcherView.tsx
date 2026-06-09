@@ -285,7 +285,11 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
     <div className="h-full flex flex-col">
       {/* Monitore + Transition */}
       <div className="flex-1 min-h-0 flex items-stretch gap-5 px-6 py-5">
-        <Monitor label="Preview" tone="preview" canvasRef={previewRef} sceneName={previewScene?.name} />
+        <Monitor label="Preview" tone="preview" canvasRef={previewRef} sceneName={previewScene?.name}>
+          {previewScene && previewScene.layers.length > 0 && (
+            <LayerEditor scene={previewScene} sources={state.sources} engine={engine} />
+          )}
+        </Monitor>
 
         <div className="shrink-0 flex flex-col items-center justify-center gap-3 w-28">
           <button
@@ -481,6 +485,144 @@ function OutputBar({
   );
 }
 
+const MIN_LAYER = 0.05;
+const CORNERS = ['nw', 'ne', 'sw', 'se'] as const;
+type Corner = (typeof CORNERS)[number];
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+function cornerStyle(c: Corner): React.CSSProperties {
+  const s: React.CSSProperties = { position: 'absolute' };
+  if (c[0] === 'n') s.top = -6;
+  else s.bottom = -6;
+  if (c[1] === 'w') s.left = -6;
+  else s.right = -6;
+  s.cursor = c === 'nw' || c === 'se' ? 'nwse-resize' : 'nesw-resize';
+  return s;
+}
+
+/** Interaktives Overlay über dem Preview-Monitor: Ebenen ziehen + skalieren. */
+function LayerEditor({
+  scene,
+  sources,
+  engine,
+}: {
+  scene: SceneInfo;
+  sources: SourceInfo[];
+  engine: SwitcherEngine;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const drag = useRef<{
+    id: string;
+    mode: 'move' | Corner;
+    sx: number;
+    sy: number;
+    cw: number;
+    ch: number;
+    rect: Rect;
+  } | null>(null);
+
+  const nameOf = (id: string): string => sources.find((s) => s.id === id)?.name ?? '—';
+
+  const onMove = (e: PointerEvent): void => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = (e.clientX - d.sx) / d.cw;
+    const dy = (e.clientY - d.sy) / d.ch;
+    let { x, y, w, h } = d.rect;
+    if (d.mode === 'move') {
+      x = clamp(d.rect.x + dx, 0, 1 - w);
+      y = clamp(d.rect.y + dy, 0, 1 - h);
+    } else {
+      if (d.mode.includes('e')) w = clamp(d.rect.w + dx, MIN_LAYER, 1 - d.rect.x);
+      if (d.mode.includes('s')) h = clamp(d.rect.h + dy, MIN_LAYER, 1 - d.rect.y);
+      if (d.mode.includes('w')) {
+        const nx = clamp(d.rect.x + dx, 0, d.rect.x + d.rect.w - MIN_LAYER);
+        x = nx;
+        w = d.rect.x + d.rect.w - nx;
+      }
+      if (d.mode.includes('n')) {
+        const ny = clamp(d.rect.y + dy, 0, d.rect.y + d.rect.h - MIN_LAYER);
+        y = ny;
+        h = d.rect.y + d.rect.h - ny;
+      }
+    }
+    engine.setLayerRect(scene.id, d.id, { x, y, w, h });
+  };
+
+  const onUp = (): void => {
+    drag.current = null;
+    window.removeEventListener('pointermove', onMove);
+  };
+
+  const begin = (e: React.PointerEvent, layer: LayerInfo, mode: 'move' | Corner): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected(layer.id);
+    const cont = ref.current?.getBoundingClientRect();
+    if (!cont || cont.width === 0) return;
+    drag.current = {
+      id: layer.id,
+      mode,
+      sx: e.clientX,
+      sy: e.clientY,
+      cw: cont.width,
+      ch: cont.height,
+      rect: { x: layer.x, y: layer.y, w: layer.w, h: layer.h },
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="absolute inset-0"
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) setSelected(null);
+      }}
+    >
+      {scene.layers.map(
+        (layer) =>
+          layer.visible && (
+            <div
+              key={layer.id}
+              onPointerDown={(e) => begin(e, layer, 'move')}
+              className={cn(
+                'absolute border touch-none cursor-move',
+                selected === layer.id
+                  ? 'border-[var(--primary)]'
+                  : 'border-white/40 hover:border-white/70',
+              )}
+              style={{
+                left: `${layer.x * 100}%`,
+                top: `${layer.y * 100}%`,
+                width: `${layer.w * 100}%`,
+                height: `${layer.h * 100}%`,
+              }}
+            >
+              <span className="absolute top-0 left-0 px-1 text-[9px] font-bold bg-black/60 text-white truncate max-w-full pointer-events-none">
+                {nameOf(layer.sourceId)}
+              </span>
+              {selected === layer.id &&
+                CORNERS.map((c) => (
+                  <div
+                    key={c}
+                    onPointerDown={(e) => begin(e, layer, c)}
+                    className="size-3 rounded-sm bg-[var(--primary)] border border-black touch-none"
+                    style={cornerStyle(c)}
+                  />
+                ))}
+            </div>
+          ),
+      )}
+    </div>
+  );
+}
+
 function meterColor(level: number): string {
   if (level >= 0.85) return 'var(--destructive)';
   if (level >= 0.6) return 'var(--warning)';
@@ -565,11 +707,13 @@ function Monitor({
   tone,
   canvasRef,
   sceneName,
+  children,
 }: {
   label: string;
   tone: 'preview' | 'program';
   canvasRef: React.RefObject<HTMLCanvasElement>;
   sceneName?: string;
+  children?: React.ReactNode;
 }) {
   const accent = tone === 'program' ? 'var(--destructive)' : 'var(--success)';
   return (
@@ -586,6 +730,7 @@ function Monitor({
           style={{ borderColor: accent }}
         >
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-contain" />
+          {children}
         </div>
       </div>
     </div>
