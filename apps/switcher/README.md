@@ -15,7 +15,9 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   (anlegen/umbenennen/löschen), Ebenen-Editor (Sichtbarkeit, Z-Reihenfolge,
   Layout-Presets: Vollbild / PiP-Ecken / Hälften) → **PiP** in Sekunden baubar.
   Seit v0.2 zusätzlich **Drag/Resize direkt auf dem Preview-Monitor** (Ebene
-  anklicken → ziehen = verschieben, Eck-Griffe = skalieren, live ins Bild).
+  anklicken → ziehen = verschieben, Eck-Griffe = skalieren, live ins Bild) und
+  **Chroma-Key/Greenscreen pro Ebene** (KEY-Button → Schlüsselfarbe + Toleranz +
+  Kante; CPU-Keying im Canvas-Compositor via YCbCr-Chroma-Distanz).
 - **Slice 3 (NDI-Empfang):** **NDI-Quelle(n)** im Pool. „+ NDI" sucht Quellen im
   Studio-LAN (JM NDI Screen Capture, TriCaster, vMix …) und verbindet sie. Seit
   v0.2 **mehrere NDI-Empfänger gleichzeitig** — ein eigener `@jm/ndi`-

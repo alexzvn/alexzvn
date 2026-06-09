@@ -895,61 +895,118 @@ function LayersPanel({
           display.map((layer, di) => {
             const isFront = di === 0;
             const isBack = di === display.length - 1;
+            const srcKind = sources.find((s) => s.id === layer.sourceId)?.kind;
+            const canKey = srcKind === 'ndi' || srcKind === 'image' || srcKind === 'capture' || srcKind === 'screen';
+            const key = layer.key;
             return (
               <div
                 key={layer.id}
-                className="flex items-center gap-2 h-9 px-2 rounded-[var(--radius)] border border-[var(--border)]/60 bg-[var(--card)]/40"
+                className="flex flex-col rounded-[var(--radius)] border border-[var(--border)]/60 bg-[var(--card)]/40"
               >
-                <button
-                  type="button"
-                  title={layer.visible ? 'Ebene ausblenden' : 'Ebene einblenden'}
-                  onClick={() => engine.setLayerVisible(scene.id, layer.id, !layer.visible)}
-                  className={cn('shrink-0', layer.visible ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]/40')}
-                >
-                  <EyeIcon off={!layer.visible} />
-                </button>
-                <span className="flex-1 truncate text-sm font-semibold">{nameOf(layer.sourceId)}</span>
-                <select
-                  value={currentPreset(layer)}
-                  onChange={(e) => {
-                    const p = LAYER_PRESETS.find((x) => x.key === e.target.value);
-                    if (p) engine.setLayerRect(scene.id, layer.id, p.rect);
-                  }}
-                  className="h-7 rounded border border-[var(--border)] bg-[var(--input)] px-1.5 text-xs"
-                >
-                  {currentPreset(layer) === 'custom' && <option value="custom">Eigene</option>}
-                  {LAYER_PRESETS.map((p) => (
-                    <option key={p.key} value={p.key}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  title="nach vorn"
-                  disabled={isFront}
-                  onClick={() => engine.moveLayer(scene.id, layer.id, 1)}
-                  className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30"
-                >
-                  <ArrowIcon up />
-                </button>
-                <button
-                  type="button"
-                  title="nach hinten"
-                  disabled={isBack}
-                  onClick={() => engine.moveLayer(scene.id, layer.id, -1)}
-                  className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30"
-                >
-                  <ArrowIcon />
-                </button>
-                <button
-                  type="button"
-                  title="Ebene entfernen"
-                  onClick={() => engine.removeLayer(scene.id, layer.id)}
-                  className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
-                >
-                  <XIcon />
-                </button>
+                <div className="flex items-center gap-2 h-9 px-2">
+                  <button
+                    type="button"
+                    title={layer.visible ? 'Ebene ausblenden' : 'Ebene einblenden'}
+                    onClick={() => engine.setLayerVisible(scene.id, layer.id, !layer.visible)}
+                    className={cn('shrink-0', layer.visible ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]/40')}
+                  >
+                    <EyeIcon off={!layer.visible} />
+                  </button>
+                  <span className="flex-1 truncate text-sm font-semibold">{nameOf(layer.sourceId)}</span>
+                  <select
+                    value={currentPreset(layer)}
+                    onChange={(e) => {
+                      const p = LAYER_PRESETS.find((x) => x.key === e.target.value);
+                      if (p) engine.setLayerRect(scene.id, layer.id, p.rect);
+                    }}
+                    className="h-7 rounded border border-[var(--border)] bg-[var(--input)] px-1.5 text-xs"
+                  >
+                    {currentPreset(layer) === 'custom' && <option value="custom">Eigene</option>}
+                    {LAYER_PRESETS.map((p) => (
+                      <option key={p.key} value={p.key}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                  {canKey && (
+                    <button
+                      type="button"
+                      title="Chroma-Key (Greenscreen)"
+                      onClick={() => engine.setLayerKey(scene.id, layer.id, { enabled: !key?.enabled })}
+                      className={cn(
+                        'shrink-0 h-6 px-1.5 rounded text-[10px] font-extrabold border',
+                        key?.enabled
+                          ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+                          : 'border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+                      )}
+                    >
+                      KEY
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    title="nach vorn"
+                    disabled={isFront}
+                    onClick={() => engine.moveLayer(scene.id, layer.id, 1)}
+                    className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30"
+                  >
+                    <ArrowIcon up />
+                  </button>
+                  <button
+                    type="button"
+                    title="nach hinten"
+                    disabled={isBack}
+                    onClick={() => engine.moveLayer(scene.id, layer.id, -1)}
+                    className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30"
+                  >
+                    <ArrowIcon />
+                  </button>
+                  <button
+                    type="button"
+                    title="Ebene entfernen"
+                    onClick={() => engine.removeLayer(scene.id, layer.id)}
+                    className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+                  >
+                    <XIcon />
+                  </button>
+                </div>
+                {canKey && key?.enabled && (
+                  <div className="flex items-center gap-3 px-2 pb-2 pt-0.5 flex-wrap">
+                    <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-bold text-[var(--muted-foreground)]">
+                      Farbe
+                      <input
+                        type="color"
+                        value={key.color}
+                        onChange={(e) => engine.setLayerKey(scene.id, layer.id, { color: e.target.value })}
+                        className="size-6 cursor-pointer rounded border border-[var(--border)] bg-transparent p-0"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-bold text-[var(--muted-foreground)]">
+                      Toleranz
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={key.similarity}
+                        onChange={(e) => engine.setLayerKey(scene.id, layer.id, { similarity: Number(e.target.value) })}
+                        className="w-24 accent-[var(--primary)]"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-bold text-[var(--muted-foreground)]">
+                      Kante
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={key.smoothness}
+                        onChange={(e) => engine.setLayerKey(scene.id, layer.id, { smoothness: Number(e.target.value) })}
+                        className="w-20 accent-[var(--primary)]"
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             );
           })}

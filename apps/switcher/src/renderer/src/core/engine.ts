@@ -13,6 +13,17 @@ export interface SourceInfo {
   color?: string;
 }
 
+/** Chroma-Key-Einstellungen einer Ebene (Greenscreen). */
+export interface ChromaKey {
+  enabled: boolean;
+  /** Schlüsselfarbe als Hex (#rrggbb). */
+  color: string;
+  /** Toleranz 0..1 — wie nah an der Farbe wird ausgestanzt. */
+  similarity: number;
+  /** Kantenweichheit 0..1. */
+  smoothness: number;
+}
+
 /** Eine Ebene in einer Szene — Quelle + normalisiertes Rechteck (0..1). */
 export interface LayerInfo {
   id: string;
@@ -22,7 +33,16 @@ export interface LayerInfo {
   w: number;
   h: number;
   visible: boolean;
+  /** Chroma-Key (optional; nur für Bild/Video-Quellen sinnvoll). */
+  key?: ChromaKey;
 }
+
+export const DEFAULT_CHROMA_KEY: ChromaKey = {
+  enabled: true,
+  color: '#00d400',
+  similarity: 0.4,
+  smoothness: 0.1,
+};
 
 export interface SceneInfo {
   id: string;
@@ -71,6 +91,9 @@ export class SwitcherEngine {
   private programSceneId: string | null = null;
   private autoMs = 800;
   private transition: { fromId: string | null; toId: string; t0: number; dur: number } | null = null;
+  // Wiederverwendetes Offscreen-Canvas für Chroma-Key-Ebenen.
+  private keyCanvas: HTMLCanvasElement | null = null;
+  private keyCtx: CanvasRenderingContext2D | null = null;
   private previewCanvas: HTMLCanvasElement | null = null;
   private programCanvas: HTMLCanvasElement | null = null;
   private raf = 0;
@@ -306,6 +329,14 @@ export class SwitcherEngine {
     this.notify();
   }
 
+  /** Chroma-Key einer Ebene setzen/ändern (Patch wird gemerged). */
+  setLayerKey(sceneId: string, layerId: string, patch: Partial<ChromaKey>): void {
+    const layer = this.scenes.find((s) => s.id === sceneId)?.layers.find((l) => l.id === layerId);
+    if (!layer) return;
+    layer.key = { ...DEFAULT_CHROMA_KEY, ...layer.key, ...patch };
+    this.notify();
+  }
+
   setLayerVisible(sceneId: string, layerId: string, visible: boolean): void {
     const layer = this.scenes.find((s) => s.id === sceneId)?.layers.find((l) => l.id === layerId);
     if (!layer) return;
@@ -406,19 +437,91 @@ export class SwitcherEngine {
       if (src.info.kind === 'color' && src.info.color) {
         ctx.fillStyle = src.info.color;
         ctx.fillRect(dx, dy, dw, dh);
-      } else if (src.info.kind === 'ndi') {
-        if (src.ndiReady && src.ndiCanvas) {
-          drawContainInto(ctx, src.ndiCanvas, src.ndiCanvas.width, src.ndiCanvas.height, dx, dy, dw, dh);
+      } else {
+        // Zeichenbare Quelle (NDI/Bild/Video) ermitteln.
+        let img: CanvasImageSource | null = null;
+        let iw = 0;
+        let ih = 0;
+        if (src.info.kind === 'ndi' && src.ndiReady && src.ndiCanvas) {
+          img = src.ndiCanvas;
+          iw = src.ndiCanvas.width;
+          ih = src.ndiCanvas.height;
+        } else if (src.info.kind === 'image' && src.image && src.image.complete && src.image.naturalWidth > 0) {
+          img = src.image;
+          iw = src.image.naturalWidth;
+          ih = src.image.naturalHeight;
+        } else if (src.video && src.video.readyState >= 2 && src.video.videoWidth > 0) {
+          img = src.video;
+          iw = src.video.videoWidth;
+          ih = src.video.videoHeight;
         }
-      } else if (src.info.kind === 'image') {
-        if (src.image && src.image.complete && src.image.naturalWidth > 0) {
-          drawContainInto(ctx, src.image, src.image.naturalWidth, src.image.naturalHeight, dx, dy, dw, dh);
+        if (img) {
+          if (layer.key?.enabled) {
+            this.drawKeyed(ctx, img, iw, ih, dx, dy, dw, dh, layer.key);
+          } else {
+            drawContainInto(ctx, img, iw, ih, dx, dy, dw, dh);
+          }
         }
-      } else if (src.video && src.video.readyState >= 2 && src.video.videoWidth > 0) {
-        drawContainInto(ctx, src.video, src.video.videoWidth, src.video.videoHeight, dx, dy, dw, dh);
       }
     }
     ctx.globalAlpha = 1;
+  }
+
+  /** Quelle ins Offscreen-Canvas zeichnen, Chroma-Key anwenden, dann compositen. */
+  private drawKeyed(
+    ctx: CanvasRenderingContext2D,
+    img: CanvasImageSource,
+    iw: number,
+    ih: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+    key: ChromaKey,
+  ): void {
+    const w = Math.max(1, Math.round(dw));
+    const h = Math.max(1, Math.round(dh));
+    if (!this.keyCanvas) this.keyCanvas = document.createElement('canvas');
+    if (this.keyCanvas.width !== w || this.keyCanvas.height !== h) {
+      this.keyCanvas.width = w;
+      this.keyCanvas.height = h;
+      this.keyCtx = this.keyCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    const wctx = this.keyCtx;
+    if (!wctx) return;
+    wctx.clearRect(0, 0, w, h);
+    drawContainInto(wctx, img, iw, ih, 0, 0, w, h);
+    const image = wctx.getImageData(0, 0, w, h);
+    chromaKey(image.data, key);
+    wctx.putImageData(image, 0, 0);
+    ctx.drawImage(this.keyCanvas, dx, dy, w, h);
+  }
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return { r: 0, g: 212, b: 0 };
+  const n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+/** Chroma-Key per YCbCr-Chroma-Distanz: Pixel nahe der Schlüsselfarbe → alpha 0. */
+function chromaKey(data: Uint8ClampedArray, key: ChromaKey): void {
+  const { r: kr, g: kg, b: kb } = hexToRgb(key.color);
+  const kCb = -0.168736 * kr - 0.331264 * kg + 0.5 * kb;
+  const kCr = 0.5 * kr - 0.418688 * kg - 0.081312 * kb;
+  const sim = key.similarity * 0.5 * 255; // Schwelle in Cb/Cr-Einheiten
+  const smooth = Math.max(1, key.smoothness * 0.3 * 255);
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) continue;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const cb = -0.168736 * r - 0.331264 * g + 0.5 * b;
+    const cr = 0.5 * r - 0.418688 * g - 0.081312 * b;
+    const d = Math.hypot(cb - kCb, cr - kCr);
+    if (d < sim) data[i + 3] = 0;
+    else if (d < sim + smooth) data[i + 3] = Math.round(data[i + 3] * ((d - sim) / smooth));
   }
 }
 
