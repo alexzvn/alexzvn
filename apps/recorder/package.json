@@ -13,7 +13,7 @@
     "start": "electron-vite preview",
     "start:codespace": "unset ELECTRON_RUN_AS_NODE && xvfb-run -a node_modules/.bin/electron out/main/index.cjs",
     "rebuild:native": "electron-rebuild --only @jm/audio",
-    "postinstall": "electron-rebuild --only @jm/audio || true",
+    "postinstall": "node scripts/maybe-rebuild.mjs",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
