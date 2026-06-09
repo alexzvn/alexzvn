@@ -18,18 +18,34 @@ function bundledBinDir() {
   return fs.existsSync(path.join(dir, 'jm_audio.node')) ? dir : null;
 }
 
-// Falls PortAudio dynamisch gelinkt ist: das Addon-Verzeichnis vorne an PATH
-// hängen, damit eine daneben liegende portaudio_x64.dll gefunden wird (Windows).
-function ensureRuntimeOnPath(preferredDir) {
-  if (process.platform !== 'win32' || !preferredDir) return;
+// Dev: das gebaute Addon liegt unter packages/audio/build/Release.
+function devBuildDir() {
+  const d = path.join(__dirname, 'build', 'Release');
+  return fs.existsSync(path.join(d, 'jm_audio.node')) ? d : null;
+}
+
+// Falls PortAudio dynamisch gelinkt ist (SHARED build → portaudio.dll), die
+// in Frage kommenden Verzeichnisse vorne an PATH hängen, damit die DLL gefunden
+// wird (Windows; sonst Lade-Fehler 126). Reihenfolge: Addon-Verzeichnis zuerst
+// (gepackt bzw. dev build/Release), dann PORTAUDIO_DIR + PORTAUDIO_DIR/bin.
+function ensureRuntimeOnPath(dirs) {
+  if (process.platform !== 'win32') return;
   const parts = (process.env.PATH || '').split(path.delimiter);
-  if (!parts.includes(preferredDir)) {
-    process.env.PATH = preferredDir + path.delimiter + (process.env.PATH || '');
+  for (const dir of dirs) {
+    if (!dir) continue;
+    try {
+      if (!fs.existsSync(dir) || parts.includes(dir)) continue;
+    } catch {
+      continue;
+    }
+    process.env.PATH = dir + path.delimiter + (process.env.PATH || '');
+    parts.unshift(dir);
   }
 }
 
 const bundled = bundledBinDir();
-ensureRuntimeOnPath(bundled);
+const pa = process.env.PORTAUDIO_DIR;
+ensureRuntimeOnPath([bundled, devBuildDir(), pa, pa && path.join(pa, 'bin'), pa && path.join(pa, 'lib')]);
 
 let addon;
 try {
