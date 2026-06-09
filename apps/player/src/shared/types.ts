@@ -64,6 +64,8 @@ export interface ImportResult {
   added: number;
   skipped: number;
   failed: number;
+  /** Erste Fehlermeldung (z. B. DB-Problem), falls etwas hart fehlschlug. */
+  error?: string;
 }
 
 /** Shape, die der Preload auf `window.jmplay` legt. */

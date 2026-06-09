@@ -131,6 +131,7 @@ export async function importPaths(paths: string[]): Promise<ImportResult> {
   let added = 0;
   let skipped = 0;
   let failed = 0;
+  let firstError: string | undefined;
   const now = Date.now();
 
   for (const file of files) {
@@ -139,31 +140,55 @@ export async function importPaths(paths: string[]): Promise<ImportResult> {
       skipped += 1;
       continue;
     }
+
+    // Probe ist best-effort: fehlt ffprobe (z. B. im Dev ohne gebündelte
+    // Binaries), importieren wir trotzdem mit Minimal-Metadaten — abspielbar
+    // bleibt die Datei via HTML5 ohnehin. Dauer/Codec sind dann nur leer.
+    let fileName = path.basename(file);
+    let durationSec = 0;
+    let sizeBytes = 0;
+    let format: string | null = null;
+    let codec: string | null = null;
     try {
       const info = await probeMedia(file);
+      fileName = info.fileName;
+      durationSec = info.durationSec;
+      sizeBytes = info.sizeBytes;
+      format = info.format || null;
       const stream = kind === 'video'
         ? info.streams.find((s) => s.type === 'video')
         : info.streams.find((s) => s.type === 'audio');
+      codec = stream?.codec ?? null;
+    } catch {
+      try {
+        sizeBytes = (await stat(file)).size;
+      } catch {
+        // Größe ist nur informativ
+      }
+    }
+
+    try {
       const res = insert.run({
         path: file,
-        file_name: info.fileName,
+        file_name: fileName,
         kind,
         title: null,
         artist: null,
-        duration_sec: info.durationSec,
-        size_bytes: info.sizeBytes,
-        format: info.format || null,
-        codec: stream?.codec ?? null,
+        duration_sec: durationSec,
+        size_bytes: sizeBytes,
+        format,
+        codec,
         added_at: now,
       });
       if (res.changes > 0) added += 1;
       else skipped += 1;
-    } catch {
+    } catch (e) {
       failed += 1;
+      if (!firstError) firstError = (e as Error).message;
     }
   }
 
-  return { added, skipped, failed };
+  return { added, skipped, failed, error: firstError };
 }
 
 export function removeItem(id: number): void {

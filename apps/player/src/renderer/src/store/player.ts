@@ -86,7 +86,10 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
       const res = await window.jmplay.library.importPaths(paths);
       await get().refreshLibrary();
       set({
-        notice: `${res.added} hinzugefügt · ${res.skipped} übersprungen${res.failed ? ` · ${res.failed} fehlgeschlagen` : ''}`,
+        notice:
+          `${res.added} hinzugefügt · ${res.skipped} übersprungen` +
+          `${res.failed ? ` · ${res.failed} fehlgeschlagen` : ''}` +
+          `${res.error ? ` — ${res.error}` : ''}`,
       });
     } catch (e) {
       set({ notice: (e as Error).message });
