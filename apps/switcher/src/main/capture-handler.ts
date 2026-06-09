@@ -24,4 +24,11 @@ export function installDisplayMediaHandler(): void {
       })
       .catch(() => callback({}));
   });
+
+  // getUserMedia (Capture-Karte/Kamera) braucht eine erteilte media-Permission —
+  // für eine Desktop-App pauschal erlauben (kein Browser-Sandboxing nötig).
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
+    cb(permission === 'media');
+  });
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media');
 }

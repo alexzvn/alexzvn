@@ -23,7 +23,10 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   Screen Capture); 1-Frame-Backpressure (Ack) hält Latenz/Speicher im Zaum. BGRA
   → RGBA-Swizzle im Renderer (Uint32-Fastpath) in ein Offscreen-Canvas, das wie
   ein Video in die Ebene gezeichnet wird.
-- **Slice 4:** eine **Capture-Karte** (ffmpeg dshow) als Quelle.
+- **Slice 4 (Capture-Karte):** **„+ Capture"** listet Videogeräte (`enumerate
+  Devices`) und öffnet sie via `getUserMedia` → gleicher Canvas-Pfad wie der
+  Bildschirm. Deckt USB-Capture-Karten (Elgato, Magewell, Grabber) ab, Win **und**
+  Mac, ohne nativen Prozess. ffmpeg-`dshow` für reine SDI-Karten ohne UVC = v0.2.
 - **Slice 5:** **Aufnahme** (ffmpeg) + **RTMP**-Ausgabe des Program-Outputs.
 - **Slice 6:** **TCP-Steuerserver** + **@jm/companion-protocol** + Bitfocus-
   **Companion-Modul** (`packages/companion-jm-switcher`): PREVIEW/PROGRAM/CUT/
@@ -38,10 +41,10 @@ npm run dev -w @jm/switcher
 npm run typecheck -w @jm/switcher
 ```
 Quellen-Pool: „+ Farbe" (Farbe per Picker frei änderbar), „+ Bildschirm" (Monitor/
-Fenster), „+ NDI" (suchen → verbinden), „+ Bild" (PNG/JPG-Import, z. B. **Corner-
-Logos** mit Transparenz — PiP-Ecken-Preset macht daraus ein Bauchbinden-/Logo-
-Overlay). Quellen per **Doppelklick umbenennen**. Compositing läuft komplett im
-Renderer (Canvas).
+Fenster), „+ Capture" (Capture-Karte/Kamera via getUserMedia), „+ NDI" (suchen →
+verbinden), „+ Bild" (PNG/JPG-Import, z. B. **Corner-Logos** mit Transparenz — PiP-
+Ecken-Preset macht daraus ein Bauchbinden-/Logo-Overlay). Quellen per **Doppelklick
+umbenennen**. Compositing läuft komplett im Renderer (Canvas).
 
 ### NDI (nativ, nur Windows/Mac mit gebautem Addon)
 Wie bei [JM NDI Screen Capture](../ndi-screen-capture): das `@jm/ndi`-Addon wird

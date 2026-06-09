@@ -4,7 +4,7 @@
 // Gezeichnet auf zwei Canvases per requestAnimationFrame. NDI/Capture-Karte
 // kommen als weitere Quelltypen in späteren Slices dazu.
 
-export type SourceKind = 'color' | 'screen' | 'ndi' | 'image';
+export type SourceKind = 'color' | 'screen' | 'ndi' | 'image' | 'capture';
 
 export interface SourceInfo {
   id: string;
@@ -159,12 +159,21 @@ export class SwitcherEngine {
   }
 
   addScreenStream(name: string, stream: MediaStream): string {
+    return this.pushStreamSource(name, 'screen', stream);
+  }
+
+  /** Eine Capture-Karte / Kamera (getUserMedia-Stream) in den Pool legen. */
+  addCaptureStream(name: string, stream: MediaStream): string {
+    return this.pushStreamSource(name, 'capture', stream);
+  }
+
+  private pushStreamSource(name: string, kind: SourceKind, stream: MediaStream): string {
     const id = this.nextId('src');
     const video = document.createElement('video');
     video.muted = true;
     video.srcObject = stream;
     void video.play().catch(() => {});
-    this.sources.push({ info: { id, name, kind: 'screen' }, video, stream });
+    this.sources.push({ info: { id, name, kind }, video, stream });
     this.notify();
     return id;
   }

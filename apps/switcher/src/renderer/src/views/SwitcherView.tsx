@@ -42,6 +42,7 @@ export function SwitcherView() {
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
   const [ndiPicker, setNdiPicker] = useState(false);
+  const [capturePicker, setCapturePicker] = useState(false);
   const [ndiStatus, setNdiStatus] = useState<NdiStatus>({ state: 'idle', source: null });
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -114,6 +115,19 @@ export function SwitcherView() {
       engine.addScreenStream(screen.name, stream);
     } catch (e) {
       setNotice(`Bildschirm konnte nicht aufgenommen werden: ${(e as Error).message}`);
+    }
+  };
+
+  const pickCapture = async (device: MediaDeviceInfo): Promise<void> => {
+    setCapturePicker(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: device.deviceId } },
+        audio: false,
+      });
+      engine.addCaptureStream(device.label || 'Capture-Gerät', stream);
+    } catch (e) {
+      setNotice(`Capture-Gerät konnte nicht geöffnet werden: ${(e as Error).message}`);
     }
   };
 
@@ -231,6 +245,7 @@ export function SwitcherView() {
           onAddColor={addColor}
           onAddScreen={() => setPicker(true)}
           onAddNdi={() => setNdiPicker(true)}
+          onAddCapture={() => setCapturePicker(true)}
           onAddImage={() => fileInputRef.current?.click()}
           onSetColor={(id, color) => engine.setSourceColor(id, color)}
           onRename={(id, name) => engine.renameSource(id, name)}
@@ -253,6 +268,9 @@ export function SwitcherView() {
 
       {picker && <ScreenPicker onPick={(s) => void pickScreen(s)} onClose={() => setPicker(false)} />}
       {ndiPicker && <NdiPicker onPick={(s) => void connectNdi(s)} onClose={() => setNdiPicker(false)} />}
+      {capturePicker && (
+        <CapturePicker onPick={(d) => void pickCapture(d)} onClose={() => setCapturePicker(false)} />
+      )}
 
       {notice && (
         <div className="pointer-events-none fixed inset-x-0 bottom-5 flex justify-center px-6">
@@ -500,6 +518,7 @@ function SourcesPanel({
   onAddColor,
   onAddScreen,
   onAddNdi,
+  onAddCapture,
   onAddImage,
   onSetColor,
   onRename,
@@ -512,6 +531,7 @@ function SourcesPanel({
   onAddColor: () => void;
   onAddScreen: () => void;
   onAddNdi: () => void;
+  onAddCapture: () => void;
   onAddImage: () => void;
   onSetColor: (id: string, color: string) => void;
   onRename: (id: string, name: string) => void;
@@ -522,12 +542,16 @@ function SourcesPanel({
 
   return (
     <div className="flex flex-col min-h-0">
-      <PanelHead title="Quellen-Pool">
+      <PanelHead title="Quellen-Pool" />
+      <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-[var(--border)]/40">
         <Button size="sm" variant="outline" onClick={onAddColor}>
           + Farbe
         </Button>
         <Button size="sm" variant="outline" onClick={onAddScreen}>
           + Bildschirm
+        </Button>
+        <Button size="sm" variant="outline" onClick={onAddCapture}>
+          + Capture
         </Button>
         <Button size="sm" variant="outline" onClick={onAddNdi}>
           + NDI
@@ -535,7 +559,7 @@ function SourcesPanel({
         <Button size="sm" variant="outline" onClick={onAddImage}>
           + Bild
         </Button>
-      </PanelHead>
+      </div>
       {ndiStatus.state !== 'idle' && ndiStatus.state !== 'disconnected' && (
         <div className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-semibold border-b border-[var(--border)]/40">
           <span
@@ -578,13 +602,19 @@ function SourcesPanel({
             ) : (
               <span
                 className={cn(
-                  'size-4 rounded-sm shrink-0 border border-[var(--border)] grid place-items-center text-[6px] font-extrabold leading-none',
-                  s.kind === 'ndi' && 'bg-[var(--primary)] text-[var(--primary-foreground)]',
-                  s.kind === 'image' && 'bg-[var(--success)] text-black',
+                  'size-4 rounded-sm shrink-0 border border-[var(--border)] grid place-items-center text-[6px] font-extrabold leading-none text-white',
+                  s.kind === 'ndi' && 'bg-[var(--primary)] !text-[var(--primary-foreground)]',
+                  s.kind === 'image' && 'bg-[var(--success)] !text-black',
                 )}
-                style={{ background: s.kind === 'screen' ? '#333' : undefined }}
+                style={{ background: s.kind === 'screen' || s.kind === 'capture' ? '#333' : undefined }}
               >
-                {s.kind === 'ndi' ? 'NDI' : s.kind === 'image' ? 'IMG' : ''}
+                {s.kind === 'ndi'
+                  ? 'NDI'
+                  : s.kind === 'image'
+                    ? 'IMG'
+                    : s.kind === 'capture'
+                      ? 'CAM'
+                      : ''}
               </span>
             )}
             {editing?.id === s.id ? (
@@ -758,6 +788,93 @@ function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: 
       </div>
     </div>
   );
+}
+
+function CapturePicker({
+  onPick,
+  onClose,
+}: {
+  onPick: (d: MediaDeviceInfo) => void;
+  onClose: () => void;
+}) {
+  const [devices, setDevices] = useState<MediaDeviceInfo[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const scan = (): void => {
+    setDevices(null);
+    setError(null);
+    listVideoInputs()
+      .then(setDevices)
+      .catch((e) => {
+        setDevices([]);
+        setError((e as Error).message);
+      });
+  };
+
+  useEffect(() => {
+    scan();
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm px-6" onClick={onClose}>
+      <div
+        className="w-full max-w-lg max-h-[80vh] overflow-auto scroll-thin rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold tracking-tight">Capture-Karte / Kamera wählen</h2>
+          <Button size="sm" variant="outline" onClick={scan}>
+            Neu suchen
+          </Button>
+        </div>
+        <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
+          USB-Capture-Karten (Elgato, Magewell, Grabber) erscheinen als Videogeräte. Reine SDI-Karten
+          ohne UVC-Treiber kommen via ffmpeg in v0.2.
+        </p>
+        {devices == null ? (
+          <p className="text-sm text-[var(--muted-foreground)] mt-4">Suche Geräte…</p>
+        ) : devices.length === 0 ? (
+          <p className="text-sm text-[var(--muted-foreground)] mt-4">
+            Keine Videogeräte gefunden{error ? ` (${error})` : ''}.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2 mt-4">
+            {devices.map((d, i) => (
+              <button
+                key={d.deviceId || i}
+                type="button"
+                onClick={() => onPick(d)}
+                className="text-left rounded-[var(--radius-lg)] border border-[var(--border)] px-3.5 py-2.5 text-sm font-semibold hover:border-[var(--primary)]/60 hover:bg-[var(--highlight)] transition-colors truncate"
+              >
+                {d.label || `Videogerät ${i + 1}`}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="mt-5 flex justify-end">
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Abbrechen
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Videogeräte auflisten; bei leeren Labels kurz Permission anfordern (Electron). */
+async function listVideoInputs(): Promise<MediaDeviceInfo[]> {
+  let devices = await navigator.mediaDevices.enumerateDevices();
+  const inputs = (): MediaDeviceInfo[] => devices.filter((d) => d.kind === 'videoinput');
+  if (inputs().length === 0 || inputs().every((d) => !d.label)) {
+    let probe: MediaStream | null = null;
+    try {
+      probe = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      devices = await navigator.mediaDevices.enumerateDevices();
+    } finally {
+      probe?.getTracks().forEach((t) => t.stop());
+    }
+  }
+  return inputs();
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {
