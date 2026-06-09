@@ -56,6 +56,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
   const [outputState, setOutputState] = useState<OutputState>(() => output.getState());
   const rtmpUrl = useSettings((s) => s.rtmpUrl);
   const streamBitrateKbps = useSettings((s) => s.streamBitrateKbps);
+  const recordBitrateKbps = useSettings((s) => s.recordBitrateKbps);
   const controlEnabled = useSettings((s) => s.controlEnabled);
   const controlPort = useSettings((s) => s.controlPort);
   const audioInputId = useSettings((s) => s.audioInputId);
@@ -150,7 +151,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
 
   const toggleRecording = (): void => {
     if (outputState.recording) output.stopRecording();
-    else void output.startRecording();
+    else void output.startRecording(recordBitrateKbps);
   };
   const toggleStreaming = (): void => {
     if (outputState.streaming) output.stopStreaming();
@@ -179,7 +180,7 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
           engine.auto(cmd.ms);
           break;
         case 'record':
-          if (cmd.on) void output.startRecordingAuto();
+          if (cmd.on) void output.startRecordingAuto(useSettings.getState().recordBitrateKbps);
           else output.stopRecording();
           break;
         case 'stream':
@@ -1002,6 +1003,18 @@ function LayersPanel({
                         step={0.01}
                         value={key.smoothness}
                         onChange={(e) => engine.setLayerKey(scene.id, layer.id, { smoothness: Number(e.target.value) })}
+                        className="w-20 accent-[var(--primary)]"
+                      />
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-bold text-[var(--muted-foreground)]">
+                      Spill
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={key.spill ?? 0}
+                        onChange={(e) => engine.setLayerKey(scene.id, layer.id, { spill: Number(e.target.value) })}
                         className="w-20 accent-[var(--primary)]"
                       />
                     </label>

@@ -17,7 +17,8 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   Seit v0.2 zusätzlich **Drag/Resize direkt auf dem Preview-Monitor** (Ebene
   anklicken → ziehen = verschieben, Eck-Griffe = skalieren, live ins Bild) und
   **Chroma-Key/Greenscreen pro Ebene** (KEY-Button → Schlüsselfarbe + Toleranz +
-  Kante; CPU-Keying im Canvas-Compositor via YCbCr-Chroma-Distanz).
+  Kante + **Spill**-Suppression; CPU-Keying im Canvas-Compositor via
+  YCbCr-Chroma-Distanz).
 - **Slice 3 (NDI-Empfang):** **NDI-Quelle(n)** im Pool. „+ NDI" sucht Quellen im
   Studio-LAN (JM NDI Screen Capture, TriCaster, vMix …) und verbindet sie. Seit
   v0.2 **mehrere NDI-Empfänger gleichzeitig** — ein eigener `@jm/ndi`-
@@ -38,8 +39,8 @@ Port 5181 · `window.jmswitch` · appId `gmbh.jakobs.switcher`.
   pipet dieselben Chunks in **ffmpeg** (`@jm/media`) → H.264 + stille AAC-Spur
   (`anullsrc`, damit YouTube/Twitch die FLV akzeptieren) → **RTMP**. Pro Output ein
   eigener MediaRecorder (sauberer WebM-Header je Sink).
-  **RTMP-Ziel + Bitrate** liegen im **Einstellungen-Tab** (persistiert); der
-  Stream-Start-Button bleibt in der Mischer-Ansicht.
+  **RTMP-Ziel + Stream-Bitrate + Aufnahme-Bitrate** liegen im **Einstellungen-Tab**
+  (persistiert); der Stream-Start-Button bleibt in der Mischer-Ansicht.
 - **v0.2 — Programm-Audio:** Eine **Audioquelle** (Mikro/Line-In/Capture-Ton, Wahl
   im Einstellungen-Tab) läuft durch WebAudio (Gain/Mute + Pegelmeter in der
   Mischer-Leiste) und wird als echte Tonspur in **Aufnahme + RTMP** gemischt

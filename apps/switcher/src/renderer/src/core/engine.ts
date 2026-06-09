@@ -22,6 +22,8 @@ export interface ChromaKey {
   similarity: number;
   /** Kantenweichheit 0..1. */
   smoothness: number;
+  /** Spill-Suppression 0..1 — Farbstich der Schlüsselfarbe im Motiv dämpfen. */
+  spill: number;
 }
 
 /** Eine Ebene in einer Szene — Quelle + normalisiertes Rechteck (0..1). */
@@ -42,6 +44,7 @@ export const DEFAULT_CHROMA_KEY: ChromaKey = {
   color: '#00d400',
   similarity: 0.4,
   smoothness: 0.1,
+  spill: 0.3,
 };
 
 export interface SceneInfo {
@@ -505,13 +508,20 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
-/** Chroma-Key per YCbCr-Chroma-Distanz: Pixel nahe der Schlüsselfarbe → alpha 0. */
+/**
+ * Chroma-Key per YCbCr-Chroma-Distanz: Pixel nahe der Schlüsselfarbe → alpha 0,
+ * Übergangsband gefeathert. Optionale Spill-Suppression dämpft den Farbstich der
+ * dominanten Schlüsselkanal-Komponente im verbleibenden Motiv.
+ */
 function chromaKey(data: Uint8ClampedArray, key: ChromaKey): void {
   const { r: kr, g: kg, b: kb } = hexToRgb(key.color);
   const kCb = -0.168736 * kr - 0.331264 * kg + 0.5 * kb;
   const kCr = 0.5 * kr - 0.418688 * kg - 0.081312 * kb;
   const sim = key.similarity * 0.5 * 255; // Schwelle in Cb/Cr-Einheiten
   const smooth = Math.max(1, key.smoothness * 0.3 * 255);
+  const spill = key.spill ?? 0;
+  const maxK = Math.max(kr, kg, kb);
+  const dom = kg === maxK ? 1 : kb === maxK ? 2 : 0; // dominanter Kanal der Keyfarbe
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] === 0) continue;
     const r = data[i];
@@ -520,8 +530,27 @@ function chromaKey(data: Uint8ClampedArray, key: ChromaKey): void {
     const cb = -0.168736 * r - 0.331264 * g + 0.5 * b;
     const cr = 0.5 * r - 0.418688 * g - 0.081312 * b;
     const d = Math.hypot(cb - kCb, cr - kCr);
-    if (d < sim) data[i + 3] = 0;
-    else if (d < sim + smooth) data[i + 3] = Math.round(data[i + 3] * ((d - sim) / smooth));
+    if (d < sim) {
+      data[i + 3] = 0;
+      continue;
+    }
+    if (d < sim + smooth) {
+      const a = Math.round(data[i + 3] * ((d - sim) / smooth));
+      data[i + 3] = a;
+      if (a === 0) continue;
+    }
+    if (spill > 0) {
+      if (dom === 1) {
+        const lim = (r + b) / 2;
+        if (g > lim) data[i + 1] = g - (g - lim) * spill;
+      } else if (dom === 2) {
+        const lim = (r + g) / 2;
+        if (b > lim) data[i + 2] = b - (b - lim) * spill;
+      } else {
+        const lim = (g + b) / 2;
+        if (r > lim) data[i] = r - (r - lim) * spill;
+      }
+    }
   }
 }
 

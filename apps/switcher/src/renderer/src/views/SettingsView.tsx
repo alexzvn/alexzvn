@@ -6,11 +6,13 @@ export function SettingsView() {
   const {
     rtmpUrl,
     streamBitrateKbps,
+    recordBitrateKbps,
     controlEnabled,
     controlPort,
     audioInputId,
     setRtmpUrl,
     setStreamBitrateKbps,
+    setRecordBitrateKbps,
     setControlEnabled,
     setControlPort,
     setAudioInputId,
@@ -163,11 +165,29 @@ export function SettingsView() {
           </p>
         </section>
 
-        <section className="rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-3">
+        <section className="rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-5">
           <h2 className="text-[11px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
             Aufnahme
           </h2>
-          <p className="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
+          <label className="flex flex-col gap-1.5 max-w-xs">
+            <span className="text-sm font-bold">Aufnahme-Bitrate</span>
+            <span className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1000}
+                max={60000}
+                step={500}
+                value={recordBitrateKbps}
+                onChange={(e) => setRecordBitrateKbps(Number(e.target.value))}
+                className="h-10 w-32 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-center tabular text-[var(--foreground)]"
+              />
+              <span className="text-sm text-[var(--muted-foreground)]">kbit/s</span>
+            </span>
+            <span className="text-[11px] text-[var(--muted-foreground)]">
+              Video-Bitrate der WebM-Aufnahme. 720p: ~8000–16000 kbit/s.
+            </span>
+          </label>
+          <p className="text-[11px] text-[var(--muted-foreground)] leading-relaxed border-t border-[var(--border)]/60 pt-4">
             Aufnahmen werden als <span className="font-semibold text-[var(--foreground)]">WebM</span>{' '}
             gespeichert (Speicherort wird beim Start abgefragt). Für MP4 die Datei im
             <span className="font-semibold text-[var(--foreground)]"> JM Media Converter</span> umwandeln.

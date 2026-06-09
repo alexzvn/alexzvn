@@ -10,7 +10,8 @@ export interface OutputState {
   error: string | null;
 }
 
-const REC_BITS = 8_000_000;
+const DEFAULT_REC_BITS = 12_000_000;
+const MIN_STREAM_INTERMEDIATE = 8_000_000;
 const TIMESLICE_MS = 500;
 
 function pickMimeType(): string {
@@ -91,17 +92,18 @@ export class OutputController {
   }
 
   /** Aufnahme mit Speicherdialog (UI-Button). */
-  startRecording(): Promise<void> {
-    return this.beginRecording(() => window.jmswitch.output.recStart());
+  startRecording(bitrateKbps?: number): Promise<void> {
+    return this.beginRecording(() => window.jmswitch.output.recStart(), bitrateKbps);
   }
 
   /** Aufnahme ohne Dialog (Fernsteuerung): Standardordner + Zeitstempel. */
-  startRecordingAuto(): Promise<void> {
-    return this.beginRecording(() => window.jmswitch.output.recStartAuto());
+  startRecordingAuto(bitrateKbps?: number): Promise<void> {
+    return this.beginRecording(() => window.jmswitch.output.recStartAuto(), bitrateKbps);
   }
 
   private async beginRecording(
     open: () => Promise<{ ok: boolean; path?: string; error?: string }>,
+    bitrateKbps?: number,
   ): Promise<void> {
     if (this.recRecorder) return;
     const stream = this.buildOutputStream();
@@ -114,7 +116,8 @@ export class OutputController {
       if (res.error) this.patch({ error: res.error });
       return; // abgebrochen
     }
-    const rec = new MediaRecorder(stream, { mimeType: pickMimeType(), videoBitsPerSecond: REC_BITS });
+    const bits = bitrateKbps ? bitrateKbps * 1000 : DEFAULT_REC_BITS;
+    const rec = new MediaRecorder(stream, { mimeType: pickMimeType(), videoBitsPerSecond: bits });
     rec.ondataavailable = (e) => void this.send(e.data, 'rec');
     rec.onstop = () => window.jmswitch.output.recStop();
     rec.onerror = () => {
@@ -143,7 +146,10 @@ export class OutputController {
       this.patch({ error: res.error ?? 'Stream-Start fehlgeschlagen.' });
       return;
     }
-    const rec = new MediaRecorder(stream, { mimeType: pickMimeType(), videoBitsPerSecond: REC_BITS });
+    // Zwischen-WebM nicht unter die Stream-Zielbitrate drücken (sonst Qualitätsverlust
+    // vor dem x264-Re-Encode).
+    const interBits = Math.max(MIN_STREAM_INTERMEDIATE, (bitrateKbps ?? 0) * 1000);
+    const rec = new MediaRecorder(stream, { mimeType: pickMimeType(), videoBitsPerSecond: interBits });
     rec.ondataavailable = (e) => void this.send(e.data, 'stream');
     rec.onstop = () => window.jmswitch.output.streamStop();
     rec.onerror = () => {

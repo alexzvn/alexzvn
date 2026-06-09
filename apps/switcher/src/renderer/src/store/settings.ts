@@ -9,6 +9,8 @@ export interface SettingsState {
   rtmpUrl: string;
   /** Stream-Videobitrate in kbit/s (x264 -b:v). */
   streamBitrateKbps: number;
+  /** Aufnahme-Videobitrate in kbit/s (MediaRecorder WebM). */
+  recordBitrateKbps: number;
   /** TCP-Fernsteuerung (Companion) aktiv? */
   controlEnabled: boolean;
   /** Port des Steuerservers. */
@@ -17,6 +19,7 @@ export interface SettingsState {
   audioInputId: string;
   setRtmpUrl: (v: string) => void;
   setStreamBitrateKbps: (v: number) => void;
+  setRecordBitrateKbps: (v: number) => void;
   setControlEnabled: (v: boolean) => void;
   setControlPort: (v: number) => void;
   setAudioInputId: (v: string) => void;
@@ -27,12 +30,15 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       rtmpUrl: '',
       streamBitrateKbps: 4500,
+      recordBitrateKbps: 12000,
       controlEnabled: false,
       controlPort: DEFAULT_CONTROL_PORT,
       audioInputId: '',
       setRtmpUrl: (rtmpUrl) => set({ rtmpUrl }),
       setStreamBitrateKbps: (streamBitrateKbps) =>
         set({ streamBitrateKbps: Math.min(20000, Math.max(500, Math.round(streamBitrateKbps) || 0)) }),
+      setRecordBitrateKbps: (recordBitrateKbps) =>
+        set({ recordBitrateKbps: Math.min(60000, Math.max(1000, Math.round(recordBitrateKbps) || 0)) }),
       setControlEnabled: (controlEnabled) => set({ controlEnabled }),
       setControlPort: (controlPort) =>
         set({ controlPort: Math.min(65535, Math.max(1, Math.round(controlPort) || DEFAULT_CONTROL_PORT)) }),
