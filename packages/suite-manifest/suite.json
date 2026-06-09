@@ -129,6 +129,27 @@
       "app": "recorder"
     },
     {
+      "id": "jm-switcher",
+      "name": "JM Switcher",
+      "tagline": "Video-Mischer · Program/Preview",
+      "description": "Softwarebasierter Video-Mischer mit Program/Preview, Cut und Auto-Dissolve. Quellen: Bildschirm/Fenster, NDI und Capture-Karte. Aufnahme + RTMP-Ausgabe, steuerbar per Companion.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.switcher",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Switcher-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Switcher.app"
+        },
+        "win": {
+          "artifact": "JM Switcher-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Switcher\\JM Switcher.exe"
+        }
+      },
+      "app": "switcher"
+    },
+    {
       "id": "jm-sync",
       "name": "JM Sync",
       "tagline": "A/V-Lipsync-Messung",

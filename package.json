@@ -24,6 +24,9 @@
     "recorder:dev": "npm run dev -w @jm/recorder",
     "recorder:build": "npm run build -w @jm/recorder",
     "recorder:dist": "npm run dist -w @jm/recorder",
+    "switcher:dev": "npm run dev -w @jm/switcher",
+    "switcher:build": "npm run build -w @jm/switcher",
+    "switcher:dist": "npm run dist -w @jm/switcher",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }
