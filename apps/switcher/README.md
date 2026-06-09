@@ -37,8 +37,11 @@ Keying, Audio-Mischmatrix = v0.2+.
 npm run dev -w @jm/switcher
 npm run typecheck -w @jm/switcher
 ```
-Bildschirmquelle: „+ Bildschirm" wählt einen Monitor/ein Fenster; das Compositing
-läuft komplett im Renderer (Canvas). NDI-Quelle: „+ NDI" → suchen → verbinden.
+Quellen-Pool: „+ Farbe" (Farbe per Picker frei änderbar), „+ Bildschirm" (Monitor/
+Fenster), „+ NDI" (suchen → verbinden), „+ Bild" (PNG/JPG-Import, z. B. **Corner-
+Logos** mit Transparenz — PiP-Ecken-Preset macht daraus ein Bauchbinden-/Logo-
+Overlay). Quellen per **Doppelklick umbenennen**. Compositing läuft komplett im
+Renderer (Canvas).
 
 ### NDI (nativ, nur Windows/Mac mit gebautem Addon)
 Wie bei [JM NDI Screen Capture](../ndi-screen-capture): das `@jm/ndi`-Addon wird

@@ -4,7 +4,7 @@
 // Gezeichnet auf zwei Canvases per requestAnimationFrame. NDI/Capture-Karte
 // kommen als weitere Quelltypen in späteren Slices dazu.
 
-export type SourceKind = 'color' | 'screen' | 'ndi';
+export type SourceKind = 'color' | 'screen' | 'ndi' | 'image';
 
 export interface SourceInfo {
   id: string;
@@ -51,6 +51,8 @@ interface InternalSource {
   info: SourceInfo;
   video: HTMLVideoElement | null;
   stream: MediaStream | null;
+  // Bild/Logo-Quelle (PNG mit Transparenz für Corner-Logos).
+  image?: HTMLImageElement;
   // NDI: empfangene BGRA-Frames werden in dieses Offscreen-Canvas geschrieben
   // und von dort wie ein <video> in die Ebene gezeichnet.
   ndiCanvas?: HTMLCanvasElement;
@@ -136,6 +138,26 @@ export class SwitcherEngine {
     return id;
   }
 
+  /** Farbe einer Farb-Quelle ändern. */
+  setSourceColor(id: string, color: string): void {
+    const src = this.sources.find((s) => s.info.id === id);
+    if (src && src.info.kind === 'color') {
+      src.info.color = color;
+      this.notify();
+    }
+  }
+
+  /** Ein Bild/Logo (Data-URL, z. B. PNG mit Alpha) als Quelle in den Pool legen. */
+  addImageSource(name: string, dataUrl: string): string {
+    const id = this.nextId('src');
+    const image = new Image();
+    image.onload = () => this.notify(); // erstes Frame zeichnen, sobald geladen
+    image.src = dataUrl;
+    this.sources.push({ info: { id, name, kind: 'image' }, video: null, stream: null, image });
+    this.notify();
+    return id;
+  }
+
   addScreenStream(name: string, stream: MediaStream): string {
     const id = this.nextId('src');
     const video = document.createElement('video');
@@ -199,6 +221,7 @@ export class SwitcherEngine {
   private disposeSource(s: InternalSource): void {
     s.stream?.getTracks().forEach((t) => t.stop());
     if (s.video) s.video.srcObject = null;
+    if (s.image) s.image.onload = null;
   }
 
   // ---- Szenen ----
@@ -369,6 +392,10 @@ export class SwitcherEngine {
       } else if (src.info.kind === 'ndi') {
         if (src.ndiReady && src.ndiCanvas) {
           drawContainInto(ctx, src.ndiCanvas, src.ndiCanvas.width, src.ndiCanvas.height, dx, dy, dw, dh);
+        }
+      } else if (src.info.kind === 'image') {
+        if (src.image && src.image.complete && src.image.naturalWidth > 0) {
+          drawContainInto(ctx, src.image, src.image.naturalWidth, src.image.naturalHeight, dx, dy, dw, dh);
         }
       } else if (src.video && src.video.readyState >= 2 && src.video.videoWidth > 0) {
         drawContainInto(ctx, src.video, src.video.videoWidth, src.video.videoHeight, dx, dy, dw, dh);

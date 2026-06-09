@@ -38,6 +38,7 @@ export function SwitcherView() {
   const previewRef = useRef<HTMLCanvasElement>(null);
   const programRef = useRef<HTMLCanvasElement>(null);
   const ndiSourceIdRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
   const [ndiPicker, setNdiPicker] = useState(false);
@@ -144,6 +145,19 @@ export function SwitcherView() {
     engine.removeSource(id);
   };
 
+  const addImageFiles = async (files: FileList | null): Promise<void> => {
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue;
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        engine.addImageSource(file.name.replace(/\.[^.]+$/, ''), dataUrl);
+      } catch (e) {
+        setNotice(`Bild konnte nicht geladen werden: ${(e as Error).message}`);
+      }
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Monitore + Transition */}
@@ -217,10 +231,25 @@ export function SwitcherView() {
           onAddColor={addColor}
           onAddScreen={() => setPicker(true)}
           onAddNdi={() => setNdiPicker(true)}
+          onAddImage={() => fileInputRef.current?.click()}
+          onSetColor={(id, color) => engine.setSourceColor(id, color)}
+          onRename={(id, name) => engine.renameSource(id, name)}
           onAddToScene={(sourceId) => previewScene && engine.addLayer(previewScene.id, sourceId)}
           onRemove={removeSource}
         />
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          void addImageFiles(e.target.files);
+          e.target.value = '';
+        }}
+      />
 
       {picker && <ScreenPicker onPick={(s) => void pickScreen(s)} onClose={() => setPicker(false)} />}
       {ndiPicker && <NdiPicker onPick={(s) => void connectNdi(s)} onClose={() => setNdiPicker(false)} />}
@@ -471,6 +500,9 @@ function SourcesPanel({
   onAddColor,
   onAddScreen,
   onAddNdi,
+  onAddImage,
+  onSetColor,
+  onRename,
   onAddToScene,
   onRemove,
 }: {
@@ -480,9 +512,14 @@ function SourcesPanel({
   onAddColor: () => void;
   onAddScreen: () => void;
   onAddNdi: () => void;
+  onAddImage: () => void;
+  onSetColor: (id: string, color: string) => void;
+  onRename: (id: string, name: string) => void;
   onAddToScene: (sourceId: string) => void;
   onRemove: (id: string) => void;
 }) {
+  const [editing, setEditing] = useState<{ id: string; value: string } | null>(null);
+
   return (
     <div className="flex flex-col min-h-0">
       <PanelHead title="Quellen-Pool">
@@ -494,6 +531,9 @@ function SourcesPanel({
         </Button>
         <Button size="sm" variant="outline" onClick={onAddNdi}>
           + NDI
+        </Button>
+        <Button size="sm" variant="outline" onClick={onAddImage}>
+          + Bild
         </Button>
       </PanelHead>
       {ndiStatus.state !== 'idle' && ndiStatus.state !== 'disconnected' && (
@@ -527,16 +567,50 @@ function SourcesPanel({
             key={s.id}
             className="group flex items-center gap-2 h-9 px-2 rounded-[var(--radius)] border border-[var(--border)]/60"
           >
-            <span
-              className={cn(
-                'size-4 rounded-sm shrink-0 border border-[var(--border)] grid place-items-center text-[6px] font-extrabold',
-                s.kind === 'ndi' && 'bg-[var(--primary)] text-[var(--primary-foreground)]',
-              )}
-              style={{ background: s.kind === 'color' ? s.color : s.kind === 'ndi' ? undefined : '#333' }}
-            >
-              {s.kind === 'ndi' ? 'NDI' : ''}
-            </span>
-            <span className="flex-1 truncate text-sm font-semibold">{s.name}</span>
+            {s.kind === 'color' ? (
+              <input
+                type="color"
+                value={s.color ?? '#000000'}
+                title="Farbe ändern"
+                onChange={(e) => onSetColor(s.id, e.target.value)}
+                className="size-5 shrink-0 cursor-pointer rounded-sm border border-[var(--border)] bg-transparent p-0"
+              />
+            ) : (
+              <span
+                className={cn(
+                  'size-4 rounded-sm shrink-0 border border-[var(--border)] grid place-items-center text-[6px] font-extrabold leading-none',
+                  s.kind === 'ndi' && 'bg-[var(--primary)] text-[var(--primary-foreground)]',
+                  s.kind === 'image' && 'bg-[var(--success)] text-black',
+                )}
+                style={{ background: s.kind === 'screen' ? '#333' : undefined }}
+              >
+                {s.kind === 'ndi' ? 'NDI' : s.kind === 'image' ? 'IMG' : ''}
+              </span>
+            )}
+            {editing?.id === s.id ? (
+              <input
+                autoFocus
+                value={editing.value}
+                onChange={(e) => setEditing({ id: s.id, value: e.target.value })}
+                onBlur={() => {
+                  if (editing.value.trim()) onRename(s.id, editing.value.trim());
+                  setEditing(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  if (e.key === 'Escape') setEditing(null);
+                }}
+                className="flex-1 h-7 rounded border border-[var(--border)] bg-[var(--input)] px-2 text-sm"
+              />
+            ) : (
+              <span
+                className="flex-1 truncate text-sm font-semibold"
+                title="Doppelklick zum Umbenennen"
+                onDoubleClick={() => setEditing({ id: s.id, value: s.name })}
+              >
+                {s.name}
+              </span>
+            )}
             <button
               type="button"
               title={canAddLayer ? 'Als Ebene in Preview-Szene' : 'Erst eine Szene wählen'}
@@ -684,6 +758,15 @@ function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: 
       </div>
     </div>
   );
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader-Fehler'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function XIcon() {
