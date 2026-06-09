@@ -21,6 +21,9 @@
     "player:dev": "npm run dev -w @jm/player",
     "player:build": "npm run build -w @jm/player",
     "player:dist": "npm run dist -w @jm/player",
+    "recorder:dev": "npm run dev -w @jm/recorder",
+    "recorder:build": "npm run build -w @jm/recorder",
+    "recorder:dist": "npm run dist -w @jm/recorder",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }

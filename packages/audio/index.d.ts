@@ -48,7 +48,7 @@ export type AudioFramesCallback = (
   frames: number,
 ) => void;
 
-/** PortAudio initialisieren. Muss vor list*/openInput() laufen. */
+/** PortAudio initialisieren. Muss vor listDevices/openInput() laufen. */
 export function init(): boolean;
 
 /** Verfügbare Host-APIs (auf Windows ist "ASIO" der Eintrag für DVSC). */

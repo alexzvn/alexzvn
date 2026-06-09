@@ -108,6 +108,27 @@
       "app": "player"
     },
     {
+      "id": "jm-recorder",
+      "name": "JM Audio Recorder",
+      "tagline": "Mehrkanal-Aufnahme · Dante/ASIO",
+      "description": "Audio-Recorder für Standard-Eingänge, System-Audio und Dante (über die Dante Virtual Soundcard via ASIO). Mehrkanalige WAV-Aufnahme mit Pegelmetern.",
+      "category": "Ingest",
+      "appId": "gmbh.jakobs.recorder",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Audio Recorder-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Audio Recorder.app"
+        },
+        "win": {
+          "artifact": "JM Audio Recorder-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Audio Recorder\\JM Audio Recorder.exe"
+        }
+      },
+      "app": "recorder"
+    },
+    {
       "id": "jm-sync",
       "name": "JM Sync",
       "tagline": "A/V-Lipsync-Messung",
