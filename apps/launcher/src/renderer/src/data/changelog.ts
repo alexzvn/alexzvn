@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.3',
+        date: '2026-06-10',
+        notes: ['Neues Tool im Werkzeugkasten: JM Stage Display (Bühnen-/Crew-Schirm).'],
+      },
+      {
         version: '0.2.2',
         date: '2026-06-10',
         notes: ['Patch Notes für JM Copy (Netzwerk-Sync) ergänzt.'],
@@ -210,6 +215,19 @@ export const CHANGELOG: AppChangelog[] = [
       {
         version: '0.1.1',
         notes: ['Bildschirm/Fenster + Audio als NDI-Quelle senden (für TriCaster, vMix, OBS).'],
+      },
+    ],
+  },
+  {
+    app: 'stage-display',
+    name: 'JM Stage Display',
+    entries: [
+      {
+        version: '0.1.0',
+        notes: [
+          'Vollbild-Bühnenschirm auf einem 2. Bildschirm: Countdown vom JM Timer, Uhr, Switcher-Status und Ad-hoc-Nachrichten.',
+          'Bündelt mehrere Suite-Tools übers Netzwerk (Timer-Server + Switcher-Companion-Port).',
+        ],
       },
     ],
   },

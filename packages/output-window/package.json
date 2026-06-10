@@ -1,0 +1,13 @@
+{
+  "name": "@jm/output-window",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteiltes Vollbild-Ausgabefenster (2. Bildschirm) für JM-Tools: Bildschirmwahl + #hash-Renderer + Befehlskanal",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "electron": ">=30"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-05T00:00:00.000Z",
+  "updatedAt": "2026-06-10T00:00:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -232,6 +232,27 @@
         }
       },
       "app": "ndi-screen-capture"
+    },
+    {
+      "id": "jm-stage-display",
+      "name": "JM Stage Display",
+      "tagline": "Bühnen-/Crew-Schirm",
+      "description": "Vollbild-Bühnenschirm auf einem zweiten Bildschirm: Countdown vom JM Timer, Uhrzeit, Switcher-Status (Program/REC/Stream) und Ad-hoc-Nachrichten — gebündelt aus mehreren Suite-Tools übers Netzwerk.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.stage-display",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Stage Display-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Stage Display.app"
+        },
+        "win": {
+          "artifact": "JM Stage Display-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Stage Display\\JM Stage Display.exe"
+        }
+      },
+      "app": "stage-display"
     }
   ]
 }
