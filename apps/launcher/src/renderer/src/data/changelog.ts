@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.2',
+        date: '2026-06-10',
+        notes: ['Patch Notes für JM Copy (Netzwerk-Sync) ergänzt.'],
+      },
+      {
         version: '0.2.1',
         date: '2026-06-09',
         notes: ['Patch Notes für JM Player, Media Converter und Timer ergänzt.'],
@@ -119,6 +124,13 @@ export const CHANGELOG: AppChangelog[] = [
     app: 'copy',
     name: 'JM Copy',
     entries: [
+      {
+        version: '0.2.0',
+        notes: [
+          'Neuer Netzwerk-Sync: Quellordner als Einweg-Spiegel auf BackUp-Rechner (Größen-/Zeit-Abgleich, Vorschau, optional Löschen am Ziel).',
+          'Manuell oder automatisch (Quelle überwachen / Intervall).',
+        ],
+      },
       {
         version: '0.1.0',
         notes: [
