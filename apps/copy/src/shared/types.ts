@@ -131,6 +131,98 @@ export interface VerifyProgress {
   currentRelPath: string;
 }
 
+// ---- Netzwerk-Sync (Einweg-Spiegel: Quelle → Ziel(e)) ----
+
+export interface SyncTarget {
+  id: string;
+  /** Zielordner — i. d. R. ein gemounteter Netzwerkpfad (UNC \\HOST\Share, Z:\…, /Volumes/…). */
+  path: string;
+}
+
+export interface SyncRunSummary {
+  at: number;
+  copied: number;
+  deleted: number;
+  failed: number;
+  bytes: number;
+  durationMs: number;
+  canceled?: boolean;
+}
+
+export interface SyncJob {
+  id: string;
+  name: string;
+  /** Quellordner (maßgeblich). */
+  sourcePath: string;
+  targets: SyncTarget[];
+  /** Spiegeln: am Ziel zusätzliche Dateien löschen. */
+  mirror: boolean;
+  /** Kopierte Dateien per Hash gegen die Quelle prüfen. */
+  verify: boolean;
+  createdAt: number;
+  updatedAt: number;
+  lastRun?: SyncRunSummary;
+}
+
+export type SyncAction = 'copy' | 'update' | 'delete';
+
+export interface SyncPlanItem {
+  relPath: string;
+  action: SyncAction;
+  /** Quelle: Dateigröße; Löschen: Größe am Ziel. */
+  sizeBytes: number;
+}
+
+export interface SyncTargetPlan {
+  targetId: string;
+  targetPath: string;
+  /** Ziel erreichbar (existiert/lesbar)? */
+  reachable: boolean;
+  copy: number;
+  update: number;
+  del: number;
+  /** Zu kopierende/aktualisierende Bytes. */
+  bytes: number;
+  /** Auf eine Anzeige-Obergrenze gekürzte Liste. */
+  items: SyncPlanItem[];
+  error?: string;
+}
+
+export interface SyncPreview {
+  jobId: string;
+  sourceMissing: boolean;
+  totalFiles: number;
+  totalBytes: number;
+  targets: SyncTargetPlan[];
+}
+
+export interface SyncProgress {
+  jobId: string;
+  phase: 'compare' | 'copy' | 'delete';
+  targetPath: string;
+  filesDone: number;
+  filesTotal: number;
+  bytesDone: number;
+  bytesTotal: number;
+  bytesPerSec: number;
+  etaSec: number;
+  currentRelPath: string;
+}
+
+export interface SyncTargetResult {
+  targetId: string;
+  targetPath: string;
+  copied: number;
+  deleted: number;
+  failed: number;
+  error?: string;
+}
+
+export interface SyncResult extends SyncRunSummary {
+  jobId: string;
+  targets: SyncTargetResult[];
+}
+
 /** Shape exposed on `window.jmcp` by the preload bridge. */
 export interface JmcpApi {
   platform: NodeJS.Platform;
@@ -152,6 +244,16 @@ export interface JmcpApi {
     findMhl: (dir: string) => Promise<string[]>;
     run: (mhlPath: string) => Promise<VerifyReport>;
   };
+  sync: {
+    listJobs: () => Promise<SyncJob[]>;
+    /** Anlegen oder aktualisieren (Upsert anhand id). */
+    saveJob: (job: SyncJob) => Promise<SyncJob>;
+    removeJob: (id: string) => Promise<void>;
+    /** Trockenlauf: was würde kopiert/gelöscht? */
+    preview: (id: string) => Promise<SyncPreview>;
+    run: (id: string) => Promise<void>;
+    cancel: (id: string) => Promise<void>;
+  };
   shell: {
     reveal: (path: string) => Promise<void>;
     openExternal: (url: string) => Promise<void>;
@@ -160,4 +262,6 @@ export interface JmcpApi {
   onJobProgress: (cb: (p: JobProgress) => void) => () => void;
   onDone: (cb: (r: JobResult) => void) => () => void;
   onVerifyProgress: (cb: (p: VerifyProgress) => void) => () => void;
+  onSyncProgress: (cb: (p: SyncProgress) => void) => () => void;
+  onSyncDone: (cb: (r: SyncResult) => void) => () => void;
 }

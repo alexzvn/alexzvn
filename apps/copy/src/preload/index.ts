@@ -5,6 +5,9 @@ import type {
   JmcpApi,
   JobProgress,
   JobResult,
+  SyncJob,
+  SyncProgress,
+  SyncResult,
   VerifyProgress,
 } from '@shared/types';
 
@@ -25,6 +28,14 @@ const api: JmcpApi = {
   verify: {
     findMhl: (dir) => ipcRenderer.invoke('verify:findMhl', dir) as Promise<string[]>,
     run: (mhlPath) => ipcRenderer.invoke('verify:run', mhlPath),
+  },
+  sync: {
+    listJobs: () => ipcRenderer.invoke('sync:listJobs') as Promise<SyncJob[]>,
+    saveJob: (job: SyncJob) => ipcRenderer.invoke('sync:saveJob', job) as Promise<SyncJob>,
+    removeJob: (id) => ipcRenderer.invoke('sync:removeJob', id) as Promise<void>,
+    preview: (id) => ipcRenderer.invoke('sync:preview', id),
+    run: (id) => ipcRenderer.invoke('sync:run', id) as Promise<void>,
+    cancel: (id) => ipcRenderer.invoke('sync:cancel', id) as Promise<void>,
   },
   shell: {
     reveal: (filePath) => ipcRenderer.invoke('shell:reveal', filePath) as Promise<void>,
@@ -49,6 +60,16 @@ const api: JmcpApi = {
     const listener = (_event: unknown, p: VerifyProgress) => cb(p);
     ipcRenderer.on('verify:progress', listener);
     return () => ipcRenderer.off('verify:progress', listener);
+  },
+  onSyncProgress: (cb) => {
+    const listener = (_event: unknown, p: SyncProgress) => cb(p);
+    ipcRenderer.on('sync:progress', listener);
+    return () => ipcRenderer.off('sync:progress', listener);
+  },
+  onSyncDone: (cb) => {
+    const listener = (_event: unknown, r: SyncResult) => cb(r);
+    ipcRenderer.on('sync:done', listener);
+    return () => ipcRenderer.off('sync:done', listener);
   },
 };
 

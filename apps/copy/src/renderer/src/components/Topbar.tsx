@@ -11,6 +11,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { id: 'copy', label: 'Kopieren', hint: 'Offload · Verify · MHL' },
+  { id: 'sync', label: 'Sync', hint: 'Netzwerk-Spiegel' },
   { id: 'templates', label: 'Vorlagen', hint: 'Master-Ordner Baukasten' },
   { id: 'verify', label: 'Prüfen', hint: 'Ordner gegen MHL' },
 ];
