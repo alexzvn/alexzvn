@@ -238,6 +238,10 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Stage Display',
     entries: [
       {
+        version: '0.1.1',
+        notes: ['Eigenes App-Icon.'],
+      },
+      {
         version: '0.1.0',
         notes: [
           'Vollbild-Bühnenschirm auf einem 2. Bildschirm: Countdown vom JM Timer, Uhr, Switcher-Status und Ad-hoc-Nachrichten.',

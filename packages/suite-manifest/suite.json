@@ -241,7 +241,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.stage-display",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.1.1",
       "platforms": {
         "mac": {
           "artifact": "JM Stage Display-${version}-mac-${arch}.dmg",
