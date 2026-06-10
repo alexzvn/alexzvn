@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.4',
+        date: '2026-06-10',
+        notes: ['Neues Tool im Werkzeugkasten: JM Prompter (Teleprompter).'],
+      },
+      {
         version: '0.2.3',
         date: '2026-06-10',
         notes: ['Neues Tool im Werkzeugkasten: JM Stage Display (Bühnen-/Crew-Schirm).'],
@@ -227,6 +232,19 @@ export const CHANGELOG: AppChangelog[] = [
         notes: [
           'Vollbild-Bühnenschirm auf einem 2. Bildschirm: Countdown vom JM Timer, Uhr, Switcher-Status und Ad-hoc-Nachrichten.',
           'Bündelt mehrere Suite-Tools übers Netzwerk (Timer-Server + Switcher-Companion-Port).',
+        ],
+      },
+    ],
+  },
+  {
+    app: 'prompter',
+    name: 'JM Prompter',
+    entries: [
+      {
+        version: '0.1.0',
+        notes: [
+          'Teleprompter: Skript-Editor + Vollbild-Scroller auf dem Talent-Monitor (2. Bildschirm).',
+          'Live regelbar: Tempo, Schriftgröße, Spiegelung (Beamsplitter) und Abschnitts-Marken zum Springen.',
         ],
       },
     ],
