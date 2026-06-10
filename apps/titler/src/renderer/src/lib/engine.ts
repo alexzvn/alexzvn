@@ -1,0 +1,126 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { TitlerConfig } from '@shared/types';
+import { drawCg } from './cg';
+
+function easeInOut(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+const ANIM_MS = 450;
+
+/**
+ * Render-/NDI-Engine des Titlers (läuft im Operator-Renderer):
+ *  - zeichnet den CG pro Frame auf einen Offscreen-Canvas in Programmauflösung,
+ *  - spiegelt ihn skaliert in die Vorschau (mit Schachbrett-Hintergrund),
+ *  - liest ihn bei aktivem NDI als BGRA aus und postet ihn auf den Frame-Port
+ *    (Main → utilityProcess → sendVideoBGRA), gedrosselt auf config.fps.
+ * Take/Clear blendet über `vis` (Alpha + Slide) ein/aus.
+ */
+export function useTitlerEngine(
+  config: TitlerConfig,
+  ndiActive: boolean,
+  previewRef: React.RefObject<HTMLCanvasElement | null>,
+): { live: boolean; take: () => void; clear: () => void } {
+  const cfgRef = useRef(config);
+  cfgRef.current = config;
+  const ndiRef = useRef(ndiActive);
+  ndiRef.current = ndiActive;
+
+  const [live, setLive] = useState(false);
+
+  const visRef = useRef(0);
+  const animRef = useRef({ from: 0, to: 0, start: 0 });
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
+  const offctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const portRef = useRef<MessagePort | null>(null);
+  const startRef = useRef(performance.now());
+  const lastSendRef = useRef(0);
+
+  const animateTo = useCallback((to: number) => {
+    animRef.current = { from: visRef.current, to, start: performance.now() };
+    setLive(to > 0.5);
+  }, []);
+  const take = useCallback(() => animateTo(1), [animateTo]);
+  const clear = useCallback(() => animateTo(0), [animateTo]);
+
+  // Frame-Port vom Main empfangen (per window.postMessage-Transfer aus dem Preload).
+  useEffect(() => {
+    const onMsg = (e: MessageEvent): void => {
+      if (e.data === 'jmtitler:frame-port' && e.ports && e.ports[0]) {
+        portRef.current = e.ports[0];
+        portRef.current.start();
+      }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  useEffect(() => {
+    let raf = 0;
+
+    const ensureOffscreen = (W: number, H: number): CanvasRenderingContext2D => {
+      let cv = offscreenRef.current;
+      if (!cv) {
+        cv = document.createElement('canvas');
+        offscreenRef.current = cv;
+      }
+      if (cv.width !== W || cv.height !== H) {
+        cv.width = W;
+        cv.height = H;
+        offctxRef.current = cv.getContext('2d', { willReadFrequently: true });
+      }
+      if (!offctxRef.current) {
+        offctxRef.current = cv.getContext('2d', { willReadFrequently: true });
+      }
+      return offctxRef.current as CanvasRenderingContext2D;
+    };
+
+    const loop = (): void => {
+      const c = cfgRef.current;
+      const ctx = ensureOffscreen(c.width, c.height);
+      const now = performance.now();
+
+      const a = animRef.current;
+      const t = Math.min(1, (now - a.start) / ANIM_MS);
+      visRef.current = a.from + (a.to - a.from) * easeInOut(t);
+
+      const elapsedSec = (now - startRef.current) / 1000;
+      drawCg(ctx, c.width, c.height, c, visRef.current, elapsedSec);
+
+      // Vorschau (skaliert)
+      const pv = previewRef.current;
+      if (pv && offscreenRef.current) {
+        const pctx = pv.getContext('2d');
+        if (pctx) {
+          pctx.clearRect(0, 0, pv.width, pv.height);
+          pctx.drawImage(offscreenRef.current, 0, 0, pv.width, pv.height);
+        }
+      }
+
+      // NDI-Frame (gedrosselt auf fps)
+      const port = portRef.current;
+      if (ndiRef.current && port) {
+        const interval = 1000 / Math.max(1, c.fps);
+        if (now - lastSendRef.current >= interval) {
+          lastSendRef.current = now;
+          const img = ctx.getImageData(0, 0, c.width, c.height);
+          const u32 = new Uint32Array(img.data.buffer);
+          // RGBA (0xAABBGGRR LE) → BGRA (0xAARRGGBB LE): R und B tauschen.
+          for (let i = 0; i < u32.length; i++) {
+            const p = u32[i];
+            u32[i] = (p & 0xff00ff00) | ((p & 0x000000ff) << 16) | ((p & 0x00ff0000) >>> 16);
+          }
+          // Ohne Transfer posten → Buffer wird kopiert (transferiert käme als null an).
+          port.postMessage({ type: 'video', buffer: img.data.buffer, w: c.width, h: c.height, fpsN: c.fps });
+        }
+      }
+
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [previewRef]);
+
+  return { live, take, clear };
+}

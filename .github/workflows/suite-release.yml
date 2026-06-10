@@ -17,11 +17,11 @@ jobs:
     name: ${{ matrix.os }}
     # Tools mit nativen Addons werden NICHT in CI gebaut (lizenzierte, nicht
     # redistribuierbare SDKs fehlen auf GitHub-Runnern):
-    #   - ndi-screen-capture + switcher → @jm/ndi (NDI-SDK)
-    #   - recorder                      → @jm/audio (PortAudio/ASIO-SDK)
+    #   - ndi-screen-capture + switcher + titler → @jm/ndi (NDI-SDK)
+    #   - recorder                               → @jm/audio (PortAudio/ASIO-SDK)
     # Diese werden lokal auf Windows gebaut und das Release manuell angelegt
     # (gh release create <app>-v<version> + Installer-Upload).
-    if: ${{ !startsWith(github.ref_name, 'ndi-screen-capture-v') && !startsWith(github.ref_name, 'switcher-v') && !startsWith(github.ref_name, 'recorder-v') }}
+    if: ${{ !startsWith(github.ref_name, 'ndi-screen-capture-v') && !startsWith(github.ref_name, 'switcher-v') && !startsWith(github.ref_name, 'recorder-v') && !startsWith(github.ref_name, 'titler-v') }}
     strategy:
       fail-fast: false
       matrix:

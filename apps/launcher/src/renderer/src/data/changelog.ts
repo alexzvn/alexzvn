@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.5',
+        date: '2026-06-10',
+        notes: ['Neues Tool im Werkzeugkasten: JM Titler (Live-Bauchbinden → NDI).'],
+      },
+      {
         version: '0.2.4',
         date: '2026-06-10',
         notes: ['Neues Tool im Werkzeugkasten: JM Prompter (Teleprompter).'],
@@ -245,6 +250,19 @@ export const CHANGELOG: AppChangelog[] = [
         notes: [
           'Teleprompter: Skript-Editor + Vollbild-Scroller auf dem Talent-Monitor (2. Bildschirm).',
           'Live regelbar: Tempo, Schriftgröße, Spiegelung (Beamsplitter) und Abschnitts-Marken zum Springen.',
+        ],
+      },
+    ],
+  },
+  {
+    app: 'titler',
+    name: 'JM Titler',
+    entries: [
+      {
+        version: '0.1.0',
+        notes: [
+          'Live-CG als transparente NDI-Quelle: Bauchbinde (Name/Funktion), Banner und Ticker.',
+          'Take/Clear mit Einblendung; Stil, Farben, Position frei wählbar. Eingang in TriCaster/vMix/OBS.',
         ],
       },
     ],

@@ -1,0 +1,47 @@
+appId: gmbh.jakobs.titler
+productName: JM Titler
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+# NDI wird LOKAL auf Windows gebaut (NDI-SDK nicht in CI verfügbar; der
+# suite-release-Workflow überspringt dieses Tool). electron ist im Workspace ans
+# Root gehoistet → electron-builder findet die Version sonst nicht; npmRebuild aus,
+# weil das native Addon via electron-rebuild gebaut + von bundle-ndi nach
+# resources/bin/win gestaged wird. electronVersion bei Electron-Upgrade nachziehen.
+electronVersion: 33.4.11
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Titler
+
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true
