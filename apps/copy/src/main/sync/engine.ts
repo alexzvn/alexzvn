@@ -170,7 +170,13 @@ async function copyOne(src: TreeEntry, targetPath: string, verify: boolean): Pro
   }
 }
 
+export function isSyncing(jobId: string): boolean {
+  return states.has(jobId);
+}
+
 export async function runSync(job: SyncJob): Promise<void> {
+  // Kein zweiter parallel laufender Sync desselben Jobs (Auto + manuell).
+  if (states.has(job.id)) return;
   const state: SyncState = { canceled: false };
   states.set(job.id, state);
   const startedAtMs = Date.now();

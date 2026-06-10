@@ -5,6 +5,7 @@ import { runCopy, cancelCopy, setCopyEmitter } from './copy/engine';
 import { findMhl, runVerify } from './copy/verify';
 import { buildPreview, cancelSync, runSync, setSyncEmitter } from './sync/engine';
 import * as syncStore from './sync/store';
+import { rescheduleJob } from './sync/scheduler';
 
 export function registerIpc(getWindow: () => BrowserWindow | null): void {
   const send = (channel: string, payload: unknown): void => {
@@ -93,9 +94,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   // ---- Netzwerk-Sync ----
   ipcMain.handle('sync:listJobs', async () => syncStore.listJobs());
-  ipcMain.handle('sync:saveJob', async (_event, job: SyncJob) => syncStore.saveJob(job));
+  ipcMain.handle('sync:saveJob', async (_event, job: SyncJob) => {
+    const saved = syncStore.saveJob(job);
+    rescheduleJob(saved.id); // Auto-Auslöser an den neuen Stand anpassen
+    return saved;
+  });
   ipcMain.handle('sync:removeJob', async (_event, id: string) => {
     syncStore.removeJob(id);
+    rescheduleJob(id); // stoppt den Runner
   });
   ipcMain.handle('sync:preview', async (_event, id: string) => {
     const job = syncStore.getJob(id);

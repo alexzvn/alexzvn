@@ -149,6 +149,14 @@ export interface SyncRunSummary {
   canceled?: boolean;
 }
 
+/** Automatischer Auslöser eines Sync-Jobs. */
+export interface SyncAuto {
+  /** 'off' = nur manuell · 'watch' = bei Änderung der Quelle · 'interval' = zeitgesteuert. */
+  mode: 'off' | 'watch' | 'interval';
+  /** Intervall in Sekunden (nur bei mode='interval'). */
+  intervalSec?: number;
+}
+
 export interface SyncJob {
   id: string;
   name: string;
@@ -159,6 +167,8 @@ export interface SyncJob {
   mirror: boolean;
   /** Kopierte Dateien per Hash gegen die Quelle prüfen. */
   verify: boolean;
+  /** Automatischer Auslöser (optional; fehlt = aus). */
+  auto?: SyncAuto;
   createdAt: number;
   updatedAt: number;
   lastRun?: SyncRunSummary;

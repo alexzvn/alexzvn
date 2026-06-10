@@ -43,6 +43,12 @@ export function SyncView() {
               <div className="text-[10px] uppercase tracking-[0.1em] text-[var(--muted-foreground)] truncate">
                 {j.sourcePath ? basename(j.sourcePath) : 'keine Quelle'} · {j.targets.length} Ziel
                 {j.targets.length === 1 ? '' : 'e'}
+                {j.auto && j.auto.mode !== 'off' && (
+                  <span className="text-[var(--primary)]">
+                    {' · '}
+                    {j.auto.mode === 'watch' ? 'auto ⟳' : `alle ${Math.round((j.auto.intervalSec ?? 300) / 60)}m`}
+                  </span>
+                )}
               </div>
               {j.lastRun && (
                 <div className="text-[10px] text-[var(--muted-foreground)] mt-0.5">
@@ -168,6 +174,52 @@ function JobPanel({ job }: { job: SyncJob }) {
         </div>
       </Section>
 
+      {/* Automatik */}
+      <Section title="Automatik">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={job.auto?.mode ?? 'off'}
+            onChange={(e) =>
+              patch({
+                auto: {
+                  mode: e.target.value as 'off' | 'watch' | 'interval',
+                  intervalSec: job.auto?.intervalSec ?? 300,
+                },
+              })
+            }
+            className="h-9 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm font-semibold"
+          >
+            <option value="off">Aus (nur manuell)</option>
+            <option value="watch">Bei Änderung der Quelle</option>
+            <option value="interval">Im Intervall</option>
+          </select>
+          {job.auto?.mode === 'interval' && (
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-[var(--muted-foreground)]">alle</span>
+              <input
+                type="number"
+                min={1}
+                value={Math.round((job.auto.intervalSec ?? 300) / 60)}
+                onChange={(e) =>
+                  patch({
+                    auto: { mode: 'interval', intervalSec: Math.max(10, Number(e.target.value) * 60 || 60) },
+                  })
+                }
+                className="h-9 w-20 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm tabular"
+              />
+              <span className="text-[var(--muted-foreground)]">Min.</span>
+            </label>
+          )}
+          <span className="text-[11px] text-[var(--muted-foreground)]">
+            {job.auto?.mode === 'watch'
+              ? 'Synchronisiert kurz nach jeder Änderung im Quellordner.'
+              : job.auto?.mode === 'interval'
+                ? 'Läuft im Hintergrund, solange JM Copy geöffnet ist.'
+                : 'Sync nur per „Jetzt syncen".'}
+          </span>
+        </div>
+      </Section>
+
       {/* Aktionen */}
       <div className="flex items-center gap-3 border-t border-[var(--border)]/60 pt-5">
         <Button variant="outline" disabled={!ready || previewing || running} onClick={() => void runPreview(job.id)}>
@@ -187,8 +239,8 @@ function JobPanel({ job }: { job: SyncJob }) {
         )}
       </div>
 
-      {/* Fortschritt */}
-      {running && progress && (
+      {/* Fortschritt (auch bei Auto-Läufen) */}
+      {progress && progress.jobId === job.id && (
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] p-4 space-y-2">
           <ProgressBar value={livePct} />
           <div className="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] tabular">

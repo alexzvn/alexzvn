@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron';
 import path, { join } from 'node:path';
 import { registerIpc } from './ipc';
+import { rescheduleAll, stopAllRunners } from './sync/scheduler';
 
 declare const __dirname: string;
 
@@ -82,11 +83,15 @@ if (!gotLock) {
   app.whenReady().then(() => {
     registerIpc(() => mainWindow);
     createMainWindow();
+    // Auto-Sync-Jobs (Überwachung/Intervall) aus dem Store hochfahren.
+    rescheduleAll();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
   });
+
+  app.on('will-quit', () => stopAllRunners());
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

@@ -46,6 +46,7 @@ export const useSync = create<SyncStore>((set, get) => ({
       targets: [],
       mirror: true,
       verify: false,
+      auto: { mode: 'off' },
       createdAt: now,
       updatedAt: now,
     };
