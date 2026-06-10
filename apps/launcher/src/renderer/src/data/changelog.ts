@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.6',
+        date: '2026-06-10',
+        notes: ['Neues Tool im Werkzeugkasten: JM Transcribe (lokale Untertitel via Whisper).'],
+      },
+      {
         version: '0.2.5',
         date: '2026-06-10',
         notes: ['Neues Tool im Werkzeugkasten: JM Titler (Live-Bauchbinden → NDI).'],
@@ -263,6 +268,19 @@ export const CHANGELOG: AppChangelog[] = [
         notes: [
           'Live-CG als transparente NDI-Quelle: Bauchbinde (Name/Funktion), Banner und Ticker.',
           'Take/Clear mit Einblendung; Stil, Farben, Position frei wählbar. Eingang in TriCaster/vMix/OBS.',
+        ],
+      },
+    ],
+  },
+  {
+    app: 'transcribe',
+    name: 'JM Transcribe',
+    entries: [
+      {
+        version: '0.1.0',
+        notes: [
+          'Lokale, offline Untertitel/Transkripte (SRT/VTT/TXT) aus Audio-/Videodateien via Whisper.',
+          'Sprachwahl oder Auto-Erkennung, Übersetzung nach Englisch; Basismodell mitgeliefert, größere nachladbar.',
         ],
       },
     ],

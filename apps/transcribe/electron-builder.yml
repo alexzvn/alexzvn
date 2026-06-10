@@ -1,0 +1,46 @@
+appId: gmbh.jakobs.transcribe
+productName: JM Transcribe
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+# whisper.cpp-Binary + Basismodell werden LOKAL auf Windows gestaged (bundle-
+# whisper.mjs, braucht WHISPER_DIR + WHISPER_MODEL_BASE); der suite-release-
+# Workflow überspringt dieses Tool (Tag-Präfix transcribe-v). electron ist ans
+# Root gehoistet → electronVersion bei Electron-Upgrade nachziehen.
+electronVersion: 33.4.11
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Transcribe
+
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true
