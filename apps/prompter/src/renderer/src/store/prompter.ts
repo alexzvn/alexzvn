@@ -9,6 +9,7 @@ interface PrompterStore {
   markersEm: number[];
   load: () => Promise<void>;
   setConfig: (patch: PartialPrompterConfig) => Promise<void>;
+  setRemote: (enabled: boolean) => Promise<void>;
   setMarkers: (m: number[]) => void;
   refreshDisplays: () => Promise<void>;
   openOutput: (displayId?: number) => Promise<void>;
@@ -37,6 +38,10 @@ export const usePrompter = create<PrompterStore>((set, get) => ({
   },
   setConfig: async (patch) => {
     const s = await window.jmprompt.setConfig(patch);
+    set({ state: s });
+  },
+  setRemote: async (enabled) => {
+    const s = await window.jmprompt.setRemote(enabled);
     set({ state: s });
   },
   setMarkers: (m) => set({ markersEm: m }),

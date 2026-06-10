@@ -24,6 +24,11 @@ export const CHANGELOG: AppChangelog[] = [
     name: 'JM Production Suite',
     entries: [
       {
+        version: '0.2.7',
+        date: '2026-06-10',
+        notes: ['JM Prompter: Handy-Fernbedienung (v0.2). Eigene App-Icons für die neuen Tools.'],
+      },
+      {
         version: '0.2.6',
         date: '2026-06-10',
         notes: ['Neues Tool im Werkzeugkasten: JM Transcribe (lokale Untertitel via Whisper).'],
@@ -254,6 +259,13 @@ export const CHANGELOG: AppChangelog[] = [
     app: 'prompter',
     name: 'JM Prompter',
     entries: [
+      {
+        version: '0.2.0',
+        notes: [
+          'Handy-Fernbedienung im WLAN: GO/Pause, Tempo, Vor/Zurück und „An den Anfang" vom Smartphone-Browser.',
+          'Eigenes App-Icon.',
+        ],
+      },
       {
         version: '0.1.0',
         notes: [

@@ -24,6 +24,8 @@ const api: JmpromptApi = {
     nudge: (deltaEm: number) => ipcRenderer.invoke('prompter:nudge', deltaEm) as Promise<PrompterState>,
     reset: () => ipcRenderer.invoke('prompter:reset') as Promise<PrompterState>,
   },
+  setRemote: (enabled: boolean) =>
+    ipcRenderer.invoke('prompter:setRemote', enabled) as Promise<PrompterState>,
   output: {
     displays: () => ipcRenderer.invoke('output:displays') as Promise<DisplayInfo[]>,
     open: (displayId) => ipcRenderer.invoke('output:open', displayId) as Promise<void>,

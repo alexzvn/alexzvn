@@ -45,6 +45,7 @@ export function patchConfig(patch: PartialPrompterConfig): PrompterConfig {
     ...(patch.readingLinePct !== undefined ? { readingLinePct: patch.readingLinePct } : {}),
     ...(patch.bold !== undefined ? { bold: patch.bold } : {}),
     ...(patch.outputDisplayId !== undefined ? { outputDisplayId: patch.outputDisplayId } : {}),
+    ...(patch.remoteEnabled !== undefined ? { remoteEnabled: patch.remoteEnabled } : {}),
     colors: { ...cur.colors, ...patch.colors },
   };
   cache = next;

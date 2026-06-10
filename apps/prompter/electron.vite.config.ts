@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // Source-Workspace-Pakete inline bündeln (kein Laufzeit-require).
-const internalPackages = ['@jm/output-window'];
+const internalPackages = ['@jm/output-window', '@jm/remote'];
 
 export default defineConfig({
   main: {

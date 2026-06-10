@@ -43,6 +43,8 @@ export interface PrompterConfig {
   colors: PrompterColors;
   /** Gewählter Ausgabe-Bildschirm (null = primär). */
   outputDisplayId: number | null;
+  /** Handy-Fernbedienung (HTTP/SSE) aktiv. */
+  remoteEnabled: boolean;
 }
 
 export const DEFAULT_CONFIG: PrompterConfig = {
@@ -66,6 +68,7 @@ export const DEFAULT_CONFIG: PrompterConfig = {
   bold: true,
   colors: DEFAULT_COLORS,
   outputDisplayId: null,
+  remoteEnabled: false,
 };
 
 /**
@@ -97,9 +100,16 @@ export function positionEm(t: PrompterTransport, now: number = Date.now()): numb
   return t.anchorEm + ((now - t.anchorAtMs) / 1000) * t.emPerSec;
 }
 
+export interface RemoteInfo {
+  running: boolean;
+  /** Erreichbare LAN-URLs der Fernbedienung. */
+  urls: string[];
+}
+
 export interface PrompterState {
   config: PrompterConfig;
   transport: PrompterTransport;
+  remote: RemoteInfo;
 }
 
 export interface DisplayInfo {
@@ -124,6 +134,7 @@ export interface PartialPrompterConfig {
   bold?: boolean;
   colors?: Partial<PrompterColors>;
   outputDisplayId?: number | null;
+  remoteEnabled?: boolean;
 }
 
 /** Shape, die der Preload auf `window.jmprompt` legt. */
@@ -143,6 +154,8 @@ export interface JmpromptApi {
     /** An den Anfang zurücksetzen und pausieren. */
     reset: () => Promise<PrompterState>;
   };
+  /** Handy-Fernbedienung an/aus; liefert den neuen Gesamt-State (inkl. URLs). */
+  setRemote: (enabled: boolean) => Promise<PrompterState>;
   output: {
     displays: () => Promise<DisplayInfo[]>;
     open: (displayId?: number) => Promise<void>;

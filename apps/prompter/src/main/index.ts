@@ -1,11 +1,15 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
 import { OutputWindow, listDisplays } from '@jm/output-window';
+import { RemoteServer } from '@jm/remote';
 import { INITIAL_TRANSPORT, positionEm } from '@shared/types';
-import type { PartialPrompterConfig, PrompterState, PrompterTransport } from '@shared/types';
+import type { PartialPrompterConfig, PrompterState, PrompterTransport, RemoteInfo } from '@shared/types';
 import { getConfig, patchConfig } from './config';
+import { REMOTE_PAGE } from './remote-page';
 
 declare const __dirname: string;
+
+const REMOTE_PORT = 7781;
 
 let mainWindow: BrowserWindow | null = null;
 const preloadPath = join(__dirname, '../preload/index.mjs');
@@ -17,19 +21,73 @@ let transport: PrompterTransport = {
   emPerSec: getEmPerSec(),
 };
 
+// Handy-Fernbedienung (HTTP/SSE).
+const remote = new RemoteServer({
+  port: REMOTE_PORT,
+  page: REMOTE_PAGE,
+  getState: () => ({ playing: transport.playing, speed: getConfig().speed }),
+  onCommand: (cmd) => handleRemoteCommand(cmd),
+});
+
 function getEmPerSec(): number {
   const c = getConfig();
   return c.speed * c.lineHeight;
 }
 
+function remoteInfo(): RemoteInfo {
+  const addr = remote.address();
+  return { running: remote.isRunning(), urls: addr?.urls ?? [] };
+}
+
 function buildState(): PrompterState {
-  return { config: getConfig(), transport };
+  return { config: getConfig(), transport, remote: remoteInfo() };
 }
 
 function broadcast(): void {
   const state = buildState();
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('prompter:state', state);
   output.send(state);
+  remote.broadcast({ playing: transport.playing, speed: getConfig().speed });
+}
+
+function handleRemoteCommand(cmd: unknown): void {
+  const c = cmd as { type?: string; value?: number } | null;
+  if (!c || typeof c.type !== 'string') return;
+  switch (c.type) {
+    case 'toggle':
+      transport.playing ? pause() : play();
+      break;
+    case 'play':
+      play();
+      break;
+    case 'pause':
+      pause();
+      break;
+    case 'nudge':
+      nudge(Number(c.value) || 0);
+      break;
+    case 'reset':
+      reset();
+      break;
+    case 'speed': {
+      const next = Math.max(0.2, Math.min(6, getConfig().speed + (Number(c.value) || 0)));
+      patchConfig({ speed: Math.round(next * 10) / 10 });
+      reanchor();
+      broadcast();
+      break;
+    }
+  }
+}
+
+async function setRemote(enabled: boolean): Promise<void> {
+  patchConfig({ remoteEnabled: enabled });
+  try {
+    if (enabled) await remote.start();
+    else await remote.stop();
+  } catch (err) {
+    console.error('[prompter] Fernbedienung:', err);
+  }
+  broadcast();
 }
 
 /** Anker auf die aktuelle Position neu setzen (z. B. nach Tempo-/Zeilenabstand-Änderung). */
@@ -172,6 +230,11 @@ function registerIpc(): void {
   ipcMain.handle('prompter:nudge', (_e, deltaEm: number) => (nudge(deltaEm), buildState()));
   ipcMain.handle('prompter:reset', () => (reset(), buildState()));
 
+  ipcMain.handle('prompter:setRemote', async (_e, enabled: boolean) => {
+    await setRemote(enabled);
+    return buildState();
+  });
+
   ipcMain.handle('output:displays', () => listDisplays());
   ipcMain.handle('output:open', (_e, displayId?: number) => openOutput(displayId));
   ipcMain.handle('output:close', () => output.close());
@@ -195,6 +258,12 @@ if (!gotLock) {
   app.whenReady().then(() => {
     registerIpc();
     createMainWindow();
+    // Fernbedienung automatisch starten, wenn zuletzt aktiv.
+    if (getConfig().remoteEnabled) void setRemote(true);
+  });
+
+  app.on('before-quit', () => {
+    void remote.stop();
   });
 
   app.on('window-all-closed', () => {

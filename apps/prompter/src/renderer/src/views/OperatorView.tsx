@@ -14,6 +14,7 @@ export function OperatorView(): React.JSX.Element {
   const openOutput = usePrompter((s) => s.openOutput);
   const closeOutput = usePrompter((s) => s.closeOutput);
   const refreshDisplays = usePrompter((s) => s.refreshDisplays);
+  const setRemote = usePrompter((s) => s.setRemote);
   usePrompterHotkeys();
 
   if (!state) {
@@ -198,6 +199,30 @@ export function OperatorView(): React.JSX.Element {
                   </Button>
                 )}
               </div>
+            </Section>
+
+            {/* Handy-Fernbedienung */}
+            <Section title="Fernbedienung (Handy im WLAN)">
+              <Toggle
+                label="Fernbedienung aktiv"
+                checked={c.remoteEnabled}
+                onChange={(v) => void setRemote(v)}
+              />
+              {state.remote.running && state.remote.urls.length > 0 && (
+                <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] p-2.5 space-y-1">
+                  <div className="text-[11px] text-[var(--muted-foreground)]">
+                    Im selben WLAN am Handy öffnen:
+                  </div>
+                  {state.remote.urls.map((u) => (
+                    <div key={u} className="text-sm font-bold tabular text-[var(--primary)] break-all">
+                      {u}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {c.remoteEnabled && state.remote.urls.length === 0 && (
+                <p className="text-[11px] text-[var(--muted-foreground)]">Keine LAN-Adresse gefunden.</p>
+              )}
             </Section>
           </div>
         </div>

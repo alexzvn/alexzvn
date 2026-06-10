@@ -1,0 +1,10 @@
+{
+  "name": "@jm/remote",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geteilter Mini-HTTP/SSE-Server für Handy-Fernbedienungen (und Tool-zu-Tool-Substrat)",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
