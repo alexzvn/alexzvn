@@ -1237,21 +1237,39 @@ function ScreenPicker({
 }
 
 function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: () => void }) {
-  const [sources, setSources] = useState<string[] | null>(null);
+  // Quellen über mehrere Scans hinweg AKKUMULIEREN (nicht ersetzen): NDI-
+  // Discovery ist asynchron, ein einzelner Scan sieht oft nur einen Teil der
+  // Geräte. Wir vereinen die Ergebnisse + scannen automatisch ein zweites Mal
+  // (Issue #17).
+  const [sources, setSources] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState(false);
 
-  const scan = (): void => {
+  const scanOnce = (): Promise<void> => {
     setScanning(true);
-    setSources(null);
-    window.jmswitch.ndi
+    return window.jmswitch.ndi
       .find(2000)
-      .then(setSources)
-      .catch(() => setSources([]))
-      .finally(() => setScanning(false));
+      .then((list) =>
+        setSources((prev) => Array.from(new Set([...prev, ...list])).sort((a, b) => a.localeCompare(b))),
+      )
+      .catch(() => {})
+      .finally(() => {
+        setScanning(false);
+        setScanned(true);
+      });
   };
 
   useEffect(() => {
-    scan();
+    let cancelled = false;
+    void (async () => {
+      await scanOnce();
+      await new Promise((r) => setTimeout(r, 900));
+      if (!cancelled) await scanOnce();
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -1262,14 +1280,14 @@ function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: 
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-extrabold tracking-tight">NDI-Quelle wählen</h2>
-          <Button size="sm" variant="outline" onClick={scan} disabled={scanning}>
+          <Button size="sm" variant="outline" onClick={() => void scanOnce()} disabled={scanning}>
             {scanning ? 'Suche…' : 'Neu suchen'}
           </Button>
         </div>
         <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
           Quellen im Studio-LAN (z. B. JM NDI Screen Capture, TriCaster, vMix). Mehrere gleichzeitig möglich.
         </p>
-        {sources == null ? (
+        {!scanned && sources.length === 0 ? (
           <p className="text-sm text-[var(--muted-foreground)] mt-4">Suche NDI-Quellen…</p>
         ) : sources.length === 0 ? (
           <p className="text-sm text-[var(--muted-foreground)] mt-4">
@@ -1277,6 +1295,9 @@ function NdiPicker({ onPick, onClose }: { onPick: (s: string) => void; onClose: 
           </p>
         ) : (
           <div className="flex flex-col gap-2 mt-4">
+            {scanning && (
+              <p className="text-[11px] text-[var(--muted-foreground)]">Suche läuft… (Geräte erscheinen nach und nach)</p>
+            )}
             {sources.map((s) => (
               <button
                 key={s}

@@ -17,6 +17,11 @@ namespace {
 
 NDIlib_send_instance_t g_send = nullptr;
 NDIlib_recv_instance_t g_recv = nullptr;
+// Persistenter Quellen-Finder: NDI-Discovery ist asynchron — ein bei jedem
+// Aufruf neu erzeugter Finder sieht nur einen Teil der Quellen, bevor er
+// zerstört wird (mal dieses, mal jenes Gerät). Ein dauerhaft offener Finder
+// akkumuliert die Quellen über die Zeit (Issue #17).
+NDIlib_find_instance_t g_find = nullptr;
 
 void ThrowJs(napi_env env, const char* message) {
   napi_throw_error(env, nullptr, message);
@@ -124,30 +129,36 @@ Napi::Value Connections(const Napi::CallbackInfo& info) {
 // ===================== RECEIVE =====================
 
 // findSources([timeoutMs=1000]): string[]  → sichtbare NDI-Quellnamen
+//
+// Nutzt einen PERSISTENTEN Finder (g_find): einmal erzeugt, bleibt er offen und
+// akkumuliert über die Zeit alle Quellen aller Geräte. wait_for_sources blockt
+// nur bis zur nächsten Änderung (oder Timeout); get_current_sources liefert den
+// vollständigen aktuellen Stand. Mehrfaches Aufrufen liefert eine immer
+// vollständigere Liste (Issue #17 — vorher sah jeder Call nur einen Teil).
 Napi::Value FindSources(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   int timeout = info.Length() > 0 ? info[0].As<Napi::Number>().Int32Value() : 1000;
 
-  NDIlib_find_create_t fdesc;          // Default-Ctor
-  fdesc.show_local_sources = true;
-  fdesc.p_groups = nullptr;
-  fdesc.p_extra_ips = nullptr;
-
-  NDIlib_find_instance_t finder = NDIlib_find_create_v2(&fdesc);
-  if (!finder) {
-    ThrowJs(env, "NDIlib_find_create_v2 fehlgeschlagen");
-    return env.Undefined();
+  if (!g_find) {
+    NDIlib_find_create_t fdesc;          // Default-Ctor
+    fdesc.show_local_sources = true;
+    fdesc.p_groups = nullptr;
+    fdesc.p_extra_ips = nullptr;
+    g_find = NDIlib_find_create_v2(&fdesc);
+    if (!g_find) {
+      ThrowJs(env, "NDIlib_find_create_v2 fehlgeschlagen");
+      return env.Undefined();
+    }
   }
 
-  NDIlib_find_wait_for_sources(finder, timeout < 0 ? 0 : static_cast<uint32_t>(timeout));
+  NDIlib_find_wait_for_sources(g_find, timeout < 0 ? 0 : static_cast<uint32_t>(timeout));
   uint32_t count = 0;
-  const NDIlib_source_t* srcs = NDIlib_find_get_current_sources(finder, &count);
+  const NDIlib_source_t* srcs = NDIlib_find_get_current_sources(g_find, &count);
 
   Napi::Array out = Napi::Array::New(env, count);
   for (uint32_t i = 0; i < count; ++i) {
     out.Set(i, Napi::String::New(env, srcs[i].p_ndi_name ? srcs[i].p_ndi_name : ""));
   }
-  NDIlib_find_destroy(finder);
   return out;
 }
 
@@ -257,6 +268,10 @@ Napi::Value Destroy(const Napi::CallbackInfo& info) {
   if (g_recv) {
     NDIlib_recv_destroy(g_recv);
     g_recv = nullptr;
+  }
+  if (g_find) {
+    NDIlib_find_destroy(g_find);
+    g_find = nullptr;
   }
   NDIlib_destroy();
   return info.Env().Undefined();

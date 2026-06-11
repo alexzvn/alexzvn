@@ -66,8 +66,16 @@ process.parentPort.on('message', (e) => {
 function handleFind(timeoutMs: number): void {
   try {
     ndi.init();
-    const list = ndi.findSources(timeoutMs);
-    process.parentPort.postMessage({ type: 'sources', list });
+    // NDI-Discovery ist asynchron. Der persistente Finder (g_find im Addon)
+    // akkumuliert Quellen über die Zeit; wir geben ihm in mehreren kurzen
+    // Wait-Runden Zeit, ALLE Geräte zu finden, und vereinen die Ergebnisse —
+    // sonst sieht ein einzelner Aufruf nur einen Teil (Issue #17).
+    const seen = new Set<string>();
+    const rounds = Math.max(2, Math.ceil(timeoutMs / 500));
+    for (let i = 0; i < rounds; i++) {
+      for (const s of ndi.findSources(500)) seen.add(s);
+    }
+    process.parentPort.postMessage({ type: 'sources', list: [...seen] });
   } catch (err) {
     process.parentPort.postMessage({
       type: 'sources',
