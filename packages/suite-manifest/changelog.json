@@ -73,6 +73,12 @@
     "name": "JM Player",
     "entries": [
       {
+        "version": "0.3.0",
+        "notes": [
+          "Zufallswiedergabe (Shuffle) und Wiederholung (aus / Einzelclip / ganze Playlist) in der Transportleiste."
+        ]
+      },
+      {
         "version": "0.2.0",
         "notes": [
           "Neuer Cue-Show-Modus (QLab-Stil): geordnete Cue-Liste, GO mit Auto-Continue, Pre-Wait und Fades.",

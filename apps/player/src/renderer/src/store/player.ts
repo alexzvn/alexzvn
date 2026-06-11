@@ -33,6 +33,10 @@ interface PlayerStore {
   activePlaylistId: number | null; // null = "Alle Medien"
   queue: PlaylistItem[];
   currentMediaId: number | null;
+  /** Zufallswiedergabe. */
+  shuffle: boolean;
+  /** Wiederholung: aus / Einzelclip / ganze Liste. */
+  repeat: 'none' | 'one' | 'all';
 
   // Soundboard
   soundboardId: number | null;
@@ -73,6 +77,8 @@ interface PlayerStore {
   play: (mediaId: number) => void;
   playNext: () => void;
   playPrev: () => void;
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
 
   selectSoundboard: (id: number) => Promise<void>;
   refreshCues: () => Promise<void>;
@@ -112,6 +118,8 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   activePlaylistId: null,
   queue: [],
   currentMediaId: null,
+  shuffle: false,
+  repeat: 'none',
   soundboardId: null,
   cues: [],
   shows: [],
@@ -215,17 +223,37 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
     void window.jmplay.library.markPlayed(mediaId);
   },
   playNext: () => {
+    const { shuffle, repeat, currentMediaId } = get();
     const list = get().contextList();
-    const idx = list.findIndex((m) => m.id === get().currentMediaId);
+    if (list.length === 0) return;
+    if (shuffle) {
+      // Zufälliger nächster Titel; bei >1 nicht denselben direkt wiederholen.
+      if (list.length === 1) {
+        get().play(list[0].id);
+        return;
+      }
+      let pickId = list[Math.floor(Math.random() * list.length)].id;
+      while (pickId === currentMediaId) pickId = list[Math.floor(Math.random() * list.length)].id;
+      get().play(pickId);
+      return;
+    }
+    const idx = list.findIndex((m) => m.id === currentMediaId);
     const next = list[idx + 1];
     if (next) get().play(next.id);
+    else if (repeat === 'all') get().play(list[0].id); // am Ende → von vorn
   },
   playPrev: () => {
+    const { repeat, currentMediaId } = get();
     const list = get().contextList();
-    const idx = list.findIndex((m) => m.id === get().currentMediaId);
+    if (list.length === 0) return;
+    const idx = list.findIndex((m) => m.id === currentMediaId);
     const prev = list[idx - 1];
     if (prev) get().play(prev.id);
+    else if (repeat === 'all') get().play(list[list.length - 1].id); // Anfang → ans Ende
   },
+  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
+  cycleRepeat: () =>
+    set((s) => ({ repeat: s.repeat === 'none' ? 'all' : s.repeat === 'all' ? 'one' : 'none' })),
 
   selectSoundboard: async (id) => {
     set({ soundboardId: id });

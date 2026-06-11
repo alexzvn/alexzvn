@@ -94,7 +94,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.player",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM Player-${version}-mac-${arch}.dmg",

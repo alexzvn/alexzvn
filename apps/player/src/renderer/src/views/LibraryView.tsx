@@ -449,6 +449,10 @@ function PlayerPanel() {
   const currentMediaId = usePlayer((s) => s.currentMediaId);
   const playNext = usePlayer((s) => s.playNext);
   const playPrev = usePlayer((s) => s.playPrev);
+  const shuffle = usePlayer((s) => s.shuffle);
+  const repeat = usePlayer((s) => s.repeat);
+  const toggleShuffle = usePlayer((s) => s.toggleShuffle);
+  const cycleRepeat = usePlayer((s) => s.cycleRepeat);
   const mediaRef = useRef<HTMLMediaElement | null>(null);
 
   const item = useMemo(() => items.find((m) => m.id === currentMediaId) ?? null, [items, currentMediaId]);
@@ -504,7 +508,19 @@ function PlayerPanel() {
     onPause: () => setPlaying(false),
     onTimeUpdate: () => setTime(mediaRef.current?.currentTime ?? 0),
     onLoadedMetadata: () => setDuration(mediaRef.current?.duration || 0),
-    onEnded: () => playNext(),
+    onEnded: () => {
+      // Repeat-One: denselben Clip neu starten; sonst regulär weiter (Shuffle/
+      // Repeat-All steckt in playNext).
+      if (repeat === 'one') {
+        const el = mediaRef.current;
+        if (el) {
+          el.currentTime = 0;
+          void el.play();
+          return;
+        }
+      }
+      playNext();
+    },
   };
 
   return (
@@ -559,6 +575,20 @@ function PlayerPanel() {
 
         {/* Transport */}
         <div className="flex items-center gap-3">
+          <TransportBtn
+            title={shuffle ? 'Zufallswiedergabe aus' : 'Zufallswiedergabe'}
+            active={shuffle}
+            onClick={toggleShuffle}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M16 3h5v5" />
+              <path d="M4 20 21 3" />
+              <path d="M21 16v5h-5" />
+              <path d="m15 15 6 6" />
+              <path d="M4 4l5 5" />
+            </svg>
+          </TransportBtn>
+
           <TransportBtn title="Vorheriger" disabled={!item} onClick={() => playPrev()}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M6 6h2v12H6zM20 6v12L9 12z" />
@@ -590,6 +620,26 @@ function PlayerPanel() {
           <TransportBtn title="Nächster" disabled={!item} onClick={() => playNext()}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M16 6h2v12h-2zM4 6l11 6L4 18z" />
+            </svg>
+          </TransportBtn>
+
+          <TransportBtn
+            title={
+              repeat === 'one'
+                ? 'Wiederholen: Einzelclip'
+                : repeat === 'all'
+                  ? 'Wiederholen: ganze Liste'
+                  : 'Wiederholen: aus'
+            }
+            active={repeat !== 'none'}
+            onClick={cycleRepeat}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m17 2 4 4-4 4" />
+              <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+              <path d="m7 22-4-4 4-4" />
+              <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+              {repeat === 'one' && <path d="M11 10h1v4" />}
             </svg>
           </TransportBtn>
 
@@ -629,11 +679,13 @@ function TransportBtn({
   title,
   onClick,
   disabled,
+  active,
   children,
 }: {
   title: string;
   onClick: () => void;
   disabled?: boolean;
+  active?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -642,9 +694,13 @@ function TransportBtn({
       title={title}
       disabled={disabled}
       onClick={onClick}
-      className="grid place-items-center size-12 rounded-[var(--radius)] border border-[var(--border)]
-                 text-[var(--foreground)] hover:bg-[var(--highlight)] transition-colors
-                 disabled:opacity-40 disabled:cursor-not-allowed"
+      className={cn(
+        'grid place-items-center size-12 rounded-[var(--radius)] border transition-colors',
+        'disabled:opacity-40 disabled:cursor-not-allowed',
+        active
+          ? 'border-[var(--primary)]/60 bg-[var(--highlight)] text-[var(--primary)]'
+          : 'border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)]',
+      )}
     >
       {children}
     </button>
