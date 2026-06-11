@@ -1,6 +1,7 @@
 import { exposeApi, invoke, listen } from '@jm/electron-kit/preload';
 import type {
   ActionResult,
+  AppChangelog,
   AppEvent,
   FeedbackInput,
   InstallProgress,
@@ -16,6 +17,7 @@ const api: JmpsApi = {
   platform: process.platform,
   getVersion: () => invoke<string>('app:version'),
   listTools: () => invoke<ToolManifest[]>('suite:list'),
+  getChangelog: () => invoke<AppChangelog[]>('changelog:get'),
   getState: () => invoke<ToolState[]>('suite:state'),
   checkUpdates: () => invoke<ToolState[]>('suite:check-updates'),
   open: (id) => invoke<ActionResult>('tool:open', id),

@@ -1,6 +1,13 @@
-import type { ToolManifest, ToolState } from '@jm/suite-manifest';
+import type { AppChangelog, ToolManifest, ToolState } from '@jm/suite-manifest';
 
-export type { ToolManifest, ToolState, ToolCategory, InstallStatus } from '@jm/suite-manifest';
+export type {
+  ToolManifest,
+  ToolState,
+  ToolCategory,
+  InstallStatus,
+  AppChangelog,
+  ChangelogEntry,
+} from '@jm/suite-manifest';
 
 /** Ergebnis einer Launcher-Aktion (öffnen/installieren/aktualisieren). */
 export interface ActionResult {
@@ -57,7 +64,8 @@ export interface FeedbackInput {
 /** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */
 export type AppEvent =
   | { type: 'notice'; message: string }
-  | { type: 'manifest-changed' };
+  | { type: 'manifest-changed' }
+  | { type: 'changelog-changed' };
 
 /** Die unter `window.jmps` bereitgestellte Launcher-API. */
 export interface JmpsApi {
@@ -65,6 +73,8 @@ export interface JmpsApi {
   /** Eigene Version des Launchers (z. B. "0.1.12"). */
   getVersion: () => Promise<string>;
   listTools: () => Promise<ToolManifest[]>;
+  /** App-Patchnotes (live geladen, sonst gebündelter Fallback). */
+  getChangelog: () => Promise<AppChangelog[]>;
   getState: () => Promise<ToolState[]>;
   checkUpdates: () => Promise<ToolState[]>;
   open: (id: string) => Promise<ActionResult>;

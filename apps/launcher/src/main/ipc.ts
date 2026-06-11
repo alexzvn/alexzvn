@@ -3,6 +3,7 @@ import type { IpcMainInvokeEvent } from 'electron';
 import type { ActionResult, FeedbackInput, InstallProgress, SuiteSettingsInput } from '@shared/types';
 import type { ToolManifest } from '@jm/suite-manifest';
 import { getTool, getTools } from './manifest';
+import { getChangelog } from './changelog';
 import { getAllStates } from './install-state';
 import { checkToolUpdates, checkLauncherUpdate } from './updates';
 import { openTool } from './launch';
@@ -25,6 +26,8 @@ export function registerIpc(): void {
   ipcMain.handle('app:version', () => app.getVersion());
 
   ipcMain.handle('suite:list', () => getTools());
+  // App-Patchnotes (live geladen, sonst gebündelter Fallback) — Issue #19.
+  ipcMain.handle('changelog:get', () => getChangelog());
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
   // Live-Update-Prüfung gegen die Releases (online, sonst unveränderte Zustände).
   ipcMain.handle('suite:check-updates', () => checkToolUpdates(getTools()));

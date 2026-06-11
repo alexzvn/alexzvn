@@ -4,6 +4,7 @@ import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } fr
 import type { AppEvent } from '@shared/types';
 import { registerIpc } from './ipc';
 import { initManifest, refreshManifest } from './manifest';
+import { initChangelog, refreshChangelog } from './changelog';
 
 declare const __dirname: string;
 
@@ -26,6 +27,7 @@ function createWindow(): BrowserWindow {
 if (setupSingleInstance(() => createWindow())) {
   app.whenReady().then(() => {
     initManifest(); // lokalen Manifest-Cache laden, bevor das Fenster Tools abfragt
+    initChangelog(); // dito für die App-Patchnotes
     registerIpc();
     createWindow();
 
@@ -33,6 +35,12 @@ if (setupSingleInstance(() => createWindow())) {
     refreshManifest()
       .then((changed) => {
         if (changed) emitAppEvent({ type: 'manifest-changed' });
+      })
+      .catch(() => {});
+    // … und die remote changelog.json (App-Patchnotes ohne Launcher-Release).
+    refreshChangelog()
+      .then((changed) => {
+        if (changed) emitAppEvent({ type: 'changelog-changed' });
       })
       .catch(() => {});
     // Launcher-Self-Update läuft über den Renderer (loadLauncherUpdate → Banner

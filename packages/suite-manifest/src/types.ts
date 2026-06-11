@@ -47,6 +47,22 @@ export interface SuiteManifest {
   tools: ToolManifest[];
 }
 
+/** Ein Versionseintrag in den Patch Notes einer App. */
+export interface ChangelogEntry {
+  version: string;
+  /** ISO-Datum (optional, nur zur Anzeige). */
+  date?: string;
+  notes: string[];
+}
+
+/** Patch Notes einer App (Launcher oder Tool); Versionen neueste zuerst. */
+export interface AppChangelog {
+  /** 'launcher' oder die `app`-Kennung eines Tools (Release-Tag-Präfix). */
+  app: string;
+  name: string;
+  entries: ChangelogEntry[];
+}
+
 /** Installationsstatus eines Tools, zur Laufzeit vom Launcher ermittelt. */
 export type InstallStatus = 'installed' | 'update-available' | 'not-installed';
 

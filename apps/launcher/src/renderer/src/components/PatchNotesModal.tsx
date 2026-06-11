@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Button, Card, cn } from '@jm/ui';
-import { CHANGELOG, changelogFor } from '@/data/changelog';
+import { useChangelog } from '@/store/changelog';
 import { useTools } from '@/store/tools';
 
 export function PatchNotesModal() {
   const patchNotes = useTools((s) => s.patchNotes);
   const close = useTools((s) => s.closePatchNotes);
+  const CHANGELOG = useChangelog((s) => s.data);
+  const changelogFor = useChangelog((s) => s.changelogFor);
   // Welche App-Notes sind initial gewählt? Die aus dem Auslöser, sonst Launcher.
   const [selected, setSelected] = useState(patchNotes?.app ?? 'launcher');
 

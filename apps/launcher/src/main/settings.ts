@@ -20,10 +20,18 @@ const BAKED_PROXY_KEY = typeof __JMPS_PROXY_KEY__ !== 'undefined' ? __JMPS_PROXY
 // Repo (Route /suite.json). So erscheinen neue Tools ohne Launcher-Release —
 // der Katalog wird zentral in git gepflegt. Überschreibbar per Setting/ENV.
 const DEFAULT_MANIFEST_URL = `${DEFAULT_PROXY_URL}/suite.json`;
+// App-Patchnotes ebenfalls live vom Proxy (Route /changelog.json) — so erscheinen
+// neue Patchnotes ohne Launcher-Release (Issue #19).
+const DEFAULT_CHANGELOG_URL = `${DEFAULT_PROXY_URL}/changelog.json`;
 
 /** Eingebackene Standard-Katalog-URL (für den Fetch-Fallback in manifest.ts). */
 export function defaultManifestUrl(): string {
   return DEFAULT_MANIFEST_URL;
+}
+
+/** Effektive Changelog-URL: Env (JMPS_CHANGELOG_URL) > eingebackener Default. */
+export function resolveChangelogUrl(): string {
+  return process.env['JMPS_CHANGELOG_URL'] || DEFAULT_CHANGELOG_URL;
 }
 
 function settingsFile(): string {

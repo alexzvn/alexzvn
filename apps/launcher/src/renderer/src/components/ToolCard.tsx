@@ -1,7 +1,7 @@
 import { Badge, Button, Card, cn } from '@jm/ui';
 import type { ToolManifest, ToolState } from '@shared/types';
 import { monogram } from '@/lib/monogram';
-import { changelogFor } from '@/data/changelog';
+import { useChangelog } from '@/store/changelog';
 import { useTools } from '@/store/tools';
 
 interface Props {
@@ -18,6 +18,7 @@ export function ToolCard({ tool, state }: Props) {
   const update = useTools((s) => s.update);
   const uninstall = useTools((s) => s.uninstall);
   const openPatchNotes = useTools((s) => s.openPatchNotes);
+  const changelogFor = useChangelog((s) => s.changelogFor);
   const hasNotes = Boolean(changelogFor(tool.app));
   const showProgress = busy && progress && progress.phase !== 'done' && progress.phase !== 'error';
 

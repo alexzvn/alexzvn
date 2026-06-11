@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { entryFor } from '@/data/changelog';
+import { useChangelog } from '@/store/changelog';
 import type {
   ActionResult,
   FeedbackInput,
@@ -112,6 +112,9 @@ export const useTools = create<ToolsStore>((set) => {
               window.jmps.getState(),
             ]);
             set({ tools, states: byId(states) });
+          } else if (e.type === 'changelog-changed') {
+            // Live aktualisierte App-Patchnotes übernehmen (Issue #19).
+            await useChangelog.getState().load();
           }
         });
         // Nach Rückkehr zum Launcher (z. B. wenn der NSIS-Installer durch ist
@@ -127,11 +130,12 @@ export const useTools = create<ToolsStore>((set) => {
         window.jmps.getState(),
         window.jmps.getSettings(),
         window.jmps.getVersion(),
+        useChangelog.getState().load(),
       ]);
       set({ tools, states: byId(states), settings, version, loading: false });
       // „Was ist neu?" nach einem Launcher-Update (oder beim ersten Start dieser
       // Version) genau einmal zeigen — sofern für die Version Notes vorliegen.
-      if (version && readSeenVersion() !== version && entryFor('launcher', version)) {
+      if (version && readSeenVersion() !== version && useChangelog.getState().entryFor('launcher', version)) {
         set({ patchNotes: { app: 'launcher', highlight: version } });
       }
       // Zustände sofort rendern, die (langsameren, online) Prüfungen danach.
