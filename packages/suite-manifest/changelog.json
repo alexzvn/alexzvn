@@ -193,6 +193,21 @@
     "name": "JM Studio Control",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-12",
+        "notes": ["Audio-Tab: Fader und Mute für Yamaha QL1 und Allen & Heath SQ5 – wahlweise über TCP, OSC oder Dante."]
+      },
+      {
+        "version": "0.3.0",
+        "date": "2026-06-12",
+        "notes": ["Licht-Tab: Art-Net/DMX-Steuerung (Eurolite Node IV) mit Live-Fadern, Farbe/CCT und Master-Blackout. Profile u. a. für Aputure LS 60X/300X und Nova P300C."]
+      },
+      {
+        "version": "0.2.0",
+        "date": "2026-06-12",
+        "notes": ["PTZ-Tab: Schwenk/Neige/Zoom/Fokus, Auto-Fokus, Presets und Power für Panasonic AW-Kameras – mit Press-and-Hold-Steuerkreuz."]
+      },
+      {
         "version": "0.1.0",
         "notes": ["Studio-Steuerung mit Benutzerverwaltung (Admins legen Nutzer mit Rolle/Passwort an)."]
       }
