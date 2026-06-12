@@ -52,7 +52,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.studio-control",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.4.0",
       "platforms": {
         "mac": {
           "artifact": "JM Studio Control-${version}-mac-${arch}.dmg",
