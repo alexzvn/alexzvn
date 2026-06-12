@@ -10,7 +10,7 @@
       "category": "Ingest",
       "appId": "gmbh.jakobs.copy",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.2.1",
       "platforms": {
         "mac": {
           "artifact": "JM Copy-${version}-mac-${arch}.dmg",
@@ -136,7 +136,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.switcher",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.1",
+      "latestVersion": "0.2.2",
       "platforms": {
         "mac": {
           "artifact": "JM Switcher-${version}-mac-${arch}.dmg",

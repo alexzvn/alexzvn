@@ -112,6 +112,14 @@
     "name": "JM Switcher",
     "entries": [
       {
+        "version": "0.2.2",
+        "date": "2026-06-12",
+        "notes": [
+          "Nach CUT/AUTO tauschen Program und Preview automatisch – das alte Programm wird zum Preview, sodass sofort wieder ein sinnvoller Wechsel möglich ist.",
+          "Beim Beenden tritt kein JavaScript-Fehler mehr auf (Aufräum-Reihenfolge beim Schließen abgesichert)."
+        ]
+      },
+      {
         "version": "0.2.1",
         "notes": [
           "NDI-Quellensuche findet jetzt zuverlässig alle Geräte gleichzeitig (persistenter Finder + mehrfaches Scannen, Ergebnisse werden vereint)."
@@ -146,6 +154,14 @@
     "app": "copy",
     "name": "JM Copy",
     "entries": [
+      {
+        "version": "0.2.1",
+        "date": "2026-06-12",
+        "notes": [
+          "Ein einzeln gewählter Quellordner wird jetzt als Inhalt ins Master kopiert – kein doppelter Projektname mehr über den Unterordnern (Footage usw. liegen direkt im Master).",
+          "Deutlich höhere Kopiergeschwindigkeit durch größere I/O-Blöcke und paralleles Lesen/Schreiben statt Flush pro Block."
+        ]
+      },
       {
         "version": "0.2.0",
         "notes": [
