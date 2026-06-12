@@ -50,12 +50,18 @@ function commonDir(dirs: string[]): string {
 
 /**
  * Enumerate every file under the selected files/folders into one ScanResult.
- * The common parent of the selected inputs becomes the root, so the names of
- * selected folders/files are preserved as structure in each destination.
+ *
+ * Root selection (drives the relPath each file keeps in the master folder):
+ *  - A SINGLE selected folder is treated as "copy its contents" — the folder
+ *    itself becomes the root, so its children (Footage, Audio, …) land directly
+ *    in the master and the folder's own name is NOT repeated under it (#25).
+ *  - Multiple inputs (or single files) use their common parent as root, so the
+ *    names of the dropped folders/files stay as structure and never collide.
  */
 export async function scanPaths(inputs: string[]): Promise<ScanResult> {
   const files: RawFile[] = [];
   const skipped: string[] = [];
+  let singleDirInput = false;
 
   for (const input of inputs) {
     let st: import('node:fs').Stats;
@@ -66,6 +72,7 @@ export async function scanPaths(inputs: string[]): Promise<ScanResult> {
       continue;
     }
     if (st.isDirectory()) {
+      if (inputs.length === 1) singleDirInput = true;
       await walk(input, files, skipped);
     } else if (st.isFile()) {
       if (!JUNK.has(path.basename(input))) {
@@ -74,7 +81,7 @@ export async function scanPaths(inputs: string[]): Promise<ScanResult> {
     }
   }
 
-  const root = commonDir(inputs.map((p) => path.dirname(p)));
+  const root = singleDirInput ? inputs[0] : commonDir(inputs.map((p) => path.dirname(p)));
   const items: SourceItem[] = files.map((f) => ({
     path: f.path,
     relPath: path.relative(root, f.path).split(path.sep).join('/'),

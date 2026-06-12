@@ -58,8 +58,9 @@ describe('runCopy (integration)', () => {
     expect(result.failed).toBe(0);
     expect(result.canceled).toBe(false);
 
-    // Files landed in both destinations under the master folder + preserved structure.
-    const copied = path.join(destA, '2026-06-05_Test', 'CARD', 'A001', 'clip01.mov');
+    // A single selected folder copies its CONTENTS into the master — the source
+    // folder name "CARD" is not repeated (#25); its children land directly.
+    const copied = path.join(destA, '2026-06-05_Test', 'A001', 'clip01.mov');
     expect((await fs.stat(copied)).size).toBe(200_000);
     // Fixed subfolder created.
     expect((await fs.stat(path.join(destA, '2026-06-05_Test', 'Footage'))).isDirectory()).toBe(true);
@@ -92,9 +93,9 @@ describe('runCopy (integration)', () => {
     const [mhl] = await findMhl(folder);
 
     // Tamper with one copied file after the MHL was written.
-    await fs.writeFile(path.join(folder, 'CARD', 'notes.txt'), 'tampered');
+    await fs.writeFile(path.join(folder, 'notes.txt'), 'tampered');
     // And remove another.
-    await fs.rm(path.join(folder, 'CARD', 'A001', 'clip02.mov'));
+    await fs.rm(path.join(folder, 'A001', 'clip02.mov'));
 
     const report = await runVerify(mhl, () => {});
     expect(report.mismatch).toBe(1);

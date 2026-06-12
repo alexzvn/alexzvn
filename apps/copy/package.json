@@ -1,6 +1,6 @@
 {
   "name": "@jm/copy",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Jakobs Medien Copy — verifizierter Offload (xxHash64) mit MHL-Protokoll und Master-Ordner-Baukasten",
   "author": "Jakobs Medien GmbH",

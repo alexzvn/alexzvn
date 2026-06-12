@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream, promises as fs } from 'node:fs';
+import { createReadStream, createWriteStream, promises as fs, type WriteStream } from 'node:fs';
 import path from 'node:path';
 import type {
   CopySpec,
@@ -36,6 +36,11 @@ export function cancelCopy(jobId: string): void {
 
 class CanceledError extends Error {}
 
+// 4-MiB-I/O-Blöcke statt der Stream-Defaults (Lesen 64 KB / Schreiben 16 KB):
+// deutlich weniger Syscalls/Round-Trips — der größte Durchsatz-Gewinn über
+// SMB-Netzwerkfreigaben und USB-Karten.
+const COPY_CHUNK = 1 << 22;
+
 function osPath(base: string, relPosix: string): string {
   return path.join(base, ...relPosix.split('/'));
 }
@@ -45,13 +50,37 @@ function destFolder(d: Destination): string {
   return d.subPath ? osPath(d.basePath, d.subPath) : d.basePath;
 }
 
-function writeChunk(stream: import('node:fs').WriteStream, chunk: Buffer): Promise<void> {
-  return new Promise((resolve, reject) => {
-    stream.write(chunk, (err) => (err ? reject(err) : resolve()));
-  });
+/**
+ * Write a buffer to every destination, only awaiting when a writer signals
+ * backpressure (write() === false). This pipelines read+hash with the writes
+ * instead of forcing a full flush round-trip per chunk — the main throughput
+ * win, especially across network shares. A writer error while NOT awaiting is
+ * captured by the persistent 'error' handler in copyAndHash and re-thrown there.
+ */
+function writeFanout(writers: WriteStream[], buf: Buffer): Promise<void> {
+  const waits: Promise<void>[] = [];
+  for (const w of writers) {
+    if (!w.write(buf)) {
+      waits.push(
+        new Promise<void>((resolve, reject) => {
+          const onDrain = (): void => {
+            w.off('error', onError);
+            resolve();
+          };
+          const onError = (e: Error): void => {
+            w.off('drain', onDrain);
+            reject(e);
+          };
+          w.once('drain', onDrain);
+          w.once('error', onError);
+        }),
+      );
+    }
+  }
+  return waits.length === 0 ? Promise.resolve() : Promise.all(waits).then(() => undefined);
 }
 
-function endStream(stream: import('node:fs').WriteStream): Promise<void> {
+function endStream(stream: WriteStream): Promise<void> {
   return new Promise((resolve, reject) => {
     stream.once('error', reject);
     stream.end(() => resolve());
@@ -70,14 +99,24 @@ async function copyAndHash(
     await fs.mkdir(path.dirname(dp), { recursive: true });
   }
   const hasher = await createRunningHash(withMd5);
-  const writers = destPaths.map((p) => createWriteStream(p));
-  const rs = createReadStream(src, { highWaterMark: 1 << 20 });
+  const writers = destPaths.map((p) => createWriteStream(p, { highWaterMark: COPY_CHUNK }));
+  // A writer can fail in the gap between backpressure waits (when write()
+  // returned true). Capture the first such error so the loop surfaces it
+  // instead of crashing on an unhandled 'error' event.
+  let writeError: Error | null = null;
+  for (const w of writers) {
+    w.on('error', (e) => {
+      if (!writeError) writeError = e;
+    });
+  }
+  const rs = createReadStream(src, { highWaterMark: COPY_CHUNK });
   try {
     for await (const chunk of rs) {
       if (state.canceled) throw new CanceledError();
+      if (writeError) throw writeError;
       const buf = chunk as Buffer;
       hasher.update(buf);
-      await Promise.all(writers.map((w) => writeChunk(w, buf)));
+      await writeFanout(writers, buf);
       onWork(buf.length * writers.length);
     }
   } catch (err) {
@@ -86,6 +125,7 @@ async function copyAndHash(
     throw err;
   }
   await Promise.all(writers.map(endStream));
+  if (writeError) throw writeError;
   return hasher.digest();
 }
 

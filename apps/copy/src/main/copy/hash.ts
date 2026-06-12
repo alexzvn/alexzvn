@@ -32,7 +32,7 @@ export async function createRunningHash(withMd5: boolean): Promise<RunningHash> 
   };
 }
 
-/** Hash a file from disk in 1 MiB chunks. Used for verify read-back and re-verify. */
+/** Hash a file from disk in 4 MiB chunks. Used for verify read-back and re-verify. */
 export async function hashFile(
   path: string,
   withMd5: boolean,
@@ -40,7 +40,7 @@ export async function hashFile(
 ): Promise<Hashes> {
   const hasher = await createRunningHash(withMd5);
   await new Promise<void>((resolve, reject) => {
-    const rs = createReadStream(path, { highWaterMark: 1 << 20 });
+    const rs = createReadStream(path, { highWaterMark: 1 << 22 });
     rs.on('data', (chunk: string | Buffer) => {
       const buf = chunk as Buffer;
       hasher.update(buf);
