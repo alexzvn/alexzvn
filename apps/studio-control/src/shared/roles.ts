@@ -18,6 +18,8 @@ export type Action =
   | 'ptz:exec'
   | 'lighting:read'
   | 'lighting:exec'
+  | 'audio:read'
+  | 'audio:exec'
   | 'users:read'
   | 'users:write'
   | 'audit:read';
@@ -32,6 +34,8 @@ const ACTION_MIN: Record<Action, Role> = {
   'ptz:exec': 'operator',
   'lighting:read': 'viewer',
   'lighting:exec': 'operator',
+  'audio:read': 'viewer',
+  'audio:exec': 'operator',
   'users:read': 'admin',
   'users:write': 'admin',
   'audit:read': 'operator',

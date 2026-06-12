@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type {
+  AudioStatusEvent,
   AuditEntry,
   PtzStatusEvent,
   TricasterStatusEvent,
@@ -9,6 +10,7 @@ import type { TricasterConfig } from '@shared/tricaster';
 import type { PtzCameraConfig } from '@shared/ptz';
 import type { LightingConfig } from '@shared/lighting';
 import { DEFAULT_LIGHTING_CONFIG } from '@shared/lighting';
+import type { AudioConsoleConfig, ChannelState } from '@shared/audio';
 import type { UserRow } from '@/types/admin';
 
 export type Section = 'video' | 'audio' | 'licht' | 'setup';
@@ -40,6 +42,13 @@ interface AppState {
   setLighting: (config: LightingConfig, blackout: boolean) => void;
   /** Optimistic local update of one fixture's state (live faders don't echo). */
   patchFixtureLocal: (fixtureId: string, patch: Partial<LightingConfig['fixtures'][number]['state']>) => void;
+
+  audioConsoles: AudioConsoleConfig[];
+  audioStatuses: Record<string, AudioStatusEvent>;
+  setAudio: (consoles: AudioConsoleConfig[], statuses: AudioStatusEvent[]) => void;
+  setAudioStatus: (s: AudioStatusEvent) => void;
+  /** Optimistic local update of one channel (live faders/mutes don't echo). */
+  patchChannelLocal: (consoleId: string, ch: number, patch: Partial<ChannelState>) => void;
 
   discovery: {
     running: boolean;
@@ -102,6 +111,26 @@ export const useApp = create<AppState>((set) => ({
           f.id === fixtureId ? { ...f, state: { ...f.state, ...patch } } : f,
         ),
       },
+    })),
+
+  audioConsoles: [],
+  audioStatuses: {},
+  setAudio: (consoles, statuses) =>
+    set({
+      audioConsoles: consoles,
+      audioStatuses: Object.fromEntries(statuses.map((s) => [s.id, s])),
+    }),
+  setAudioStatus: (s) =>
+    set((st) => ({ audioStatuses: { ...st.audioStatuses, [s.id]: s } })),
+  patchChannelLocal: (consoleId, ch, patch) =>
+    set((st) => ({
+      audioConsoles: st.audioConsoles.map((c) => {
+        if (c.id !== consoleId) return c;
+        const prev = c.channels.find((x) => x.ch === ch);
+        const next = { ch, db: prev?.db ?? 0, mute: prev?.mute ?? false, ...patch };
+        const channels = [...c.channels.filter((x) => x.ch !== ch), next].sort((a, b) => a.ch - b.ch);
+        return { ...c, channels };
+      }),
     })),
 
   discovery: { running: false, results: [] },

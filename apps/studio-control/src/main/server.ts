@@ -76,13 +76,28 @@ import {
   upsertFixture,
 } from './lighting/engine';
 import {
+  getAudioConsoles,
+  loadAudioConsoles,
+  removeAudioConsole,
+  updateChannelState,
+  upsertAudioConsole,
+} from './config/audio';
+import {
+  getAudioStatuses,
+  onAudioStatusChange,
+  sendAudio,
+  syncAudioFromConfig,
+} from './audio/manager';
+import {
   ArtnetNodeSchema,
+  AudioConsoleConfigSchema,
   DeviceSchema,
   FixtureSchema,
   PtzCameraConfigSchema,
   TricasterConfigSchema,
 } from '@shared/protocol';
 import {
+  AudioExecSchema,
   CreateUserRequestSchema,
   EVENTS,
   LightingBlackoutSchema,
@@ -462,6 +477,54 @@ async function handleApi(
     return true;
   }
 
+  if (pathname === '/api/audio' && method === 'GET') {
+    if (!requireHttpRole(req, res, 'audio:read')) return true;
+    sendJson(res, 200, {
+      consoles: getAudioConsoles(),
+      statuses: getAudioStatuses(),
+    });
+    return true;
+  }
+
+  if (pathname === '/api/audio' && method === 'POST') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    try {
+      const body = await readJson(req);
+      const cfg = AudioConsoleConfigSchema.parse(body);
+      upsertAudioConsole(cfg);
+      syncAudioFromConfig();
+      logAction({
+        userId: actor.id || null,
+        username: actor.username,
+        action: 'audio:upsert',
+        target: cfg.id,
+      });
+      sendJson(res, 200, { consoles: getAudioConsoles() });
+      emitAudioState();
+    } catch (err) {
+      sendJson(res, 400, { error: 'bad_request', detail: String(err) });
+    }
+    return true;
+  }
+
+  const audioDel = pathname.match(/^\/api\/audio\/([^/]+)$/);
+  if (audioDel && method === 'DELETE') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    removeAudioConsole(audioDel[1]!);
+    syncAudioFromConfig();
+    logAction({
+      userId: actor.id || null,
+      username: actor.username,
+      action: 'audio:remove',
+      target: audioDel[1],
+    });
+    sendJson(res, 200, { consoles: getAudioConsoles() });
+    emitAudioState();
+    return true;
+  }
+
   if (pathname === '/api/audit' && method === 'GET') {
     if (!requireHttpRole(req, res, 'audit:read')) return true;
     sendJson(res, 200, { entries: listRecent(100) });
@@ -503,6 +566,13 @@ function emitLightingState(): void {
   io?.emit(EVENTS.LIGHTING_STATE, getLightingState());
 }
 
+function emitAudioState(): void {
+  io?.emit(EVENTS.AUDIO_STATE, {
+    consoles: getAudioConsoles(),
+    statuses: getAudioStatuses(),
+  });
+}
+
 function attachSocketHandlers(socket: Socket): void {
   socket.emit(EVENTS.INVENTORY_STATE, { devices: getDevices() });
   socket.emit(EVENTS.TRICASTER_STATE, {
@@ -514,6 +584,10 @@ function attachSocketHandlers(socket: Socket): void {
     statuses: getAllPtzStatuses(),
   });
   socket.emit(EVENTS.LIGHTING_STATE, getLightingState());
+  socket.emit(EVENTS.AUDIO_STATE, {
+    consoles: getAudioConsoles(),
+    statuses: getAudioStatuses(),
+  });
   if (socketCan(socket, 'audit:read')) {
     socket.emit('audit:state', { entries: listRecent(100) });
   }
@@ -706,6 +780,40 @@ function attachSocketHandlers(socket: Socket): void {
     });
     ack?.({ ok: true });
   });
+
+  socket.on(EVENTS.AUDIO_EXEC, (payload, ack?: (r: unknown) => void) => {
+    if (!socketCan(socket, 'audio:exec')) {
+      ack?.({ ok: false, error: 'forbidden' });
+      return;
+    }
+    const parsed = AudioExecSchema.safeParse(payload);
+    if (!parsed.success) {
+      ack?.({ ok: false, error: 'bad_payload' });
+      return;
+    }
+    const { consoleId, action } = parsed.data;
+    const ok = sendAudio(consoleId, action);
+    if (ok) {
+      // Remember the channel's last-set value (debounced save in config).
+      updateChannelState(
+        consoleId,
+        action.channel,
+        action.kind === 'fader' ? { db: action.db } : { mute: action.on },
+      );
+      // Faders are continuous — only mutes are audited (discrete, intentional).
+      if (action.kind === 'mute') {
+        const user = socketUser(socket);
+        logAction({
+          userId: user.id || null,
+          username: user.username,
+          action: 'audio:mute',
+          target: consoleId,
+          payload: { channel: action.channel, on: action.on },
+        });
+      }
+    }
+    ack?.(ok ? { ok: true } : { ok: false, error: 'send_failed' });
+  });
 }
 
 export function startServer(): Promise<void> {
@@ -714,9 +822,11 @@ export function startServer(): Promise<void> {
     loadTricasters();
     loadPtzCameras();
     loadLighting();
+    loadAudioConsoles();
     syncFromConfig();
     syncPtzFromConfig();
     initLighting();
+    syncAudioFromConfig();
     startPolling();
     startPtzPolling();
 
@@ -762,6 +872,7 @@ export function startServer(): Promise<void> {
     onStatusChange(() => emitTricasterState());
     onPtzStatusChange(() => emitPtzState());
     onLightingChange(() => emitLightingState());
+    onAudioStatusChange(() => emitAudioState());
     onAudit((entry) => {
       if (!io) return;
       for (const [, socket] of io.sockets.sockets) {

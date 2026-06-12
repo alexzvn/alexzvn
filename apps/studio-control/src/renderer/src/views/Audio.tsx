@@ -1,10 +1,9 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { AudioPanel } from '@/components/audio/AudioPanel';
 
 export function AudioView() {
   return (
-    <ComingSoon
-      title="Audio-Steuerung"
-      note="Mischpult / Routing / Mute kommen in einer Folgephase. Bislang noch keine Geräte definiert."
-    />
+    <div className="flex flex-col gap-6">
+      <AudioPanel />
+    </div>
   );
 }

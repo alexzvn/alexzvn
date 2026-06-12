@@ -4,6 +4,7 @@ import { useSession } from '@/store/session';
 import { useApp } from '@/store/app';
 import { EVENTS } from '@shared/protocol';
 import type {
+  AudioStatusEvent,
   AuditEntry,
   PtzStatusEvent,
   TricasterStatusEvent,
@@ -12,6 +13,7 @@ import type { Device, DiscoveredDevice } from '@shared/device';
 import type { TricasterConfig } from '@shared/tricaster';
 import type { PtzCameraConfig } from '@shared/ptz';
 import type { LightingConfig } from '@shared/lighting';
+import type { AudioConsoleConfig } from '@shared/audio';
 import type { UserRow } from '@/types/admin';
 import { AppShell } from '@/components/AppShell';
 import { LoginView } from '@/views/Login';
@@ -71,6 +73,17 @@ export function App() {
             s.setLighting(p.config, p.blackout);
             break;
           }
+          case EVENTS.AUDIO_STATE: {
+            const p = payload as {
+              consoles: AudioConsoleConfig[];
+              statuses: AudioStatusEvent[];
+            };
+            s.setAudio(p.consoles, p.statuses);
+            break;
+          }
+          case EVENTS.AUDIO_STATUS:
+            s.setAudioStatus(payload as AudioStatusEvent);
+            break;
           case EVENTS.DISCOVERY_START:
             s.setDiscoveryRunning(true);
             break;

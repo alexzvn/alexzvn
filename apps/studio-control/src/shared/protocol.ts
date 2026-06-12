@@ -8,6 +8,7 @@ import {
   FixtureStatePatchSchema,
   LightingConfigSchema,
 } from './lighting';
+import { AudioActionSchema, AudioConsoleConfigSchema } from './audio';
 import { ROLES, type Role } from './roles';
 
 // ===== Socket.IO event payload schemas =====
@@ -86,6 +87,20 @@ export const LightingBlackoutSchema = z.object({
   on: z.boolean(),
 });
 
+export const AudioStatusSchema = z.object({
+  id: z.string(),
+  state: z.enum(['connected', 'connecting', 'down']),
+  transport: z.enum(['tcp', 'osc', 'dante']),
+  lastChecked: z.number(),
+  lastError: z.string().optional(),
+});
+export type AudioStatusEvent = z.infer<typeof AudioStatusSchema>;
+
+export const AudioExecSchema = z.object({
+  consoleId: z.string().min(1),
+  action: AudioActionSchema,
+});
+
 export const AuditEntrySchema = z.object({
   id: z.number().int(),
   ts: z.number(),
@@ -132,6 +147,8 @@ export const EVENTS = {
   PTZ_STATE: 'ptz:state',
   PTZ_STATUS: 'ptz:status',
   LIGHTING_STATE: 'lighting:state',
+  AUDIO_STATE: 'audio:state',
+  AUDIO_STATUS: 'audio:status',
   AUDIT_APPEND: 'audit:append',
   USERS_STATE: 'users:state',
 
@@ -143,6 +160,7 @@ export const EVENTS = {
   PTZ_EXEC: 'ptz:exec',
   LIGHTING_SET: 'lighting:set',
   LIGHTING_BLACKOUT: 'lighting:blackout',
+  AUDIO_EXEC: 'audio:exec',
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
@@ -155,4 +173,5 @@ export {
   ArtnetNodeSchema,
   FixtureSchema,
   LightingConfigSchema,
+  AudioConsoleConfigSchema,
 };
