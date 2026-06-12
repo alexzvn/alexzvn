@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DeviceSchema, DiscoveredDeviceSchema } from './device';
 import { TricasterConfigSchema } from './tricaster';
+import { PtzActionSchema, PtzCameraConfigSchema } from './ptz';
 import { ROLES, type Role } from './roles';
 
 // ===== Socket.IO event payload schemas =====
@@ -50,6 +51,20 @@ export const TricasterExecSchema = z.object({
   params: z.record(z.string()).optional(),
 });
 
+export const PtzStatusSchema = z.object({
+  id: z.string(),
+  state: z.enum(['connected', 'polling', 'down']),
+  power: z.enum(['on', 'standby']).optional(),
+  lastChecked: z.number(),
+  lastError: z.string().optional(),
+});
+export type PtzStatusEvent = z.infer<typeof PtzStatusSchema>;
+
+export const PtzExecSchema = z.object({
+  cameraId: z.string().min(1),
+  action: PtzActionSchema,
+});
+
 export const AuditEntrySchema = z.object({
   id: z.number().int(),
   ts: z.number(),
@@ -93,6 +108,8 @@ export const EVENTS = {
   DISCOVERY_DONE: 'discovery:done',
   TRICASTER_STATE: 'tricaster:state',
   TRICASTER_STATUS: 'tricaster:status',
+  PTZ_STATE: 'ptz:state',
+  PTZ_STATUS: 'ptz:status',
   AUDIT_APPEND: 'audit:append',
   USERS_STATE: 'users:state',
 
@@ -101,8 +118,9 @@ export const EVENTS = {
   INVENTORY_REMOVE: 'inventory:remove',
   DISCOVERY_RUN: 'discovery:run',
   TRICASTER_EXEC: 'tricaster:exec',
+  PTZ_EXEC: 'ptz:exec',
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
 
-export { DeviceSchema, DiscoveredDeviceSchema, TricasterConfigSchema };
+export { DeviceSchema, DiscoveredDeviceSchema, TricasterConfigSchema, PtzCameraConfigSchema };

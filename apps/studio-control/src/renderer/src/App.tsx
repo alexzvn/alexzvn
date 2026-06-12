@@ -5,10 +5,12 @@ import { useApp } from '@/store/app';
 import { EVENTS } from '@shared/protocol';
 import type {
   AuditEntry,
+  PtzStatusEvent,
   TricasterStatusEvent,
 } from '@shared/protocol';
 import type { Device, DiscoveredDevice } from '@shared/device';
 import type { TricasterConfig } from '@shared/tricaster';
+import type { PtzCameraConfig } from '@shared/ptz';
 import type { UserRow } from '@/types/admin';
 import { AppShell } from '@/components/AppShell';
 import { LoginView } from '@/views/Login';
@@ -51,6 +53,17 @@ export function App() {
           }
           case EVENTS.TRICASTER_STATUS:
             s.setTricasterStatus(payload as TricasterStatusEvent);
+            break;
+          case EVENTS.PTZ_STATE: {
+            const p = payload as {
+              cameras: PtzCameraConfig[];
+              statuses: PtzStatusEvent[];
+            };
+            s.setPtzCameras(p.cameras, p.statuses);
+            break;
+          }
+          case EVENTS.PTZ_STATUS:
+            s.setPtzStatus(payload as PtzStatusEvent);
             break;
           case EVENTS.DISCOVERY_START:
             s.setDiscoveryRunning(true);

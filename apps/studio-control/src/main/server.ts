@@ -41,6 +41,12 @@ import {
   removeTricaster,
   upsertTricaster,
 } from './config/tricasters';
+import {
+  getPtzCameras,
+  loadPtzCameras,
+  removePtzCamera,
+  upsertPtzCamera,
+} from './config/ptz';
 import { logAction, listRecent, onAudit } from './db/audit';
 import { runAll, isScanning } from './discovery';
 import {
@@ -51,13 +57,22 @@ import {
   syncFromConfig,
 } from './drivers/tricaster/pool';
 import {
+  getAllPtzStatuses,
+  getPtzClient,
+  onPtzStatusChange,
+  startPtzPolling,
+  syncPtzFromConfig,
+} from './drivers/panasonic-ptz/pool';
+import {
   DeviceSchema,
+  PtzCameraConfigSchema,
   TricasterConfigSchema,
 } from '@shared/protocol';
 import {
   CreateUserRequestSchema,
   EVENTS,
   LoginRequestSchema,
+  PtzExecSchema,
   TricasterExecSchema,
   UpdateUserRequestSchema,
 } from '@shared/protocol';
@@ -312,6 +327,54 @@ async function handleApi(
     return true;
   }
 
+  if (pathname === '/api/ptz' && method === 'GET') {
+    if (!requireHttpRole(req, res, 'ptz:read')) return true;
+    sendJson(res, 200, {
+      cameras: getPtzCameras(),
+      statuses: getAllPtzStatuses(),
+    });
+    return true;
+  }
+
+  if (pathname === '/api/ptz' && method === 'POST') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    try {
+      const body = await readJson(req);
+      const cfg = PtzCameraConfigSchema.parse(body);
+      upsertPtzCamera(cfg);
+      syncPtzFromConfig();
+      logAction({
+        userId: actor.id,
+        username: actor.username,
+        action: 'ptz:upsert',
+        target: cfg.id,
+      });
+      sendJson(res, 200, { cameras: getPtzCameras() });
+      emitPtzState();
+    } catch (err) {
+      sendJson(res, 400, { error: 'bad_request', detail: String(err) });
+    }
+    return true;
+  }
+
+  const ptzDel = pathname.match(/^\/api\/ptz\/([^/]+)$/);
+  if (ptzDel && method === 'DELETE') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    removePtzCamera(ptzDel[1]!);
+    syncPtzFromConfig();
+    logAction({
+      userId: actor.id,
+      username: actor.username,
+      action: 'ptz:remove',
+      target: ptzDel[1],
+    });
+    sendJson(res, 200, { cameras: getPtzCameras() });
+    emitPtzState();
+    return true;
+  }
+
   if (pathname === '/api/audit' && method === 'GET') {
     if (!requireHttpRole(req, res, 'audit:read')) return true;
     sendJson(res, 200, { entries: listRecent(100) });
@@ -342,11 +405,22 @@ function emitTricasterState(): void {
   });
 }
 
+function emitPtzState(): void {
+  io?.emit(EVENTS.PTZ_STATE, {
+    cameras: getPtzCameras(),
+    statuses: getAllPtzStatuses(),
+  });
+}
+
 function attachSocketHandlers(socket: Socket): void {
   socket.emit(EVENTS.INVENTORY_STATE, { devices: getDevices() });
   socket.emit(EVENTS.TRICASTER_STATE, {
     tricasters: getTricasters(),
     statuses: getAllStatuses(),
+  });
+  socket.emit(EVENTS.PTZ_STATE, {
+    cameras: getPtzCameras(),
+    statuses: getAllPtzStatuses(),
   });
   if (socketCan(socket, 'audit:read')) {
     socket.emit('audit:state', { entries: listRecent(100) });
@@ -460,14 +534,60 @@ function attachSocketHandlers(socket: Socket): void {
       ack?.({ ok: false, error: String(err) });
     }
   });
+
+  socket.on(EVENTS.PTZ_EXEC, async (payload, ack?: (r: unknown) => void) => {
+    if (!socketCan(socket, 'ptz:exec')) {
+      ack?.({ ok: false, error: 'forbidden' });
+      return;
+    }
+    const parsed = PtzExecSchema.safeParse(payload);
+    if (!parsed.success) {
+      ack?.({ ok: false, error: 'bad_payload' });
+      return;
+    }
+    const client = getPtzClient(parsed.data.cameraId);
+    if (!client) {
+      ack?.({ ok: false, error: 'unknown_camera' });
+      return;
+    }
+    const user = socketUser(socket);
+    const { cameraId, action } = parsed.data;
+    try {
+      await client.send(action);
+      // Continuous drive ticks (pan-tilt/zoom/focus) would flood the audit log —
+      // only record discrete, intentional actions.
+      if (action.kind !== 'pan-tilt' && action.kind !== 'zoom' && action.kind !== 'focus') {
+        logAction({
+          userId: user.id || null,
+          username: user.username,
+          action: 'ptz:exec',
+          target: cameraId,
+          payload: action,
+        });
+      }
+      ack?.({ ok: true });
+    } catch (err) {
+      logAction({
+        userId: user.id || null,
+        username: user.username,
+        action: 'ptz:exec:failed',
+        target: cameraId,
+        payload: { action, error: String(err) },
+      });
+      ack?.({ ok: false, error: String(err) });
+    }
+  });
 }
 
 export function startServer(): Promise<void> {
   return new Promise((resolve, reject) => {
     loadDevices();
     loadTricasters();
+    loadPtzCameras();
     syncFromConfig();
+    syncPtzFromConfig();
     startPolling();
+    startPtzPolling();
 
     const distIndex = path.join(rendererDistDir(), 'index.html');
     const canServeStatic = fs.existsSync(distIndex);
@@ -509,6 +629,7 @@ export function startServer(): Promise<void> {
 
     onDevicesChange(() => emitInventory());
     onStatusChange(() => emitTricasterState());
+    onPtzStatusChange(() => emitPtzState());
     onAudit((entry) => {
       if (!io) return;
       for (const [, socket] of io.sockets.sockets) {

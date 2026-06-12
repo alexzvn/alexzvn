@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import type {
   AuditEntry,
+  PtzStatusEvent,
   TricasterStatusEvent,
 } from '@shared/protocol';
 import type { Device, DiscoveredDevice } from '@shared/device';
 import type { TricasterConfig } from '@shared/tricaster';
+import type { PtzCameraConfig } from '@shared/ptz';
 import type { UserRow } from '@/types/admin';
 
 export type Section = 'video' | 'audio' | 'licht' | 'setup';
@@ -25,6 +27,11 @@ interface AppState {
   tricasterStatuses: Record<string, TricasterStatusEvent>;
   setTricasters: (cfg: TricasterConfig[], statuses: TricasterStatusEvent[]) => void;
   setTricasterStatus: (s: TricasterStatusEvent) => void;
+
+  ptzCameras: PtzCameraConfig[];
+  ptzStatuses: Record<string, PtzStatusEvent>;
+  setPtzCameras: (cfg: PtzCameraConfig[], statuses: PtzStatusEvent[]) => void;
+  setPtzStatus: (s: PtzStatusEvent) => void;
 
   discovery: {
     running: boolean;
@@ -62,6 +69,18 @@ export const useApp = create<AppState>((set) => ({
   setTricasterStatus: (s) =>
     set((st) => ({
       tricasterStatuses: { ...st.tricasterStatuses, [s.id]: s },
+    })),
+
+  ptzCameras: [],
+  ptzStatuses: {},
+  setPtzCameras: (cfg, statuses) =>
+    set({
+      ptzCameras: cfg,
+      ptzStatuses: Object.fromEntries(statuses.map((s) => [s.id, s])),
+    }),
+  setPtzStatus: (s) =>
+    set((st) => ({
+      ptzStatuses: { ...st.ptzStatuses, [s.id]: s },
     })),
 
   discovery: { running: false, results: [] },

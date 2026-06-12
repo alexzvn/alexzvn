@@ -14,6 +14,8 @@ export type Action =
   | 'discovery:run'
   | 'tricaster:read'
   | 'tricaster:exec'
+  | 'ptz:read'
+  | 'ptz:exec'
   | 'users:read'
   | 'users:write'
   | 'audit:read';
@@ -24,6 +26,8 @@ const ACTION_MIN: Record<Action, Role> = {
   'discovery:run': 'operator',
   'tricaster:read': 'viewer',
   'tricaster:exec': 'operator',
+  'ptz:read': 'viewer',
+  'ptz:exec': 'operator',
   'users:read': 'admin',
   'users:write': 'admin',
   'audit:read': 'operator',
