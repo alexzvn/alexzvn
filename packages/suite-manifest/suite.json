@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-10T15:00:00.000Z",
+  "updatedAt": "2026-06-12T14:30:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -10,7 +10,7 @@
       "category": "Ingest",
       "appId": "gmbh.jakobs.copy",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.2.0",
       "platforms": {
         "mac": {
           "artifact": "JM Copy-${version}-mac-${arch}.dmg",
@@ -73,7 +73,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.media-converter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.2.0",
       "platforms": {
         "mac": {
           "artifact": "JM Media Converter-${version}-mac-${arch}.dmg",
@@ -178,7 +178,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.timer",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.1.1",
       "platforms": {
         "mac": {
           "artifact": "JM Timer-${version}-mac-${arch}.dmg",
