@@ -28,8 +28,17 @@ export function attachOutputWindow(win: BrowserWindow): void {
   targetWindow = win;
 }
 
+// Beim Beenden feuert win.on('closed') die stop*-Teardowns, während das Fenster
+// schon zerstört ist. `?.` schützt nur gegen null, NICHT gegen ein zerstörtes
+// webContents → sonst „Object has been destroyed" beim Quit. Darum hart prüfen.
+function send(channel: string, payload: unknown): void {
+  if (!targetWindow || targetWindow.isDestroyed()) return;
+  const wc = targetWindow.webContents;
+  if (!wc.isDestroyed()) wc.send(channel, payload);
+}
+
 function emitStatus(): void {
-  targetWindow?.webContents.send('output:status', {
+  send('output:status', {
     recording: recStream != null,
     streaming,
     recPath,
@@ -37,7 +46,7 @@ function emitStatus(): void {
 }
 
 function emitError(scope: 'record' | 'stream', message: string): void {
-  targetWindow?.webContents.send('output:error', { scope, message });
+  send('output:error', { scope, message });
 }
 
 function tailLine(s: string): string {

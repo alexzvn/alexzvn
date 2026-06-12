@@ -365,9 +365,23 @@ export class SwitcherEngine {
     this.notify();
   }
 
+  /**
+   * Bus-Swap nach CUT/AUTO (Standard-Mischer-Verhalten, #21): das alte Program
+   * (`fromId`) wird zum neuen Preview, sofern es noch existiert und sich vom
+   * neuen Program unterscheidet. So sind PGM/PVW danach wieder verschieden und
+   * ein sinnvoller Rück-Wechsel ist sofort möglich.
+   */
+  private busSwapPreview(fromId: string | null): void {
+    if (fromId && fromId !== this.programSceneId && this.scenes.some((s) => s.id === fromId)) {
+      this.previewSceneId = fromId;
+    }
+  }
+
   cut(): void {
     if (!this.previewSceneId) return;
+    const fromId = this.programSceneId;
     this.programSceneId = this.previewSceneId;
+    this.busSwapPreview(fromId);
     this.transition = null;
     this.notify();
   }
@@ -401,7 +415,9 @@ export class SwitcherEngine {
       this.paintScene(this.programCanvas, this.transition.fromId, 1, true);
       this.paintScene(this.programCanvas, this.transition.toId, k, false);
       if (k >= 1) {
+        const fromId = this.transition.fromId;
         this.programSceneId = this.transition.toId;
+        this.busSwapPreview(fromId); // altes Program → Preview (Bus-Swap, #21)
         this.transition = null;
         this.notify();
       }

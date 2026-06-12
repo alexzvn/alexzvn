@@ -47,7 +47,11 @@ function sendStatus(recvId: string, state: NdiStatus['state'], source: string | 
   const status: NdiStatus = { recvId, state, source };
   if (state === 'idle') statuses.delete(recvId);
   else statuses.set(recvId, status);
-  targetWindow?.webContents.send('ndi:status', status);
+  // Kindprozess-`exit` kann nach dem Fenster-Schließen feuern → zerstörtes
+  // webContents abfangen (sonst „Object has been destroyed" beim Quit).
+  if (!targetWindow || targetWindow.isDestroyed()) return;
+  const wc = targetWindow.webContents;
+  if (!wc.isDestroyed()) wc.send('ndi:status', status);
 }
 
 /** Sichtbare NDI-Quellen suchen — kurzlebiger Finder-Prozess (kein Receiver). */

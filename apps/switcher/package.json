@@ -1,6 +1,6 @@
 {
   "name": "@jm/switcher",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Jakobs Medien Switcher — softwarebasierter Video-Mischer (NDI/Screen/Capture) mit Program/Preview, Cut & Dissolve",
   "author": "Jakobs Medien GmbH",

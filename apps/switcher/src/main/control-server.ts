@@ -45,8 +45,17 @@ export function controlStatus(): ControlStatus {
   return { running, port: boundPort, clients: clients.size };
 }
 
+// Beim Beenden räumt stopControlServer() auf, während das Fenster schon zerstört
+// ist (Socket-close/notifyStatus feuern dann noch). `?.` schützt nur gegen null,
+// nicht gegen ein zerstörtes webContents → sonst „Object has been destroyed".
+function send(channel: string, payload: unknown): void {
+  if (!targetWindow || targetWindow.isDestroyed()) return;
+  const wc = targetWindow.webContents;
+  if (!wc.isDestroyed()) wc.send(channel, payload);
+}
+
 function notifyStatus(): void {
-  targetWindow?.webContents.send('control:status', controlStatus());
+  send('control:status', controlStatus());
 }
 
 export function startControlServer(port: number): Promise<{ ok: boolean; error?: string; port?: number }> {
@@ -90,7 +99,7 @@ function handleCommand(cmd: ControlCommand, socket: net.Socket): void {
     socket.write(formatState(lastState));
     return;
   }
-  targetWindow?.webContents.send('control:command', cmd);
+  send('control:command', cmd);
 }
 
 export function stopControlServer(): void {
