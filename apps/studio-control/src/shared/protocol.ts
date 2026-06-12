@@ -2,6 +2,12 @@ import { z } from 'zod';
 import { DeviceSchema, DiscoveredDeviceSchema } from './device';
 import { TricasterConfigSchema } from './tricaster';
 import { PtzActionSchema, PtzCameraConfigSchema } from './ptz';
+import {
+  ArtnetNodeSchema,
+  FixtureSchema,
+  FixtureStatePatchSchema,
+  LightingConfigSchema,
+} from './lighting';
 import { ROLES, type Role } from './roles';
 
 // ===== Socket.IO event payload schemas =====
@@ -65,6 +71,21 @@ export const PtzExecSchema = z.object({
   action: PtzActionSchema,
 });
 
+export const LightingStateSchema = z.object({
+  config: LightingConfigSchema,
+  blackout: z.boolean(),
+});
+export type LightingStateEvent = z.infer<typeof LightingStateSchema>;
+
+export const LightingSetSchema = z.object({
+  fixtureId: z.string().min(1),
+  patch: FixtureStatePatchSchema,
+});
+
+export const LightingBlackoutSchema = z.object({
+  on: z.boolean(),
+});
+
 export const AuditEntrySchema = z.object({
   id: z.number().int(),
   ts: z.number(),
@@ -110,6 +131,7 @@ export const EVENTS = {
   TRICASTER_STATUS: 'tricaster:status',
   PTZ_STATE: 'ptz:state',
   PTZ_STATUS: 'ptz:status',
+  LIGHTING_STATE: 'lighting:state',
   AUDIT_APPEND: 'audit:append',
   USERS_STATE: 'users:state',
 
@@ -119,8 +141,18 @@ export const EVENTS = {
   DISCOVERY_RUN: 'discovery:run',
   TRICASTER_EXEC: 'tricaster:exec',
   PTZ_EXEC: 'ptz:exec',
+  LIGHTING_SET: 'lighting:set',
+  LIGHTING_BLACKOUT: 'lighting:blackout',
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
 
-export { DeviceSchema, DiscoveredDeviceSchema, TricasterConfigSchema, PtzCameraConfigSchema };
+export {
+  DeviceSchema,
+  DiscoveredDeviceSchema,
+  TricasterConfigSchema,
+  PtzCameraConfigSchema,
+  ArtnetNodeSchema,
+  FixtureSchema,
+  LightingConfigSchema,
+};

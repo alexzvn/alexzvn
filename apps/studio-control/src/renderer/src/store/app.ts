@@ -7,6 +7,8 @@ import type {
 import type { Device, DiscoveredDevice } from '@shared/device';
 import type { TricasterConfig } from '@shared/tricaster';
 import type { PtzCameraConfig } from '@shared/ptz';
+import type { LightingConfig } from '@shared/lighting';
+import { DEFAULT_LIGHTING_CONFIG } from '@shared/lighting';
 import type { UserRow } from '@/types/admin';
 
 export type Section = 'video' | 'audio' | 'licht' | 'setup';
@@ -32,6 +34,12 @@ interface AppState {
   ptzStatuses: Record<string, PtzStatusEvent>;
   setPtzCameras: (cfg: PtzCameraConfig[], statuses: PtzStatusEvent[]) => void;
   setPtzStatus: (s: PtzStatusEvent) => void;
+
+  lighting: LightingConfig;
+  blackout: boolean;
+  setLighting: (config: LightingConfig, blackout: boolean) => void;
+  /** Optimistic local update of one fixture's state (live faders don't echo). */
+  patchFixtureLocal: (fixtureId: string, patch: Partial<LightingConfig['fixtures'][number]['state']>) => void;
 
   discovery: {
     running: boolean;
@@ -81,6 +89,19 @@ export const useApp = create<AppState>((set) => ({
   setPtzStatus: (s) =>
     set((st) => ({
       ptzStatuses: { ...st.ptzStatuses, [s.id]: s },
+    })),
+
+  lighting: DEFAULT_LIGHTING_CONFIG,
+  blackout: false,
+  setLighting: (config, blackout) => set({ lighting: config, blackout }),
+  patchFixtureLocal: (fixtureId, patch) =>
+    set((s) => ({
+      lighting: {
+        ...s.lighting,
+        fixtures: s.lighting.fixtures.map((f) =>
+          f.id === fixtureId ? { ...f, state: { ...f.state, ...patch } } : f,
+        ),
+      },
     })),
 
   discovery: { running: false, results: [] },

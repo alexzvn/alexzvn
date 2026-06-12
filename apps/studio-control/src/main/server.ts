@@ -9,6 +9,7 @@ import path from 'node:path';
 import { networkInterfaces } from 'node:os';
 import { app } from 'electron';
 import { Server as IoServer, type Socket } from 'socket.io';
+import { z } from 'zod';
 
 import {
   attachSocketAuth,
@@ -63,19 +64,35 @@ import {
   startPtzPolling,
   syncPtzFromConfig,
 } from './drivers/panasonic-ptz/pool';
+import { loadLighting } from './config/lighting';
 import {
+  getLightingState,
+  initLighting,
+  onLightingChange,
+  removeFixture,
+  setBlackout,
+  setFixtureState,
+  setNode,
+  upsertFixture,
+} from './lighting/engine';
+import {
+  ArtnetNodeSchema,
   DeviceSchema,
+  FixtureSchema,
   PtzCameraConfigSchema,
   TricasterConfigSchema,
 } from '@shared/protocol';
 import {
   CreateUserRequestSchema,
   EVENTS,
+  LightingBlackoutSchema,
+  LightingSetSchema,
   LoginRequestSchema,
   PtzExecSchema,
   TricasterExecSchema,
   UpdateUserRequestSchema,
 } from '@shared/protocol';
+import { DMX_UNIVERSE_SIZE, findProfile } from '@shared/lighting';
 
 export const SERVER_PORT = 7778;
 export const SERVER_HOST = '0.0.0.0';
@@ -227,7 +244,7 @@ async function handleApi(
       const parsed = CreateUserRequestSchema.parse(body);
       const user = createUser(parsed);
       logAction({
-        userId: actor.id,
+        userId: actor.id || null,
         username: actor.username,
         action: 'users:create',
         target: user.username,
@@ -255,7 +272,7 @@ async function handleApi(
           return true;
         }
         logAction({
-          userId: actor.id,
+          userId: actor.id || null,
           username: actor.username,
           action: 'users:update',
           target: user.username,
@@ -270,7 +287,7 @@ async function handleApi(
     if (method === 'DELETE') {
       deleteUser(id);
       logAction({
-        userId: actor.id,
+        userId: actor.id || null,
         username: actor.username,
         action: 'users:delete',
         target: String(id),
@@ -299,7 +316,7 @@ async function handleApi(
       upsertTricaster(cfg);
       syncFromConfig();
       logAction({
-        userId: actor.id,
+        userId: actor.id || null,
         username: actor.username,
         action: 'tricaster:upsert',
         target: cfg.id,
@@ -318,7 +335,7 @@ async function handleApi(
     removeTricaster(tcDel[1]!);
     syncFromConfig();
     logAction({
-      userId: actor.id,
+      userId: actor.id || null,
       username: actor.username,
       action: 'tricaster:remove',
       target: tcDel[1],
@@ -345,7 +362,7 @@ async function handleApi(
       upsertPtzCamera(cfg);
       syncPtzFromConfig();
       logAction({
-        userId: actor.id,
+        userId: actor.id || null,
         username: actor.username,
         action: 'ptz:upsert',
         target: cfg.id,
@@ -365,13 +382,83 @@ async function handleApi(
     removePtzCamera(ptzDel[1]!);
     syncPtzFromConfig();
     logAction({
-      userId: actor.id,
+      userId: actor.id || null,
       username: actor.username,
       action: 'ptz:remove',
       target: ptzDel[1],
     });
     sendJson(res, 200, { cameras: getPtzCameras() });
     emitPtzState();
+    return true;
+  }
+
+  if (pathname === '/api/lighting' && method === 'GET') {
+    if (!requireHttpRole(req, res, 'lighting:read')) return true;
+    sendJson(res, 200, getLightingState());
+    return true;
+  }
+
+  if (pathname === '/api/lighting/node' && method === 'POST') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    try {
+      const body = await readJson(req);
+      const { node } = z.object({ node: ArtnetNodeSchema.nullable() }).parse(body);
+      setNode(node);
+      logAction({
+        userId: actor.id || null,
+        username: actor.username,
+        action: 'lighting:node',
+        target: node?.host ?? '(getrennt)',
+      });
+      sendJson(res, 200, getLightingState());
+    } catch (err) {
+      sendJson(res, 400, { error: 'bad_request', detail: String(err) });
+    }
+    return true;
+  }
+
+  if (pathname === '/api/lighting/fixture' && method === 'POST') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    try {
+      const body = await readJson(req);
+      const fx = FixtureSchema.parse(body);
+      const profile = findProfile(fx.profileId);
+      if (!profile) {
+        sendJson(res, 400, { error: 'unknown_profile' });
+        return true;
+      }
+      if (fx.address - 1 + profile.footprint > DMX_UNIVERSE_SIZE) {
+        sendJson(res, 400, { error: 'address_out_of_range' });
+        return true;
+      }
+      upsertFixture(fx);
+      logAction({
+        userId: actor.id || null,
+        username: actor.username,
+        action: 'lighting:fixture',
+        target: fx.id,
+      });
+      sendJson(res, 200, getLightingState());
+    } catch (err) {
+      sendJson(res, 400, { error: 'bad_request', detail: String(err) });
+    }
+    return true;
+  }
+
+  const fxDel = pathname.match(/^\/api\/lighting\/fixture\/([^/]+)$/);
+  if (fxDel && method === 'DELETE') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    removeFixture(fxDel[1]!);
+    logAction({
+      userId: actor.id || null,
+      username: actor.username,
+      action: 'lighting:fixture:remove',
+      target: fxDel[1],
+    });
+    sendJson(res, 200, getLightingState());
     return true;
   }
 
@@ -412,6 +499,10 @@ function emitPtzState(): void {
   });
 }
 
+function emitLightingState(): void {
+  io?.emit(EVENTS.LIGHTING_STATE, getLightingState());
+}
+
 function attachSocketHandlers(socket: Socket): void {
   socket.emit(EVENTS.INVENTORY_STATE, { devices: getDevices() });
   socket.emit(EVENTS.TRICASTER_STATE, {
@@ -422,6 +513,7 @@ function attachSocketHandlers(socket: Socket): void {
     cameras: getPtzCameras(),
     statuses: getAllPtzStatuses(),
   });
+  socket.emit(EVENTS.LIGHTING_STATE, getLightingState());
   if (socketCan(socket, 'audit:read')) {
     socket.emit('audit:state', { entries: listRecent(100) });
   }
@@ -577,6 +669,43 @@ function attachSocketHandlers(socket: Socket): void {
       ack?.({ ok: false, error: String(err) });
     }
   });
+
+  socket.on(EVENTS.LIGHTING_SET, (payload, ack?: (r: unknown) => void) => {
+    if (!socketCan(socket, 'lighting:exec')) {
+      ack?.({ ok: false, error: 'forbidden' });
+      return;
+    }
+    const parsed = LightingSetSchema.safeParse(payload);
+    if (!parsed.success) {
+      ack?.({ ok: false, error: 'bad_payload' });
+      return;
+    }
+    // Live fader/colour move — frequent; applied immediately, not audited or
+    // rebroadcast (the engine streams the result to the node).
+    const ok = setFixtureState(parsed.data.fixtureId, parsed.data.patch);
+    ack?.(ok ? { ok: true } : { ok: false, error: 'unknown_fixture' });
+  });
+
+  socket.on(EVENTS.LIGHTING_BLACKOUT, (payload, ack?: (r: unknown) => void) => {
+    if (!socketCan(socket, 'lighting:exec')) {
+      ack?.({ ok: false, error: 'forbidden' });
+      return;
+    }
+    const parsed = LightingBlackoutSchema.safeParse(payload);
+    if (!parsed.success) {
+      ack?.({ ok: false, error: 'bad_payload' });
+      return;
+    }
+    setBlackout(parsed.data.on);
+    const user = socketUser(socket);
+    logAction({
+      userId: user.id || null,
+      username: user.username,
+      action: 'lighting:blackout',
+      payload: { on: parsed.data.on },
+    });
+    ack?.({ ok: true });
+  });
 }
 
 export function startServer(): Promise<void> {
@@ -584,8 +713,10 @@ export function startServer(): Promise<void> {
     loadDevices();
     loadTricasters();
     loadPtzCameras();
+    loadLighting();
     syncFromConfig();
     syncPtzFromConfig();
+    initLighting();
     startPolling();
     startPtzPolling();
 
@@ -630,6 +761,7 @@ export function startServer(): Promise<void> {
     onDevicesChange(() => emitInventory());
     onStatusChange(() => emitTricasterState());
     onPtzStatusChange(() => emitPtzState());
+    onLightingChange(() => emitLightingState());
     onAudit((entry) => {
       if (!io) return;
       for (const [, socket] of io.sockets.sockets) {

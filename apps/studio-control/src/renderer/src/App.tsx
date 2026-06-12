@@ -11,6 +11,7 @@ import type {
 import type { Device, DiscoveredDevice } from '@shared/device';
 import type { TricasterConfig } from '@shared/tricaster';
 import type { PtzCameraConfig } from '@shared/ptz';
+import type { LightingConfig } from '@shared/lighting';
 import type { UserRow } from '@/types/admin';
 import { AppShell } from '@/components/AppShell';
 import { LoginView } from '@/views/Login';
@@ -65,6 +66,11 @@ export function App() {
           case EVENTS.PTZ_STATUS:
             s.setPtzStatus(payload as PtzStatusEvent);
             break;
+          case EVENTS.LIGHTING_STATE: {
+            const p = payload as { config: LightingConfig; blackout: boolean };
+            s.setLighting(p.config, p.blackout);
+            break;
+          }
           case EVENTS.DISCOVERY_START:
             s.setDiscoveryRunning(true);
             break;
