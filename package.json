@@ -28,6 +28,9 @@
     "switcher:dev": "npm run dev -w @jm/switcher",
     "switcher:build": "npm run build -w @jm/switcher",
     "switcher:dist": "npm run dist -w @jm/switcher",
+    "editor:dev": "npm run dev -w @jm/editor",
+    "editor:build": "npm run build -w @jm/editor",
+    "editor:dist": "npm run dist -w @jm/editor",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }

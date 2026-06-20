@@ -328,5 +328,21 @@
         ]
       }
     ]
+  },
+  {
+    "app": "editor",
+    "name": "JM Editor",
+    "entries": [
+      {
+        "version": "0.1.0",
+        "date": "2026-06-15",
+        "notes": [
+          "Erste Version: Schnittprogramm auf FFmpeg-Basis — Clips importieren, trimmen, schneiden, aneinanderreihen.",
+          "Mehrspur: Video, Audio und Titel/Bauchbinden-Overlay; Lautstärke pro Clip; Kreuzblende zwischen Clips.",
+          "Flüssige Vorschau auch für ProRes/MXF/DNxHD über automatisch erzeugte Proxys; Export aus dem Original.",
+          "Export in H.264/H.265/ProRes/DNxHR mit Fortschritt und Abbrechen; Projekte als portable .jmedit-Datei."
+        ]
+      }
+    ]
   }
 ]

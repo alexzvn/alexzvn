@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-12T14:30:00.000Z",
+  "updatedAt": "2026-06-15T09:30:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -308,6 +308,27 @@
         }
       },
       "app": "transcribe"
+    },
+    {
+      "id": "jm-editor",
+      "name": "JM Editor",
+      "tagline": "Schnittprogramm · Trim/Cut/Export",
+      "description": "Leichtes Schnittprogramm auf FFmpeg-Basis: Clips importieren, trimmen, schneiden und aneinanderreihen, Kreuzblenden, Bauchbinden/Titel und Lautstärke pro Clip — Export in gängige Codecs (H.264/H.265/ProRes/DNxHR). Flüssige Vorschau auch für ProRes/MXF/DNxHD über automatische Proxys.",
+      "category": "Grafik",
+      "appId": "gmbh.jakobs.editor",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Editor-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Editor.app"
+        },
+        "win": {
+          "artifact": "JM Editor-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Editor\\JM Editor.exe"
+        }
+      },
+      "app": "editor"
     }
   ]
 }
