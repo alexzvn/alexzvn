@@ -92,7 +92,7 @@ export function PresenterView() {
         {/* current */}
         <div className="min-h-0 flex flex-col">
           <Label>Aktuelle Folie</Label>
-          <div className="flex-1 min-h-0 grid place-items-center bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
+          <div className="flex-1 min-h-0 flex items-center justify-center bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
             {current && <SlideCanvas slide={current} maxWidth={1280} />}
           </div>
           <div className="mt-3 flex items-center justify-center gap-3">
@@ -126,7 +126,7 @@ export function PresenterView() {
         <div className="min-h-0 flex flex-col gap-4">
           <div className="flex flex-col" style={{ flex: '0 0 38%' }}>
             <Label>Nächste Folie</Label>
-            <div className="flex-1 min-h-0 grid place-items-center bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
+            <div className="flex-1 min-h-0 flex items-center justify-center bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
               {next ? (
                 <SlideCanvas slide={next} maxWidth={640} />
               ) : (
@@ -166,7 +166,7 @@ export function PresenterView() {
                   i === state.index ? 'ring-[var(--primary)]' : 'ring-white/10 hover:ring-white/40',
                 )}
               >
-                <div className="aspect-video bg-black grid place-items-center">
+                <div className="aspect-video bg-black flex items-center justify-center">
                   <SlideCanvas slide={s} maxWidth={360} />
                 </div>
                 <div className="px-2 py-1 text-left text-[11px] bg-white/5 flex items-center gap-1.5">

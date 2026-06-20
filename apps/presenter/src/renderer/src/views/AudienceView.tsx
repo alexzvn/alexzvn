@@ -16,7 +16,7 @@ export function AudienceView() {
   }
 
   return (
-    <div className="h-full w-full bg-black grid place-items-center overflow-hidden">
+    <div className="h-full w-full bg-black flex items-center justify-center overflow-hidden">
       {current ? (
         <SlideCanvas slide={current} maxWidth={1920} />
       ) : (
