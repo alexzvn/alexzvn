@@ -8,7 +8,11 @@ import { ToolCard } from '@/components/ToolCard';
 import { SettingsModal } from '@/components/SettingsModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { PatchNotesModal } from '@/components/PatchNotesModal';
+import { displayName } from '@/lib/monogram';
 import { useTools } from '@/store/tools';
+
+/** Suche greift erst ab dieser Länge (Issue #27). */
+const MIN_QUERY = 3;
 
 const CATEGORY_ORDER: ToolCategory[] = ['Ingest', 'Grafik', 'Studio', 'Utilities'];
 
@@ -22,6 +26,7 @@ export function App() {
 
   const [filter, setFilter] = useState<CategoryFilter>('Alle');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Alle');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     void load();
@@ -44,23 +49,33 @@ export function App() {
     [tools, filter],
   );
 
+  // Namenssuche (ab MIN_QUERY Zeichen, Issue #27). Matcht Anzeigename, vollen
+  // Namen und Tagline, damit z.B. "JM" wie "Player" beides findet.
+  const searched = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < MIN_QUERY) return byCategory;
+    return byCategory.filter((t) =>
+      `${displayName(t.name)} ${t.name} ${t.tagline}`.toLowerCase().includes(q),
+    );
+  }, [byCategory, query]);
+
   const statusCounts = useMemo<Record<StatusFilter, number>>(() => {
     const counts: Record<StatusFilter, number> = {
-      Alle: byCategory.length,
+      Alle: searched.length,
       installed: 0,
       'update-available': 0,
       'not-installed': 0,
     };
-    for (const t of byCategory) counts[states[t.id]?.status ?? 'not-installed'] += 1;
+    for (const t of searched) counts[states[t.id]?.status ?? 'not-installed'] += 1;
     return counts;
-  }, [byCategory, states]);
+  }, [searched, states]);
 
   const visible = useMemo(
     () =>
       statusFilter === 'Alle'
-        ? byCategory
-        : byCategory.filter((t) => (states[t.id]?.status ?? 'not-installed') === statusFilter),
-    [byCategory, statusFilter, states],
+        ? searched
+        : searched.filter((t) => (states[t.id]?.status ?? 'not-installed') === statusFilter),
+    [searched, statusFilter, states],
   );
 
   const installedCount = Object.values(states).filter((s) => s.status === 'installed').length;
@@ -83,6 +98,15 @@ export function App() {
               </p>
             </div>
             <div className="flex flex-col items-end gap-2">
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Tool suchen…"
+                aria-label="Tool suchen"
+                className="h-9 w-56 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)]
+                           px-3 text-sm outline-none focus:border-[var(--primary)]"
+              />
               <CategoryChips categories={categories} active={filter} onChange={setFilter} />
               <StatusChips active={statusFilter} counts={statusCounts} onChange={setStatusFilter} />
             </div>
