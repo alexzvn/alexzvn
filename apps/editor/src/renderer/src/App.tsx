@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import '@fontsource-variable/manrope';
 import { Topbar } from './components/Topbar';
 import { MediaBin } from './components/MediaBin';
+import { SourceMonitor } from './components/SourceMonitor';
 import { PreviewMonitor } from './components/PreviewMonitor';
 import { Inspector } from './components/Inspector';
 import { Timeline } from './components/Timeline';
@@ -65,6 +66,18 @@ export function App() {
       } else if (e.key.toLowerCase() === 's') {
         e.preventDefault();
         st.splitAtPlayhead();
+      } else if (st.sourceAssetId && e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        st.setSourceIn(st.sourcePlayheadUs);
+      } else if (st.sourceAssetId && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        st.setSourceOut(st.sourcePlayheadUs);
+      } else if (st.sourceAssetId && e.key === ',') {
+        e.preventDefault();
+        st.insertFromSource('insert');
+      } else if (st.sourceAssetId && e.key === '.') {
+        e.preventDefault();
+        st.insertFromSource('overwrite');
       }
     };
     window.addEventListener('keydown', onKey);
@@ -80,8 +93,13 @@ export function App() {
           <div className="w-[260px] shrink-0">
             <MediaBin />
           </div>
-          <div className="flex-1 min-w-0">
-            <PreviewMonitor />
+          <div className="flex-1 min-w-0 flex">
+            <div className="flex-1 min-w-0 border-r border-[var(--border)]/50">
+              <SourceMonitor />
+            </div>
+            <div className="flex-1 min-w-0">
+              <PreviewMonitor />
+            </div>
           </div>
           <div className="w-[300px] shrink-0">
             <Inspector />

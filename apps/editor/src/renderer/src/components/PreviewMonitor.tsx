@@ -105,6 +105,9 @@ export function PreviewMonitor() {
 
   return (
     <div className="h-full flex flex-col min-h-0">
+      <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] font-bold text-[var(--muted-foreground)] border-b border-[var(--border)]/40">
+        Programm
+      </div>
       <div className="flex-1 min-h-0 flex items-center justify-center bg-black/50 p-3">
         <div className="relative w-full h-full max-w-full" style={{ aspectRatio: `${present.export.width} / ${present.export.height}` }}>
           <div className="absolute inset-0 m-auto h-full flex items-center justify-center">

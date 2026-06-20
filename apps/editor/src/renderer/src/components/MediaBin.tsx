@@ -8,6 +8,7 @@ import { formatShort } from '@/lib/format';
 export function MediaBin() {
   const assets = useProject((s) => s.present.assets);
   const addToTimeline = useProject((s) => s.addAssetToTimeline);
+  const loadSource = useProject((s) => s.loadSource);
 
   return (
     <div className="h-full flex flex-col bg-[var(--card)]/30 border-r border-[var(--border)]/60">
@@ -26,12 +27,17 @@ export function MediaBin() {
       <div className="flex-1 overflow-auto p-2 space-y-1.5">
         {assets.length === 0 && (
           <p className="text-xs text-[var(--muted-foreground)] px-1 py-4 leading-relaxed">
-            Noch keine Medien. Importiere Video-, Audio- oder Bilddateien und füge sie per Doppelklick
-            zur Timeline hinzu.
+            Noch keine Medien. Importiere Video-, Audio- oder Bilddateien. Doppelklick öffnet ein
+            Medium in der Quelle, „+" hängt es ans Timeline-Ende.
           </p>
         )}
         {assets.map((asset) => (
-          <AssetRow key={asset.id} asset={asset} onAdd={() => addToTimeline(asset.id)} />
+          <AssetRow
+            key={asset.id}
+            asset={asset}
+            onOpen={() => loadSource(asset.id)}
+            onAdd={() => addToTimeline(asset.id)}
+          />
         ))}
       </div>
     </div>
@@ -53,12 +59,12 @@ function ImportButton({ label, onClick }: { label: string; onClick: () => void }
   );
 }
 
-function AssetRow({ asset, onAdd }: { asset: MediaAsset; onAdd: () => void }) {
+function AssetRow({ asset, onOpen, onAdd }: { asset: MediaAsset; onOpen: () => void; onAdd: () => void }) {
   const proxy = useProject((s) => s.proxies[asset.id]);
   return (
     <div
-      onDoubleClick={onAdd}
-      title="Doppelklick: zur Timeline hinzufügen"
+      onDoubleClick={onOpen}
+      title="Doppelklick: in der Quelle öffnen"
       className="group flex items-center gap-2 p-1.5 rounded-[var(--radius)] border border-[var(--border)]/40
                  bg-[var(--card)]/40 hover:bg-[var(--highlight)] cursor-pointer select-none"
     >

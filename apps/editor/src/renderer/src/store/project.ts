@@ -46,6 +46,15 @@ interface State {
   playing: boolean;
   pxPerSec: number;
 
+  // ── Quelle-Monitor (Source) ───────────────────────────────────────────────
+  /** Im Quelle-Monitor geladenes Asset (oder null). */
+  sourceAssetId: string | null;
+  /** Quell-In/Out (µs, innerhalb des Assets) für Insert/Overwrite. */
+  sourceInUs: number;
+  sourceOutUs: number;
+  /** Abspielposition im Quelle-Monitor (µs). */
+  sourcePlayheadUs: number;
+
   proxies: Record<string, ProxyStatus>;
   exportStatus: ExportStatus;
 
@@ -69,6 +78,14 @@ interface State {
   setPlayhead: (us: number) => void;
   setPlaying: (playing: boolean) => void;
   setZoom: (pxPerSec: number) => void;
+
+  // ── Quelle-Monitor ────────────────────────────────────────────────────────
+  loadSource: (assetId: string) => void;
+  setSourcePlayhead: (us: number) => void;
+  setSourceIn: (us: number) => void;
+  setSourceOut: (us: number) => void;
+  /** Quelle (mit In/Out) am Programm-Playhead in die Timeline setzen. */
+  insertFromSource: (mode: 'insert' | 'overwrite') => void;
 
   // ── Bearbeiten ────────────────────────────────────────────────────────────
   addAssets: (assets: MediaAsset[]) => void;
@@ -100,6 +117,74 @@ export function locateClip(project: Project, clipId: string | null): { track: Tr
   return null;
 }
 
+const clampNum = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(v, hi));
+
+/**
+ * Ripple-Insert über ALLE Spuren: am Zeitpunkt `atUs` einen Spalt der Länge
+ * `lenUs` aufmachen. Clips, die den Punkt überspannen, werden geteilt; alles ab
+ * `atUs` rückt um `lenUs` nach hinten — so bleibt die Synchronität aller Spuren.
+ */
+function rippleInsertAll(project: Project, atUs: number, lenUs: number): void {
+  for (const track of project.tracks) {
+    for (const clip of [...track.clips]) {
+      if (clip.startUs < atUs && clipEndUs(clip) > atUs) {
+        const cutSource = clip.inUs + (atUs - clip.startUs);
+        track.clips.push({
+          ...structuredClone(clip),
+          id: newId('clip'),
+          inUs: cutSource,
+          startUs: atUs,
+          transitionIn: undefined,
+        });
+        clip.outUs = cutSource;
+      }
+    }
+    for (const clip of track.clips) {
+      if (clip.startUs >= atUs) clip.startUs += lenUs;
+    }
+  }
+}
+
+/**
+ * Überschreiben: räumt auf EINER Spur das Intervall [fromUs, toUs) frei — voll
+ * überdeckte Clips entfallen, randüberlappende werden getrimmt, ein das Intervall
+ * komplett umschließender Clip wird in zwei geteilt.
+ */
+function overwriteRegion(track: Track, fromUs: number, toUs: number): void {
+  const kept: Clip[] = [];
+  for (const clip of track.clips) {
+    const s = clip.startUs;
+    const e = clipEndUs(clip);
+    if (e <= fromUs || s >= toUs) {
+      kept.push(clip);
+      continue;
+    }
+    const coversLeft = s < fromUs;
+    const coversRight = e > toUs;
+    if (coversLeft && coversRight) {
+      const right: Clip = {
+        ...structuredClone(clip),
+        id: newId('clip'),
+        inUs: clip.inUs + (toUs - s),
+        startUs: toUs,
+        transitionIn: undefined,
+      };
+      clip.outUs = clip.inUs + (fromUs - s);
+      kept.push(clip, right);
+    } else if (coversLeft) {
+      clip.outUs = clip.inUs + (fromUs - s);
+      kept.push(clip);
+    } else if (coversRight) {
+      clip.inUs += toUs - s;
+      clip.startUs = toUs;
+      clip.transitionIn = undefined;
+      kept.push(clip);
+    }
+    // sonst (voll überdeckt): verwerfen
+  }
+  track.clips = kept;
+}
+
 export const useProject = create<State>((set, get) => ({
   present: makeEmptyProject(),
   past: [],
@@ -110,6 +195,10 @@ export const useProject = create<State>((set, get) => ({
   playheadUs: 0,
   playing: false,
   pxPerSec: 90,
+  sourceAssetId: null,
+  sourceInUs: 0,
+  sourceOutUs: 0,
+  sourcePlayheadUs: 0,
   proxies: {},
   exportStatus: { running: false, percent: 0 },
   _dragBefore: null,
@@ -124,6 +213,10 @@ export const useProject = create<State>((set, get) => ({
       selectedClipId: null,
       playheadUs: 0,
       playing: false,
+      sourceAssetId: null,
+      sourceInUs: 0,
+      sourceOutUs: 0,
+      sourcePlayheadUs: 0,
     }),
 
   loadProject: (path, project) =>
@@ -136,6 +229,10 @@ export const useProject = create<State>((set, get) => ({
       selectedClipId: null,
       playheadUs: 0,
       playing: false,
+      sourceAssetId: null,
+      sourceInUs: 0,
+      sourceOutUs: 0,
+      sourcePlayheadUs: 0,
     }),
 
   commit: (_label, mutate) =>
@@ -187,6 +284,71 @@ export const useProject = create<State>((set, get) => ({
     set((state) => ({ playheadUs: Math.max(0, Math.min(us, Math.max(0, projectDurationUs(state.present)))) })),
   setPlaying: (playing) => set({ playing }),
   setZoom: (pxPerSec) => set({ pxPerSec: Math.max(8, Math.min(600, pxPerSec)) }),
+
+  // ── Quelle-Monitor ────────────────────────────────────────────────────────
+  loadSource: (assetId) => {
+    const asset = get().present.assets.find((a) => a.id === assetId);
+    if (!asset) return;
+    set({
+      sourceAssetId: assetId,
+      sourceInUs: 0,
+      sourceOutUs: asset.durationUs,
+      sourcePlayheadUs: 0,
+    });
+  },
+
+  setSourcePlayhead: (us) => {
+    const asset = get().present.assets.find((a) => a.id === get().sourceAssetId);
+    const max = asset ? asset.durationUs : 0;
+    set({ sourcePlayheadUs: clampNum(us, 0, max) });
+  },
+
+  setSourceIn: (us) =>
+    set((state) => {
+      const asset = state.present.assets.find((a) => a.id === state.sourceAssetId);
+      const max = asset ? asset.durationUs : 0;
+      const inUs = clampNum(us, 0, max);
+      return { sourceInUs: inUs, sourceOutUs: Math.max(state.sourceOutUs, inUs) };
+    }),
+
+  setSourceOut: (us) =>
+    set((state) => {
+      const asset = state.present.assets.find((a) => a.id === state.sourceAssetId);
+      const max = asset ? asset.durationUs : 0;
+      const outUs = clampNum(us, 0, max);
+      return { sourceOutUs: outUs, sourceInUs: Math.min(state.sourceInUs, outUs) };
+    }),
+
+  insertFromSource: (mode) => {
+    const { sourceAssetId, sourceInUs, sourceOutUs, playheadUs, present } = get();
+    if (!sourceAssetId) return;
+    const asset = present.assets.find((a) => a.id === sourceAssetId);
+    if (!asset) return;
+    const inUs = clampNum(sourceInUs, 0, asset.durationUs);
+    const outUs = clampNum(sourceOutUs, inUs, asset.durationUs);
+    const lenUs = outUs - inUs;
+    if (lenUs <= 0) return;
+    const wantVideo = asset.hasVideo;
+    get().commit(mode === 'insert' ? 'Quelle einfügen' : 'Quelle überschreiben', (draft) => {
+      const track = draft.tracks.find((t) => t.kind === (wantVideo ? 'video' : 'audio'));
+      if (!track) return;
+      if (mode === 'insert') rippleInsertAll(draft, playheadUs, lenUs);
+      else overwriteRegion(track, playheadUs, playheadUs + lenUs);
+      track.clips.push({
+        id: newId('clip'),
+        kind: 'media',
+        assetId: sourceAssetId,
+        inUs,
+        outUs,
+        startUs: playheadUs,
+        gain: 1,
+        transform: { scaleMode: 'fit' },
+        enabled: true,
+      });
+    });
+    // Playhead ans Ende des eingefügten Clips ziehen (Verkettung wie in NLEs).
+    set({ playheadUs: playheadUs + lenUs });
+  },
 
   addAssets: (assets) =>
     set((state) => {
