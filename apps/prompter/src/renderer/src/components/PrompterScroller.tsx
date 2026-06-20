@@ -73,7 +73,11 @@ export function PrompterScroller({ state, onEnd, onMarkers }: Props): React.JSX.
       const s = stateRef.current;
       const maxEm = Math.max(0, contentEmRef.current);
       let pos = positionEm(s.transport);
-      if (pos >= maxEm) {
+      // Nur clampen/beenden, wenn die Inhaltshöhe schon gemessen ist. Sonst (maxEm
+      // === 0 vor der ersten Messung oder bei einem transienten Resize-Messwert)
+      // würde `pos >= 0` sofort das Ende auslösen → Auto-Stopp „an zufälliger
+      // Stelle" (Issue #29).
+      if (maxEm > 0 && pos >= maxEm) {
         if (s.transport.playing && !endedRef.current) {
           endedRef.current = true;
           onEndRef.current?.();
