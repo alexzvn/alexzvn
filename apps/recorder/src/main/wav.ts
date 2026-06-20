@@ -1,4 +1,5 @@
 import { closeSync, openSync, writeSync } from 'node:fs';
+import path from 'node:path';
 
 /**
  * Schlanker WAV-Writer (32-bit float, IEEE, mehrkanalig, interleaved). Verlustfrei
@@ -66,5 +67,46 @@ export class WavWriter {
     b.write('data', 36, 'ascii');
     b.writeUInt32LE(dataBytes, 40);
     return b;
+  }
+}
+
+/**
+ * Schreibt zusätzlich jede Spur als eigene Mono-WAV in einen Ordner (Issue #20).
+ * Demultiplext die planaren Frames ([ch0:frames][ch1:frames]…) auf je einen
+ * WavWriter pro Kanal — parallel zur kombinierten Mehrkanal-Datei.
+ */
+export class MultiWavWriter {
+  private readonly writers: WavWriter[];
+
+  constructor(dir: string, baseName: string, channels: number, sampleRate: number) {
+    this.writers = Array.from(
+      { length: channels },
+      (_, c) =>
+        new WavWriter(
+          path.join(dir, `${baseName}-Spur${String(c + 1).padStart(2, '0')}.wav`),
+          1,
+          sampleRate,
+        ),
+    );
+  }
+
+  writeBlock(planar: Float32Array, channels: number, frames: number): void {
+    const n = Math.min(channels, this.writers.length);
+    for (let c = 0; c < n; c++) {
+      // Mono-Slice des Kanals als 1-Kanal-Block schreiben.
+      const mono = planar.subarray(c * frames, c * frames + frames);
+      this.writers[c].writeBlock(mono, 1, frames);
+    }
+  }
+
+  /** Alle Spuren best-effort finalisieren (eine kaputte Spur bricht nicht alle ab). */
+  finalize(): void {
+    for (const w of this.writers) {
+      try {
+        w.finalize();
+      } catch {
+        // ignore
+      }
+    }
   }
 }

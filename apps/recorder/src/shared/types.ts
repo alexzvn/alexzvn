@@ -27,6 +27,8 @@ export interface RecordInput {
   dir: string;
   /** Basisname ohne Endung; Standard = Zeitstempel. */
   fileName?: string;
+  /** Zusätzlich jede Spur als eigene Mono-WAV in einen Unterordner (Issue #20). */
+  separateTracks?: boolean;
 }
 
 export interface OpResult {

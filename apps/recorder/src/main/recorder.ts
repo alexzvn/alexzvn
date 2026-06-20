@@ -10,7 +10,7 @@ import type {
   RecordResult,
   RecorderState,
 } from '@shared/types';
-import { WavWriter } from './wav';
+import { MultiWavWriter, WavWriter } from './wav';
 
 // Lazy-Load des nativen Addons: das Fenster startet auch ohne gebautes @jm/audio
 // (z. B. im Codespace). Erst beim ersten Geräte-/Aufnahme-Zugriff geladen.
@@ -41,6 +41,7 @@ const state: RecorderState = {
   recordedSec: 0,
 };
 let writer: WavWriter | null = null;
+let multiWriter: MultiWavWriter | null = null;
 let peaks: number[] = [];
 let lastEmit = 0;
 
@@ -84,6 +85,7 @@ function onFrames(planar: Float32Array, channels: number, frames: number): void 
 
   if (state.status === 'recording' && writer) {
     writer.writeBlock(planar, channels, frames);
+    multiWriter?.writeBlock(planar, channels, frames);
     state.recordedSec += frames / (state.sampleRate || 1);
   }
 
@@ -128,6 +130,10 @@ export function disarm(): void {
     }
     writer = null;
   }
+  if (multiWriter) {
+    multiWriter.finalize();
+    multiWriter = null;
+  }
   try {
     if (audioMod && inited) audioMod.stopInput();
   } catch {
@@ -155,6 +161,13 @@ export function startRecording(input: RecordInput): OpResult {
     const base = input.fileName?.trim() ? sanitize(input.fileName) : defaultName();
     const filePath = path.join(input.dir, `${base}.wav`);
     writer = new WavWriter(filePath, state.channels, state.sampleRate);
+    // Optional zusätzlich jede Spur einzeln in einen Unterordner (Issue #20). Bei
+    // Mono gibt es nichts zu trennen — die Kombi-Datei ist bereits die eine Spur.
+    if (input.separateTracks && state.channels > 1) {
+      const tracksDir = path.join(input.dir, `${base}-Spuren`);
+      mkdirSync(tracksDir, { recursive: true });
+      multiWriter = new MultiWavWriter(tracksDir, base, state.channels, state.sampleRate);
+    }
     state.filePath = filePath;
     state.recordedSec = 0;
     state.status = 'recording';
@@ -171,6 +184,10 @@ export function stopRecording(): RecordResult {
   try {
     const res = writer.finalize();
     writer = null;
+    if (multiWriter) {
+      multiWriter.finalize();
+      multiWriter = null;
+    }
     state.status = 'armed';
     emitState();
     return {
@@ -183,6 +200,10 @@ export function stopRecording(): RecordResult {
     };
   } catch (e) {
     writer = null;
+    if (multiWriter) {
+      multiWriter.finalize();
+      multiWriter = null;
+    }
     state.status = 'armed';
     emitState();
     return { ok: false, error: (e as Error).message };

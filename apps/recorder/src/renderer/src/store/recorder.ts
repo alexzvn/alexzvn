@@ -17,6 +17,7 @@ interface RecStore {
   sampleRate: number;
   dir: string | null;
   fileName: string;
+  separateTracks: boolean;
   state: RecorderState;
   peaks: number[];
   notice: string | null;
@@ -28,6 +29,7 @@ interface RecStore {
   setChannels: (n: number) => void;
   setSampleRate: (n: number) => void;
   setFileName: (s: string) => void;
+  setSeparateTracks: (v: boolean) => void;
   pickDir: () => Promise<void>;
   arm: () => Promise<void>;
   disarm: () => Promise<void>;
@@ -45,6 +47,7 @@ export const useRec = create<RecStore>((set, get) => ({
   sampleRate: 48000,
   dir: null,
   fileName: '',
+  separateTracks: false,
   state: IDLE,
   peaks: [],
   notice: null,
@@ -91,6 +94,7 @@ export const useRec = create<RecStore>((set, get) => ({
   setChannels: (n) => set({ channels: Math.max(1, Math.floor(n) || 1) }),
   setSampleRate: (n) => set({ sampleRate: Math.max(8000, Math.floor(n) || 48000) }),
   setFileName: (fileName) => set({ fileName }),
+  setSeparateTracks: (separateTracks) => set({ separateTracks }),
 
   pickDir: async () => {
     const dir = await window.jmrec.dialog.pickDir();
@@ -119,7 +123,11 @@ export const useRec = create<RecStore>((set, get) => ({
       dir = get().dir;
       if (!dir) return;
     }
-    const res = await window.jmrec.startRecording({ dir, fileName: get().fileName });
+    const res = await window.jmrec.startRecording({
+      dir,
+      fileName: get().fileName,
+      separateTracks: get().separateTracks,
+    });
     if (!res.ok) set({ notice: res.error ?? 'Aufnahme konnte nicht gestartet werden.' });
   },
 

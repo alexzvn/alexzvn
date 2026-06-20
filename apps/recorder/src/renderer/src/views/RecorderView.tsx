@@ -17,6 +17,8 @@ export function RecorderView() {
   const setChannels = useRec((s) => s.setChannels);
   const setSampleRate = useRec((s) => s.setSampleRate);
   const setFileName = useRec((s) => s.setFileName);
+  const separateTracks = useRec((s) => s.separateTracks);
+  const setSeparateTracks = useRec((s) => s.setSeparateTracks);
   const pickDir = useRec((s) => s.pickDir);
   const refreshDevices = useRec((s) => s.refreshDevices);
   const arm = useRec((s) => s.arm);
@@ -172,6 +174,22 @@ export function RecorderView() {
             />
           </Field>
         </div>
+
+        <label className="mt-4 flex w-fit items-center gap-2.5 text-sm cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={separateTracks}
+            disabled={recording}
+            onChange={(e) => setSeparateTracks(e.target.checked)}
+            className="size-4 accent-[var(--primary)] disabled:opacity-50"
+          />
+          <span className={cn('font-semibold', recording && 'opacity-50')}>
+            Spuren zusätzlich einzeln speichern
+          </span>
+          <span className="text-[11px] text-[var(--muted-foreground)]">
+            je Kanal eine Mono-WAV im Unterordner „…-Spuren"
+          </span>
+        </label>
 
         {state.filePath && (
           <button
