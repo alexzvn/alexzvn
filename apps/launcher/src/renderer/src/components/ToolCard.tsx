@@ -1,6 +1,6 @@
 import { Badge, Button, Card, cn } from '@jm/ui';
 import type { ToolManifest, ToolState } from '@shared/types';
-import { monogram } from '@/lib/monogram';
+import { displayName, monogram } from '@/lib/monogram';
 import { useChangelog } from '@/store/changelog';
 import { useTools } from '@/store/tools';
 
@@ -34,7 +34,9 @@ export function ToolCard({ tool, state }: Props) {
           {monogram(tool.name)}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-extrabold leading-tight truncate">{tool.name}</h3>
+          <h3 className="text-base font-extrabold leading-tight truncate" title={tool.name}>
+            {displayName(tool.name)}
+          </h3>
           <p className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted-foreground)] mt-0.5">
             {tool.tagline}
           </p>
