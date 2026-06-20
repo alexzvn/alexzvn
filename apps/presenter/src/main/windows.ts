@@ -48,11 +48,22 @@ export function createEditorWindow(): BrowserWindow {
     editorWindow.focus();
     return editorWindow;
   }
+  // Fit the window to the available work area so it never opens wider or taller
+  // than the screen — on smaller/scaled displays a fixed 1320×880 window pushed
+  // the right-hand inspector off-screen ("halb verdeckt"). Centred in the work
+  // area, with a min size that still fits the screen.
+  const { x: waX, y: waY, width: waW, height: waH } = screen.getPrimaryDisplay().workArea;
+  const width = Math.min(1320, waW);
+  const height = Math.min(880, waH);
+  const minWidth = Math.min(900, waW);
+  const minHeight = Math.min(640, waH);
   const win = new BrowserWindow({
-    width: 1320,
-    height: 880,
-    minWidth: 1040,
-    minHeight: 680,
+    x: waX + Math.round((waW - width) / 2),
+    y: waY + Math.round((waH - height) / 2),
+    width,
+    height,
+    minWidth,
+    minHeight,
     backgroundColor: '#121212',
     show: false,
     title: 'JM Presenter',
