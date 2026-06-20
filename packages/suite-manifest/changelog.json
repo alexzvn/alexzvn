@@ -446,6 +446,15 @@
     "name": "JM Editor",
     "entries": [
       {
+        "version": "0.3.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Mehrere Videospuren: per „+ Videospur" zusätzliche Ebenen anlegen; obere Spuren liegen über unteren (B-Roll/Layering).",
+          "Ziel-Videospur per Klick auf den Spurkopf wählen — Einfügen/Überschreiben/Doppelklick landen dort; nicht mehr benötigte Spuren wieder entfernen.",
+          "Export und Vorschau komponieren alle Videospuren übereinander (die oberste sichtbare Spur gewinnt)."
+        ]
+      },
+      {
         "version": "0.2.1",
         "date": "2026-06-20",
         "notes": [

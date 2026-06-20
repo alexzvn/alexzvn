@@ -38,6 +38,8 @@ export function Timeline() {
   const splitAtPlayhead = useProject((s) => s.splitAtPlayhead);
   const deleteSelected = useProject((s) => s.deleteSelected);
   const addTitle = useProject((s) => s.addTitle);
+  const addVideoTrack = useProject((s) => s.addVideoTrack);
+  const activeVideoTrackId = useProject((s) => s.activeVideoTrackId);
   const beginDrag = useProject((s) => s.beginDrag);
   const dragUpdate = useProject((s) => s.dragUpdate);
   const endDrag = useProject((s) => s.endDrag);
@@ -48,6 +50,13 @@ export function Timeline() {
   const totalUs = projectDurationUs(present);
   const contentUs = Math.max(totalUs, secToUs(20));
   const widthPx = usToSec(contentUs) * pxPerSec + 80;
+
+  const videoTracks = tracks.filter((t) => t.kind === 'video');
+  const effectiveActiveId =
+    activeVideoTrackId && videoTracks.some((t) => t.id === activeVideoTrackId)
+      ? activeVideoTrackId
+      : videoTracks[0]?.id;
+  const videoCount = videoTracks.length;
 
   const usToPx = (us: number): number => usToSec(us) * pxPerSec;
   const pxToUs = (px: number): number => secToUs(px / pxPerSec);
@@ -130,6 +139,7 @@ export function Timeline() {
         <TlButton label="✂ Teilen" onClick={splitAtPlayhead} />
         <TlButton label="🗑 Löschen" onClick={deleteSelected} disabled={!selectedClipId} />
         <TlButton label="T Titel" onClick={addTitle} />
+        <TlButton label="+ Videospur" onClick={addVideoTrack} />
         <div className="flex-1" />
         <span className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider">Zoom</span>
         <TlButton label="–" onClick={() => setZoom(pxPerSec / 1.3)} />
@@ -141,7 +151,12 @@ export function Timeline() {
         <div className="shrink-0 border-r border-[var(--border)]/50" style={{ width: HEADER_W }}>
           <div style={{ height: RULER_H }} className="border-b border-[var(--border)]/40" />
           {tracks.map((track) => (
-            <TrackHeader key={track.id} track={track} />
+            <TrackHeader
+              key={track.id}
+              track={track}
+              active={track.kind === 'video' && track.id === effectiveActiveId}
+              removable={track.kind === 'video' && videoCount > 1}
+            />
           ))}
         </div>
 
@@ -289,16 +304,45 @@ function Ruler({
   );
 }
 
-function TrackHeader({ track }: { track: Track }) {
+function TrackHeader({ track, active, removable }: { track: Track; active: boolean; removable: boolean }) {
   const commit = useProject((s) => s.commit);
+  const setActiveVideoTrack = useProject((s) => s.setActiveVideoTrack);
+  const removeTrack = useProject((s) => s.removeTrack);
+  const isVideo = track.kind === 'video';
   const toggle = (key: 'muted' | 'locked'): void =>
     commit(key === 'muted' ? 'Spur stummschalten' : 'Spur sperren', (draft) => {
       const t = draft.tracks.find((tt) => tt.id === track.id);
       if (t) t[key] = !t[key];
     });
   return (
-    <div className="flex flex-col justify-center gap-1 px-2 border-b border-[var(--border)]/30" style={{ height: TRACK_H }}>
-      <span className="text-[11px] font-bold truncate">{track.name}</span>
+    <div
+      onPointerDown={isVideo ? () => setActiveVideoTrack(track.id) : undefined}
+      title={isVideo ? 'Klick: als Ziel-Videospur wählen' : undefined}
+      className={cn(
+        'group flex flex-col justify-center gap-1 px-2 border-b border-[var(--border)]/30',
+        isVideo && 'cursor-pointer',
+        active && 'bg-[var(--primary)]/10 border-l-2 border-l-[var(--primary)]',
+      )}
+      style={{ height: TRACK_H }}
+    >
+      <div className="flex items-center gap-1">
+        <span className="text-[11px] font-bold truncate">{track.name}</span>
+        {active && <span className="text-[8px] uppercase tracking-wide text-[var(--primary)] font-bold">Ziel</span>}
+        {removable && (
+          <button
+            type="button"
+            title="Spur entfernen"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeTrack(track.id);
+            }}
+            className="ml-auto opacity-0 group-hover:opacity-100 w-4 h-4 rounded text-[10px] leading-none
+                       text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+          >
+            ✕
+          </button>
+        )}
+      </div>
       <div className="flex items-center gap-1">
         <MiniToggle active={track.muted} label="M" title="Stumm" onClick={() => toggle('muted')} />
         <MiniToggle active={track.locked} label="L" title="Sperren" onClick={() => toggle('locked')} />

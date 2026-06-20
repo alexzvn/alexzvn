@@ -1,23 +1,28 @@
 import { mediaUrl } from '@shared/media-url';
-import { clipEndUs, getVideoTrack, type Clip, type MediaAsset, type Project } from '@shared/project';
+import { clipEndUs, type Clip, type MediaAsset, type Project } from '@shared/project';
 
 /** Abspiel-URL: Proxy bevorzugen (browser-dekodierbar), sonst Original. */
 export function playbackUrl(asset: MediaAsset): string {
   return mediaUrl(asset.proxyPath ?? asset.path);
 }
 
-/** Aktiver Videoclip (+ Asset) unter dem Playhead, oder null (Lücke/leer). */
+/**
+ * Aktiver Videoclip (+ Asset) unter dem Playhead, oder null. Bei mehreren
+ * Videospuren gewinnt die oberste (im Array zuerst stehende) sichtbare Spur mit
+ * einem Clip an dieser Stelle — wie das Compositing im Export.
+ */
 export function activeVideoClip(
   project: Project,
   playheadUs: number,
 ): { clip: Clip; asset: MediaAsset } | null {
-  const track = getVideoTrack(project);
-  if (!track) return null;
-  const clip = track.clips.find((c) => playheadUs >= c.startUs && playheadUs < clipEndUs(c));
-  if (!clip || !clip.assetId) return null;
-  const asset = project.assets.find((a) => a.id === clip.assetId);
-  if (!asset) return null;
-  return { clip, asset };
+  for (const track of project.tracks) {
+    if (track.kind !== 'video' || track.muted) continue;
+    const clip = track.clips.find((c) => playheadUs >= c.startUs && playheadUs < clipEndUs(c));
+    if (!clip || !clip.assetId) continue;
+    const asset = project.assets.find((a) => a.id === clip.assetId);
+    if (asset) return { clip, asset };
+  }
+  return null;
 }
 
 /** Aktive Titel-Clips unter dem Playhead (Overlay-Spuren). */

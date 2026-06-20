@@ -4,7 +4,7 @@
 // Sequenz (W×H×fps, yuv420p) normalisiert → gemischte Codecs/Auflösungen sind
 // verkettbar. Lücken = schwarze color-Quelle. Übergänge = xfade. Titel = Overlay
 // vom Renderer gerenderter Vollbild-PNGs. Audio = atrim/adelay/volume → amix.
-import { clipDurationUs, getVideoTrack, usToSec, type Clip, type Project } from '@shared/project';
+import { clipDurationUs, usToSec, type Clip, type Project } from '@shared/project';
 import { getPreset, usesAudioBitrate, type VideoPreset } from '@shared/presets';
 
 export interface PlanInput {
@@ -55,9 +55,19 @@ export function buildPlan(input: PlanInput): ExportPlan {
   const preset = getPreset(project.export.presetId);
   if (!preset) throw new Error(`Unbekanntes Preset: ${project.export.presetId}`);
 
-  const videoTrack = getVideoTrack(project);
-  const videoClips = videoTrack ? [...videoTrack.clips].sort((a, b) => a.startUs - b.startUs) : [];
-  if (videoClips.length === 0) throw new Error('Keine Videoclips auf der Timeline.');
+  // Videospuren in z-Reihenfolge (Array-Reihenfolge = oben→unten). Basis = die
+  // unterste (im Array letzte) sichtbare Spur mit Clips; alle darüberliegenden
+  // Spuren werden wie Titel als Overlays draufkomponiert (oberste gewinnt).
+  const videoTracks = project.tracks.filter((t) => t.kind === 'video');
+  const clipBearing = videoTracks
+    .map((t, i) => ({ t, i }))
+    .filter((x) => !x.t.muted && x.t.clips.length > 0);
+  if (clipBearing.length === 0) throw new Error('Keine Videoclips auf der Timeline.');
+  const baseEntry = clipBearing[clipBearing.length - 1];
+  const baseTrack = baseEntry.t;
+  // Obere Spuren von unten nach oben (damit die oberste zuletzt = ganz oben liegt).
+  const upperEntries = clipBearing.filter((x) => x.i < baseEntry.i).sort((a, b) => b.i - a.i);
+  const videoClips = [...baseTrack.clips].sort((a, b) => a.startUs - b.startUs);
 
   // ── Inputs sammeln (Original-Dateien, KEINE Proxies) ──────────────────────
   const inputs: string[] = [];
@@ -127,9 +137,7 @@ export function buildPlan(input: PlanInput): ExportPlan {
     if (seg.clipId) renderedStart.set(seg.clipId, thisStart);
     accLabel = out;
   }
-  const videoRenderedEndUs = accUs;
-
-  // Original-Timeline → gerenderte Timeline (für Titel-Einblendung).
+  // Original-Timeline → gerenderte Timeline (für Titel-/Overlay-Einblendung).
   const sortedVideo = [...videoClips].sort((a, b) => a.startUs - b.startUs);
   const originalToRendered = (tUs: number): number => {
     let shift = 0;
@@ -140,8 +148,44 @@ export function buildPlan(input: PlanInput): ExportPlan {
     return Math.max(0, tUs - shift);
   };
 
-  // ── Titel-Overlays (Overlay-Spuren) ──────────────────────────────────────
+  // ── Obere Videospuren als Overlays (B-Roll / Layering; oberste gewinnt) ────
+  // Basis ggf. mit Schwarz verlängern, falls obere Spuren über ihr Ende hinausgehen.
+  let neededUs = accUs;
+  for (const { t } of upperEntries)
+    for (const clip of t.clips)
+      neededUs = Math.max(neededUs, originalToRendered(clip.startUs) + clipDurationUs(clip));
+  if (neededUs > accUs + 1000) {
+    filters.push(blackSegment('vtail', neededUs - accUs, project));
+    filters.push(`[${accLabel}][vtail]concat=n=2:v=1:a=0[vfull]`);
+    accLabel = 'vfull';
+    accUs = neededUs;
+  }
+  const videoRenderedEndUs = accUs;
+
   let videoOut = accLabel;
+  let upN = 0;
+  for (const { t } of upperEntries) {
+    for (const clip of [...t.clips].sort((a, b) => a.startUs - b.startUs)) {
+      const path = assetPath(clip.assetId);
+      if (!path) continue;
+      const idx = addMedia(clip.assetId!, path);
+      const durUs = clipDurationUs(clip);
+      const startUs = originalToRendered(clip.startUs);
+      const endUs = startUs + durUs;
+      const norm = `uv${upN}`;
+      filters.push(normalizeVideo(norm, `${idx}:v`, clip, project));
+      const shifted = `uvs${upN}`;
+      filters.push(`[${norm}]setpts=PTS-STARTPTS+${s(startUs)}/TB[${shifted}]`);
+      const out = `uvo${upN}`;
+      filters.push(
+        `[${videoOut}][${shifted}]overlay=0:0:eof_action=pass:enable='between(t,${usToSec(startUs).toFixed(3)},${usToSec(endUs).toFixed(3)})'[${out}]`,
+      );
+      videoOut = out;
+      upN++;
+    }
+  }
+
+  // ── Titel-Overlays (Overlay-Spuren) ──────────────────────────────────────
   let titleN = 0;
   for (const track of project.tracks) {
     if (track.kind !== 'overlay' || track.muted) continue;
@@ -187,10 +231,12 @@ export function buildPlan(input: PlanInput): ExportPlan {
     audioRenderedEndUs = Math.max(audioRenderedEndUs, startUs + clipDurationUs(clip));
   };
 
-  if (videoTrack && !videoTrack.muted) {
-    // Clip-Ton folgt der gerenderten (xfade-verkürzten) Zeitachse.
-    for (const clip of videoClips) addAudioFrom(clip, renderedStart.get(clip.id) ?? clip.startUs);
-  }
+  // Basisspur-Ton folgt der gerenderten (xfade-verkürzten) Zeitachse.
+  for (const clip of videoClips) addAudioFrom(clip, renderedStart.get(clip.id) ?? clip.startUs);
+  // Obere Videospuren: Ton an der gerenderten Position.
+  for (const { t } of upperEntries)
+    for (const clip of t.clips) addAudioFrom(clip, originalToRendered(clip.startUs));
+  // Reine Audiospuren.
   for (const track of project.tracks) {
     if (track.kind !== 'audio' || track.muted) continue;
     for (const clip of track.clips) addAudioFrom(clip, clip.startUs);

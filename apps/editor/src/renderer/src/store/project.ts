@@ -46,6 +46,9 @@ interface State {
   playing: boolean;
   pxPerSec: number;
 
+  /** Aktive Ziel-Videospur für Einfügen/Überschreiben/Anhängen. null = erste Videospur. */
+  activeVideoTrackId: string | null;
+
   // ── Quelle-Monitor (Source) ───────────────────────────────────────────────
   /** Im Quelle-Monitor geladenes Asset (oder null). */
   sourceAssetId: string | null;
@@ -87,6 +90,11 @@ interface State {
   /** Quelle (mit In/Out) am Programm-Playhead in die Timeline setzen. */
   insertFromSource: (mode: 'insert' | 'overwrite') => void;
 
+  // ── Spuren ────────────────────────────────────────────────────────────────
+  setActiveVideoTrack: (trackId: string) => void;
+  addVideoTrack: () => void;
+  removeTrack: (trackId: string) => void;
+
   // ── Bearbeiten ────────────────────────────────────────────────────────────
   addAssets: (assets: MediaAsset[]) => void;
   addAssetToTimeline: (assetId: string) => void;
@@ -118,6 +126,15 @@ export function locateClip(project: Project, clipId: string | null): { track: Tr
 }
 
 const clampNum = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(v, hi));
+
+/** Aktive Ziel-Videospur (oder erste Videospur als Fallback). */
+function resolveVideoTrack(project: Project, activeId: string | null): Track | undefined {
+  if (activeId) {
+    const t = project.tracks.find((tt) => tt.id === activeId && tt.kind === 'video');
+    if (t) return t;
+  }
+  return project.tracks.find((tt) => tt.kind === 'video');
+}
 
 /**
  * Ripple-Insert über ALLE Spuren: am Zeitpunkt `atUs` einen Spalt der Länge
@@ -195,6 +212,7 @@ export const useProject = create<State>((set, get) => ({
   playheadUs: 0,
   playing: false,
   pxPerSec: 90,
+  activeVideoTrackId: null,
   sourceAssetId: null,
   sourceInUs: 0,
   sourceOutUs: 0,
@@ -213,6 +231,7 @@ export const useProject = create<State>((set, get) => ({
       selectedClipId: null,
       playheadUs: 0,
       playing: false,
+      activeVideoTrackId: null,
       sourceAssetId: null,
       sourceInUs: 0,
       sourceOutUs: 0,
@@ -229,6 +248,7 @@ export const useProject = create<State>((set, get) => ({
       selectedClipId: null,
       playheadUs: 0,
       playing: false,
+      activeVideoTrackId: null,
       sourceAssetId: null,
       sourceInUs: 0,
       sourceOutUs: 0,
@@ -330,7 +350,9 @@ export const useProject = create<State>((set, get) => ({
     if (lenUs <= 0) return;
     const wantVideo = asset.hasVideo;
     get().commit(mode === 'insert' ? 'Quelle einfügen' : 'Quelle überschreiben', (draft) => {
-      const track = draft.tracks.find((t) => t.kind === (wantVideo ? 'video' : 'audio'));
+      const track = wantVideo
+        ? resolveVideoTrack(draft, get().activeVideoTrackId)
+        : draft.tracks.find((t) => t.kind === 'audio');
       if (!track) return;
       if (mode === 'insert') rippleInsertAll(draft, playheadUs, lenUs);
       else overwriteRegion(track, playheadUs, playheadUs + lenUs);
@@ -350,6 +372,41 @@ export const useProject = create<State>((set, get) => ({
     set({ playheadUs: playheadUs + lenUs });
   },
 
+  // ── Spuren ────────────────────────────────────────────────────────────────
+  setActiveVideoTrack: (trackId) => set({ activeVideoTrackId: trackId }),
+
+  addVideoTrack: () => {
+    const id = newId('trk');
+    get().commit('Videospur hinzufügen', (draft) => {
+      const count = draft.tracks.filter((t) => t.kind === 'video').length;
+      const track: Track = {
+        id,
+        kind: 'video',
+        name: `Video ${count + 1}`,
+        clips: [],
+        muted: false,
+        locked: false,
+      };
+      // Neue Videospur über die bestehenden legen (nach den Overlay-Spuren).
+      const firstVideoIdx = draft.tracks.findIndex((t) => t.kind === 'video');
+      if (firstVideoIdx < 0) draft.tracks.push(track);
+      else draft.tracks.splice(firstVideoIdx, 0, track);
+    });
+    set({ activeVideoTrackId: id });
+  },
+
+  removeTrack: (trackId) => {
+    const track = get().present.tracks.find((t) => t.id === trackId);
+    if (!track) return;
+    // Mindestens eine Videospur muss bleiben.
+    if (track.kind === 'video' && get().present.tracks.filter((t) => t.kind === 'video').length <= 1)
+      return;
+    get().commit('Spur entfernen', (draft) => {
+      draft.tracks = draft.tracks.filter((t) => t.id !== trackId);
+    });
+    if (get().activeVideoTrackId === trackId) set({ activeVideoTrackId: null });
+  },
+
   addAssets: (assets) =>
     set((state) => {
       const before = clone(state.present);
@@ -363,7 +420,9 @@ export const useProject = create<State>((set, get) => ({
       const asset = draft.assets.find((a) => a.id === assetId);
       if (!asset) return;
       const wantVideo = asset.hasVideo;
-      const track = draft.tracks.find((t) => t.kind === (wantVideo ? 'video' : 'audio'));
+      const track = wantVideo
+        ? resolveVideoTrack(draft, get().activeVideoTrackId)
+        : draft.tracks.find((t) => t.kind === 'audio');
       if (!track) return;
       const start = trackEndUs(track);
       track.clips.push({
