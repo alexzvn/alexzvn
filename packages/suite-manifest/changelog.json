@@ -374,6 +374,13 @@
     "name": "JM Transcribe",
     "entries": [
       {
+        "version": "0.1.1",
+        "date": "2026-06-20",
+        "notes": [
+          "Schreibt jetzt zuverlässig eine Untertiteldatei (mindestens TXT) und meldet einen klaren Fehler, falls keine Datei entsteht."
+        ]
+      },
+      {
         "version": "0.1.0",
         "notes": [
           "Lokale, offline Untertitel/Transkripte (SRT/VTT/TXT) aus Audio-/Videodateien via Whisper.",
