@@ -4,6 +4,14 @@
     "name": "JM Production Suite",
     "entries": [
       {
+        "version": "0.3.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Übersicht: der JM-Vorsatz wird in den Kachel-Titeln ausgeblendet (die Apps selbst behalten ihn im Titel).",
+          "Neue Namenssuche in der Tool-Übersicht (ab 3 Zeichen)."
+        ]
+      },
+      {
         "version": "0.2.8",
         "date": "2026-06-11",
         "notes": [
@@ -72,6 +80,14 @@
     "app": "player",
     "name": "JM Player",
     "entries": [
+      {
+        "version": "0.4.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Cue-Show: Position und Restzeit des laufenden Videos werden mit Fortschrittsbalken angezeigt.",
+          "Cue-Show: Vollbild am Ausgabeschirm direkt ein- und ausschaltbar."
+        ]
+      },
       {
         "version": "0.3.0",
         "notes": [
@@ -143,6 +159,14 @@
     "name": "JM Presenter",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-20",
+        "notes": [
+          "4:3-Folien werden im Präsentationsmodus nicht mehr unten abgeschnitten (auch in der Referenten-Vorschau).",
+          "Neuer Knopf zum Neu-Anlegen: frische Präsentation laden, ohne die App schließen zu müssen."
+        ]
+      },
+      {
         "version": "0.3.1",
         "notes": [
           "PDF-/Office-Presenter mit getrennter Referenten- und Publikumsansicht sowie Folien-Editor."
@@ -197,6 +221,13 @@
     "name": "JM Sync",
     "entries": [
       {
+        "version": "0.1.2",
+        "date": "2026-06-20",
+        "notes": [
+          "Klare Meldung, wenn die Videoquelle nicht startet (z. B. von einer anderen App belegt), statt kryptischer Fehlermeldung."
+        ]
+      },
+      {
         "version": "0.1.0",
         "notes": [
           "A/V-Delay-Messung (Lippensynchronität) per Flash + Beep — Software-Ersatz für „Sync-It-Plus\"."
@@ -208,6 +239,13 @@
     "app": "studio-control",
     "name": "JM Studio Control",
     "entries": [
+      {
+        "version": "0.4.1",
+        "date": "2026-06-20",
+        "notes": [
+          "TriCaster-DSK sendet jetzt die korrekten Shortcuts (Auto/Take) statt ungültiger Befehle."
+        ]
+      },
       {
         "version": "0.4.0",
         "date": "2026-06-12",
@@ -287,6 +325,14 @@
     "app": "prompter",
     "name": "JM Prompter",
     "entries": [
+      {
+        "version": "0.3.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Skript aus Datei laden: .docx, .txt oder .md.",
+          "Behoben: Der Prompter blieb gelegentlich an zufälliger Stelle stehen."
+        ]
+      },
       {
         "version": "0.2.0",
         "notes": [

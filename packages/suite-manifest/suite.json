@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-15T09:30:00.000Z",
+  "updatedAt": "2026-06-20T12:00:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -52,7 +52,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.studio-control",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.4.0",
+      "latestVersion": "0.4.1",
       "platforms": {
         "mac": {
           "artifact": "JM Studio Control-${version}-mac-${arch}.dmg",
@@ -94,7 +94,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.player",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.3.0",
+      "latestVersion": "0.4.0",
       "platforms": {
         "mac": {
           "artifact": "JM Player-${version}-mac-${arch}.dmg",
@@ -157,7 +157,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.sync",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.1.2",
       "platforms": {
         "mac": {
           "artifact": "JM Sync-${version}-mac-${arch}.dmg",
@@ -199,7 +199,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.presenter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.3.1",
+      "latestVersion": "0.4.0",
       "platforms": {
         "mac": {
           "artifact": "JM Presenter-${version}-mac-${arch}.dmg",
@@ -262,7 +262,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.prompter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM Prompter-${version}-mac-${arch}.dmg",
