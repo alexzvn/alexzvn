@@ -51,17 +51,22 @@ export const DDR_COUNT = 4;
 export interface DskEntry {
   index: number;        // 1..DSK_COUNT
   label: string;        // "DSK 1"
-  onShortcut: string;
-  offShortcut: string;
+  /** Animierter Toggle (mit Übergang). */
+  autoShortcut: string;
+  /** Harter Schnitt-Toggle. */
+  takeShortcut: string;
 }
 
+// TriCaster-DSKs sind ein Toggle, kein getrenntes On/Off: `main_dskN_auto`
+// blendet animiert ein/aus, `main_dskN_take` schneidet hart (Issue #34 — die
+// frühere `..._on/_off`-Schreibweise existiert in der Shortcut-API nicht).
 export const DSK_ENTRIES: DskEntry[] = Array.from({ length: DSK_COUNT }, (_, i) => {
   const idx = i + 1;
   return {
     index: idx,
     label: `DSK ${idx}`,
-    onShortcut: `dsk_${idx}_take_on`,
-    offShortcut: `dsk_${idx}_take_off`,
+    autoShortcut: `main_dsk${idx}_auto`,
+    takeShortcut: `main_dsk${idx}_take`,
   };
 });
 
@@ -100,8 +105,8 @@ export const MACRO_CATALOG: MacroEntry[] = [
   // DSKs 1-4 (also exposed via the dedicated DSK panel — kept here as a
   // fallback / quick search reference)
   ...DSK_ENTRIES.flatMap((d) => [
-    { id: `dsk${d.index}-on`, category: 'DSK' as const, label: `${d.label} On`, shortcut: d.onShortcut },
-    { id: `dsk${d.index}-off`, category: 'DSK' as const, label: `${d.label} Off`, shortcut: d.offShortcut },
+    { id: `dsk${d.index}-auto`, category: 'DSK' as const, label: `${d.label} Auto`, shortcut: d.autoShortcut },
+    { id: `dsk${d.index}-take`, category: 'DSK' as const, label: `${d.label} Take`, shortcut: d.takeShortcut },
   ]),
 
   // DDRs 1-4 (also exposed via the dedicated DDR panel)

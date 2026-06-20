@@ -25,17 +25,17 @@ export function DskPanel({ onExec, disabled }: Props) {
                 size="sm"
                 variant="primary"
                 disabled={disabled}
-                onClick={() => onExec(d.onShortcut)}
+                onClick={() => onExec(d.autoShortcut)}
               >
-                On
+                Auto
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 disabled={disabled}
-                onClick={() => onExec(d.offShortcut)}
+                onClick={() => onExec(d.takeShortcut)}
               >
-                Off
+                Take
               </Button>
             </div>
           </div>
