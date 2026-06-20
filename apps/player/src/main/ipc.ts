@@ -8,6 +8,7 @@ import {
   listDisplays,
   openOutputWindow,
   sendToOutput,
+  toggleOutputFullscreen,
 } from './output-window';
 
 const MEDIA_EXT = [
@@ -72,6 +73,7 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('output:open', (_e, displayId?: number) => openOutputWindow(displayId));
   ipcMain.handle('output:close', () => closeOutputWindow());
   ipcMain.handle('output:isOpen', () => isOutputOpen());
+  ipcMain.handle('output:toggleFullscreen', () => toggleOutputFullscreen());
   ipcMain.handle('output:command', (_e, cmd: OutputCommand) => sendToOutput(cmd));
   // Ausgabefenster meldet „Video zu Ende" → ans Hauptfenster weiterreichen.
   ipcMain.handle('output:ended', () => {

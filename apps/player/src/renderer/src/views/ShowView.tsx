@@ -208,6 +208,8 @@ function OutputModal({ onClose }: { onClose: () => void }) {
   const outputDisplayId = usePlayer((s) => s.outputDisplayId);
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  // Das Ausgabefenster öffnet immer im Vollbild → Default true (Issue #31).
+  const [isFs, setIsFs] = useState(true);
 
   useEffect(() => {
     void window.jmplay.output.displays().then(setDisplays);
@@ -236,6 +238,7 @@ function OutputModal({ onClose }: { onClose: () => void }) {
               onClick={() => {
                 void openOutput(d.id);
                 setIsOpen(true);
+                setIsFs(true);
               }}
               className={cn(
                 'flex items-center justify-between rounded-[var(--radius)] border px-4 py-3 text-left transition-colors',
@@ -256,17 +259,29 @@ function OutputModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              void closeOutput();
-              setIsOpen(false);
-            }}
-            disabled={!isOpen}
-          >
-            Ausgabe schließen
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                void closeOutput();
+                setIsOpen(false);
+              }}
+              disabled={!isOpen}
+            >
+              Ausgabe schließen
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!isOpen}
+              onClick={() => {
+                void window.jmplay.output.toggleFullscreen().then(setIsFs);
+              }}
+            >
+              {isFs ? 'Vollbild aus' : 'Vollbild an'}
+            </Button>
+          </div>
           <Button size="sm" variant="primary" onClick={onClose}>
             Fertig
           </Button>

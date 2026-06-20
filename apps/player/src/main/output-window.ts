@@ -83,6 +83,22 @@ export function isOutputOpen(): boolean {
   return outputWindow != null && !outputWindow.isDestroyed();
 }
 
+/**
+ * Vollbild am Ausgabeschirm umschalten (Issue #31). Liefert den neuen Zustand.
+ * Beim Verlassen des Vollbilds das Fenster sichtbar/fokussiert halten, damit es
+ * nicht hinter anderen Fenstern auf dem Ausgabeschirm verschwindet.
+ */
+export function toggleOutputFullscreen(): boolean {
+  if (!isOutputOpen()) return false;
+  const next = !outputWindow!.isFullScreen();
+  outputWindow!.setFullScreen(next);
+  if (!next) {
+    outputWindow!.show();
+    outputWindow!.focus();
+  }
+  return next;
+}
+
 export function sendToOutput(cmd: OutputCommand): void {
   if (isOutputOpen()) outputWindow!.webContents.send('output:cmd', cmd);
 }

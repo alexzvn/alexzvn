@@ -175,6 +175,8 @@ export interface JmplayApi {
     open: (displayId?: number) => Promise<void>;
     close: () => Promise<void>;
     isOpen: () => Promise<boolean>;
+    /** Vollbild am Ausgabeschirm ein/aus; liefert den neuen Zustand (Issue #31). */
+    toggleFullscreen: () => Promise<boolean>;
     /** Befehl ans Ausgabefenster (Hauptfenster → Ausgabe). */
     command: (cmd: OutputCommand) => Promise<void>;
     /** Ausgabefenster meldet, dass das aktuelle Video natürlich endete. */

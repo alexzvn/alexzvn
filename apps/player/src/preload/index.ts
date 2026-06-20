@@ -68,6 +68,7 @@ const api: JmplayApi = {
     open: (displayId) => ipcRenderer.invoke('output:open', displayId) as Promise<void>,
     close: () => ipcRenderer.invoke('output:close') as Promise<void>,
     isOpen: () => ipcRenderer.invoke('output:isOpen') as Promise<boolean>,
+    toggleFullscreen: () => ipcRenderer.invoke('output:toggleFullscreen') as Promise<boolean>,
     command: (cmd) => ipcRenderer.invoke('output:command', cmd) as Promise<void>,
     notifyEnded: () => ipcRenderer.invoke('output:ended') as Promise<void>,
     onCommand: (cb) => {
