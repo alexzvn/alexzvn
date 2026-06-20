@@ -166,10 +166,17 @@
     "name": "JM Presenter",
     "entries": [
       {
+        "version": "0.5.3",
+        "date": "2026-06-20",
+        "notes": [
+          "Editor-Layout passt sich jetzt der Fensterbreite an — die rechte Spalte (Inspector mit Titel/Notizen/Overlays) wird nicht mehr abgeschnitten; die mittlere Folienspalte skaliert mit."
+        ]
+      },
+      {
         "version": "0.5.2",
         "date": "2026-06-20",
         "notes": [
-          "Editor-Fenster passt sich jetzt der Bildschirmgröße an — auf kleineren Bildschirmen wurde der rechte Inspector vorher abgeschnitten."
+          "Editor-Fenster passt sich jetzt der Bildschirmgröße an — öffnet nicht mehr größer als der Bildschirm."
         ]
       },
       {

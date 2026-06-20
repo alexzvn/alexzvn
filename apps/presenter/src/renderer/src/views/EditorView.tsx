@@ -40,11 +40,11 @@ export function EditorView() {
       {slides.length === 0 ? (
         <EmptyState onImport={() => void importDocs()} onOffice={() => void importOffice()} />
       ) : (
-        <div className="flex-1 min-h-0 grid grid-cols-[260px_1fr_320px]">
-          <aside className="border-r border-[var(--border)]/60 min-h-0">
+        <div className="flex-1 min-h-0 grid grid-cols-[260px_minmax(0,1fr)_320px] overflow-hidden">
+          <aside className="border-r border-[var(--border)]/60 min-h-0 min-w-0">
             <SlideList />
           </aside>
-          <section className="min-h-0 flex flex-col bg-[var(--background)]">
+          <section className="min-h-0 min-w-0 flex flex-col bg-[var(--background)]">
             {selected ? (
               <EditorStage slide={selected} />
             ) : (
