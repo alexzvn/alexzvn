@@ -8,6 +8,8 @@ import type {
   PresentationState,
   RemoteConfig,
   RemoteStatus,
+  TimerSource,
+  TimerSyncConfig,
   ViewName,
 } from '@shared/types';
 
@@ -69,6 +71,18 @@ const api: JmprApi = {
       const listener = (_event: unknown, s: RemoteStatus) => cb(s);
       ipcRenderer.on('remote:status', listener);
       return () => ipcRenderer.off('remote:status', listener);
+    },
+  },
+
+  timer: {
+    getState: () => ipcRenderer.invoke('timer:getState') as Promise<TimerSource>,
+    getConfig: () => ipcRenderer.invoke('timer:getConfig') as Promise<TimerSyncConfig>,
+    apply: (config: TimerSyncConfig) =>
+      ipcRenderer.invoke('timer:apply', config) as Promise<TimerSyncConfig>,
+    onState: (cb) => {
+      const listener = (_event: unknown, s: TimerSource) => cb(s);
+      ipcRenderer.on('timer:state', listener);
+      return () => ipcRenderer.off('timer:state', listener);
     },
   },
 };

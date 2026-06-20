@@ -146,6 +146,75 @@ export interface RemoteStatus {
   error: string | null;
 }
 
+// ---- Timer sync (live countdown from JM Timer over the LAN, #38) ----
+//
+// The JM Timer broadcasts its full state over socket.io on port 7777. We mirror
+// just the countdown subset the presenter needs to show a live readout — no
+// dependency on the timer app, same approach the stage-display already uses.
+
+export interface CountdownState {
+  durationMs: number;
+  delayMs: number;
+  startedAtMs: number | null;
+  pausedRemainingMs: number | null;
+}
+
+export function effectiveDurationMs(cd: CountdownState): number {
+  return cd.durationMs + cd.delayMs;
+}
+export function getCountdownRemaining(cd: CountdownState, now: number = Date.now()): number {
+  if (cd.startedAtMs !== null) return effectiveDurationMs(cd) - (now - cd.startedAtMs);
+  if (cd.pausedRemainingMs !== null) return cd.pausedRemainingMs;
+  return effectiveDurationMs(cd);
+}
+export function getProjectedEndMs(cd: CountdownState, now: number = Date.now()): number | null {
+  if (cd.startedAtMs !== null) return cd.startedAtMs + effectiveDurationMs(cd);
+  if (cd.pausedRemainingMs !== null) return now + cd.pausedRemainingMs;
+  return null;
+}
+export function isCountdownRunning(cd: CountdownState): boolean {
+  return cd.startedAtMs !== null;
+}
+export function isCountdownPaused(cd: CountdownState): boolean {
+  return cd.startedAtMs === null && cd.pausedRemainingMs !== null;
+}
+
+/** Countdown colour thresholds (kept faithful to the timer's own colours). */
+export interface ColorConfig {
+  normal: string;
+  warning: string;
+  overtime: string;
+  /** Seconds threshold normal → warning. */
+  warningAtSec: number;
+}
+
+export const DEFAULT_COLORS: ColorConfig = {
+  normal: '#FFE819',
+  warning: '#FFB81C',
+  overtime: '#F61C56',
+  warningAtSec: 60,
+};
+
+/** Live timer state mirrored into the presenter, broadcast to the windows. */
+export interface TimerSource {
+  connected: boolean;
+  /** Raw countdown (renderer ticks it live); null = unknown. */
+  countdown: CountdownState | null;
+  activeLabel: string | null;
+  nextLabel: string | null;
+  colors: ColorConfig;
+  /** Speaker message from the timer. */
+  message: string;
+  blinking: boolean;
+}
+
+/** Persisted timer-sync configuration (set once per machine). */
+export interface TimerSyncConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+}
+
 /** The window API exposed on `window.jmpr`. */
 export interface JmprApi {
   platform: NodeJS.Platform;
@@ -199,5 +268,17 @@ export interface JmprApi {
     apply: (config: RemoteConfig) => Promise<RemoteStatus>;
     /** Subscribe to live status changes (start/stop/error). */
     onStatus: (cb: (s: RemoteStatus) => void) => () => void;
+  };
+
+  /** Live timer sync (countdown mirrored from JM Timer over the LAN). */
+  timer: {
+    /** Current live timer state (connected + countdown snapshot). */
+    getState: () => Promise<TimerSource>;
+    /** Persisted connection config (enabled/host/port). */
+    getConfig: () => Promise<TimerSyncConfig>;
+    /** Persist config and (re)connect accordingly; returns the saved config. */
+    apply: (config: TimerSyncConfig) => Promise<TimerSyncConfig>;
+    /** Subscribe to live timer-state pushes. */
+    onState: (cb: (s: TimerSource) => void) => () => void;
   };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Logo, cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
-import type { DisplayInfo, PresentationState } from '@shared/types';
+import type { DisplayInfo, PresentationState, TimerSyncConfig } from '@shared/types';
 import { useProject } from '@/store/project';
 import { getExpandPptxBuilds, setExpandPptxBuilds } from '@/lib/settings';
 
@@ -26,6 +26,8 @@ export function Toolbar() {
   const [audienceDisplay, setAudienceDisplay] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [expandBuilds, setExpandBuildsState] = useState(getExpandPptxBuilds());
+  const [timerCfg, setTimerCfg] = useState<TimerSyncConfig | null>(null);
+  const [timerConnected, setTimerConnected] = useState(false);
   const [present, setPresent] = useState<PresentationState>({
     active: false,
     index: 0,
@@ -41,8 +43,22 @@ export function Toolbar() {
       setAudienceDisplay(secondary?.id ?? d[0]?.id ?? null);
     });
     void window.jmpr.present.getState().then(setPresent);
-    return window.jmpr.present.onState(setPresent);
+    const offState = window.jmpr.present.onState(setPresent);
+    void window.jmpr.timer.getConfig().then(setTimerCfg);
+    void window.jmpr.timer.getState().then((s) => setTimerConnected(s.connected));
+    const offTimer = window.jmpr.timer.onState((s) => setTimerConnected(s.connected));
+    return () => {
+      offState();
+      offTimer();
+    };
   }, []);
+
+  const applyTimer = (patch: Partial<TimerSyncConfig>): void => {
+    if (!timerCfg) return;
+    const next = { ...timerCfg, ...patch };
+    setTimerCfg(next);
+    void window.jmpr.timer.apply(next);
+  };
 
   const visibleCount = doc.slides.filter((s) => !s.hidden).length;
 
@@ -175,6 +191,63 @@ export function Toolbar() {
                     </span>
                   </span>
                 </label>
+
+                <div className="my-3 h-px bg-[var(--border)]" />
+
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={timerCfg?.enabled ?? false}
+                    disabled={!timerCfg}
+                    onChange={(e) => applyTimer({ enabled: e.target.checked })}
+                    className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  />
+                  <span>
+                    <span className="font-semibold inline-flex items-center gap-1.5">
+                      JM Timer synchronisieren
+                      {timerCfg?.enabled && (
+                        <span
+                          title={timerConnected ? 'verbunden' : 'keine Verbindung'}
+                          className={cn(
+                            'inline-block h-2 w-2 rounded-full',
+                            timerConnected ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse',
+                          )}
+                        />
+                      )}
+                    </span>
+                    <span className="block text-xs text-[var(--muted-foreground)] mt-0.5">
+                      Zeigt den Countdown des JM Timers live in der Referentenansicht.
+                    </span>
+                  </span>
+                </label>
+
+                {timerCfg?.enabled && (
+                  <div className="mt-2 flex items-center gap-2 pl-6">
+                    <input
+                      value={timerCfg.host}
+                      onChange={(e) => setTimerCfg({ ...timerCfg, host: e.target.value })}
+                      onBlur={(e) => applyTimer({ host: e.target.value.trim() || '127.0.0.1' })}
+                      placeholder="127.0.0.1"
+                      spellCheck={false}
+                      className="h-8 flex-1 min-w-0 rounded-md bg-[var(--card)] border border-[var(--border)] px-2 text-xs"
+                      title="Host / IP des JM Timers"
+                    />
+                    <span className="text-[var(--muted-foreground)] text-xs">:</span>
+                    <input
+                      value={timerCfg.port}
+                      onChange={(e) =>
+                        setTimerCfg({ ...timerCfg, port: Number(e.target.value.replace(/\D/g, '')) || 0 })
+                      }
+                      onBlur={(e) => {
+                        const p = Number(e.target.value.replace(/\D/g, ''));
+                        applyTimer({ port: p >= 1 && p <= 65535 ? p : 7777 });
+                      }}
+                      placeholder="7777"
+                      className="h-8 w-16 text-center rounded-md bg-[var(--card)] border border-[var(--border)] px-2 text-xs"
+                      title="Port (Standard 7777)"
+                    />
+                  </div>
+                )}
               </div>
             </>
           )}

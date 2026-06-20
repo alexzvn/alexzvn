@@ -8,6 +8,7 @@ import type {
   RemoteConfig,
   ScreenMode,
   SourceKind,
+  TimerSyncConfig,
 } from '@shared/types';
 import { convertOfficeBytesToPdf, convertOfficeToPdf, countPdfPages } from './office/convert';
 import { analyzePptxAnimations } from './office/pptx-animations';
@@ -37,6 +38,14 @@ import {
   shutdownRemote,
 } from './remote';
 import { loadRemoteConfig, saveRemoteConfig } from './remote-config';
+import {
+  applyTimerConfig,
+  getTimerConfig,
+  getTimerState,
+  setTimerStateHandler,
+  shutdownTimer,
+} from './timer-sync';
+import { loadTimerConfig, saveTimerConfig } from './timer-config';
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp']);
 
@@ -234,5 +243,24 @@ export function registerIpc(): void {
   const saved = loadRemoteConfig();
   if (saved.enabled) void applyRemoteConfig(saved);
 
-  app.on('will-quit', () => shutdownRemote());
+  // ---- Timer sync (live countdown from JM Timer) ----
+
+  // Push live timer state to all windows so the presenter readout updates even
+  // while the operator is in the editor.
+  setTimerStateHandler((state) => broadcastAll('timer:state', state));
+
+  ipcMain.handle('timer:getState', () => getTimerState());
+  ipcMain.handle('timer:getConfig', () => getTimerConfig());
+  ipcMain.handle('timer:apply', (_e, config: TimerSyncConfig) => {
+    saveTimerConfig(config);
+    return applyTimerConfig(config);
+  });
+
+  // Restore the persisted timer connection on launch.
+  applyTimerConfig(loadTimerConfig());
+
+  app.on('will-quit', () => {
+    shutdownRemote();
+    shutdownTimer();
+  });
 }

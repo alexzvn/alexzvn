@@ -4,11 +4,14 @@ import type { DisplayInfo } from '@shared/types';
 import { SlideCanvas } from '@/components/SlideCanvas';
 import { Clock } from '@/components/Clock';
 import { RemotePanel } from '@/components/RemotePanel';
+import { TimerBar } from '@/components/TimerBar';
 import { usePresentation, usePresenterKeys } from '@/lib/usePresentation';
+import { useTimerSync } from '@/lib/timer';
 
 export function PresenterView() {
   const { slides, state } = usePresentation();
   usePresenterKeys(true);
+  const timer = useTimerSync();
   const [displays, setDisplays] = useState<DisplayInfo[]>([]);
   const [jump, setJump] = useState('');
   const [showGrid, setShowGrid] = useState(false);
@@ -124,6 +127,7 @@ export function PresenterView() {
 
         {/* next + notes */}
         <div className="min-h-0 flex flex-col gap-4">
+          {timer.connected && <TimerBar timer={timer} />}
           <div className="flex flex-col" style={{ flex: '0 0 38%' }}>
             <Label>Nächste Folie</Label>
             <div className="flex-1 min-h-0 flex items-center justify-center bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
