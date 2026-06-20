@@ -5,10 +5,12 @@ import { useProject } from '@/store/project';
 import { activeTitles, activeVideoClip, playbackUrl, sourceTimeSec } from '@/lib/playback';
 import { drawTitle } from '@/lib/title-render';
 import { formatTimecode } from '@/lib/format';
+import { useFitBox } from '@/lib/useFitBox';
 
 export function PreviewMonitor() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
   const lastTsRef = useRef<number>(0);
   const lastUrlRef = useRef<string>('');
@@ -19,6 +21,7 @@ export function PreviewMonitor() {
   const playheadUs = useProject((s) => s.playheadUs);
   const present = useProject((s) => s.present);
   const totalUs = projectDurationUs(present);
+  const box = useFitBox(stageRef, present.export.width / present.export.height);
 
   // ── Scrub (pausiert): Video an Playhead anlegen ───────────────────────────
   useEffect(() => {
@@ -101,22 +104,18 @@ export function PreviewMonitor() {
     for (const clip of activeTitles(present, playheadUs)) {
       if (clip.title) drawTitle(ctx, clip.title, W, H);
     }
-  }, [playheadUs, present]);
+  }, [playheadUs, present, box.w, box.h]);
 
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] font-bold text-[var(--muted-foreground)] border-b border-[var(--border)]/40">
         Programm
       </div>
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-black/50 p-3">
-        <div className="relative w-full h-full max-w-full" style={{ aspectRatio: `${present.export.width} / ${present.export.height}` }}>
-          <div className="absolute inset-0 m-auto h-full flex items-center justify-center">
-            <div className="relative h-full" style={{ aspectRatio: `${present.export.width} / ${present.export.height}` }}>
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-              <video ref={videoRef} className="absolute inset-0 w-full h-full object-contain bg-black" muted={playing} />
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
-            </div>
-          </div>
+      <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center bg-black/50 p-3 overflow-hidden">
+        <div className="relative" style={{ width: box.w, height: box.h }}>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video ref={videoRef} className="absolute inset-0 w-full h-full object-contain bg-black" muted={playing} />
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
         </div>
       </div>
 

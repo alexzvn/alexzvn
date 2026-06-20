@@ -317,7 +317,7 @@
       "category": "Grafik",
       "appId": "gmbh.jakobs.editor",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.2.1",
       "platforms": {
         "mac": {
           "artifact": "JM Editor-${version}-mac-${arch}.dmg",
