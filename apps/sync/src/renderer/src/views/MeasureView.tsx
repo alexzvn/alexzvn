@@ -288,8 +288,15 @@ function NativeSelect({
 }
 
 function friendly(e: unknown): string {
+  const name = e instanceof DOMException ? e.name : '';
   const msg = e instanceof Error ? e.message : String(e);
-  if (/Permission|NotAllowed/i.test(msg)) return 'Zugriff auf Kamera/Mikrofon verweigert.';
-  if (/NotFound|Requested device/i.test(msg)) return 'Gewähltes Gerät nicht gefunden.';
+  if (/Permission|NotAllowed/i.test(name + msg)) return 'Zugriff auf Kamera/Mikrofon verweigert.';
+  if (/NotFound|Requested device/i.test(name + msg)) return 'Gewähltes Gerät nicht gefunden.';
+  // NotReadableError → "Could not start video source": Gerät existiert, lässt
+  // sich aber nicht öffnen (von anderer App belegt oder Treiber-/Zugriffsfehler).
+  if (/NotReadable|Could not start|TrackStart/i.test(name + msg))
+    return 'Videoquelle ließ sich nicht starten — wird sie evtl. schon von einer anderen App (OBS, Teams, …) benutzt? Andere Programme schließen und erneut versuchen.';
+  if (/Overconstrained|NotSupported/i.test(name + msg))
+    return 'Gewähltes Gerät unterstützt die angeforderten Einstellungen nicht. Anderes Gerät wählen.';
   return msg;
 }
