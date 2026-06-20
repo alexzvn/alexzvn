@@ -6,9 +6,10 @@ compatibility_date = "2024-11-01"
 [vars]
 # Das Mono-Repo mit den Releases.
 REPO = "AlexmachtCode/alexzvn"
-# Branch/Ref, aus dem der Live-Katalog (suite.json) gelesen wird.
+# Branch/Ref, aus dem der Live-Katalog (suite.json + changelog.json) gelesen wird.
+# Aktiver Integrations-Branch — hier liegen die aktuellen Versionen + Patch Notes.
 # NACH dem Merge nach main hier auf "main" umstellen + erneut `wrangler deploy`.
-MANIFEST_REF = "feat/jm-production-suite"
+MANIFEST_REF = "feat/suite-newtools"
 
 # Secrets NICHT hier eintragen — verschlüsselt setzen:
 #   npx wrangler secret put GITHUB_TOKEN   (fine-grained PAT, read-only Contents)
