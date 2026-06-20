@@ -90,9 +90,21 @@ export function OutputView() {
     };
     v.addEventListener('ended', onEnded);
 
+    // Wiedergabe-Position ans Hauptfenster melden (Issue #41). `timeupdate` feuert
+    // ~4×/s während der Wiedergabe; `loadedmetadata` liefert die Dauer sofort.
+    const onTime = (): void => {
+      if (Number.isFinite(v.duration)) {
+        void window.jmplay.output.reportTime({ currentTime: v.currentTime, duration: v.duration });
+      }
+    };
+    v.addEventListener('timeupdate', onTime);
+    v.addEventListener('loadedmetadata', onTime);
+
     return () => {
       off();
       v.removeEventListener('ended', onEnded);
+      v.removeEventListener('timeupdate', onTime);
+      v.removeEventListener('loadedmetadata', onTime);
       stopRamp();
     };
   }, []);

@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import type { CueInput, OutputCommand, PlaylistKind, ShowCuePatch } from '@shared/types';
+import type { CueInput, OutputCommand, OutputTime, PlaylistKind, ShowCuePatch } from '@shared/types';
 import * as lib from './library';
 import { ensureThumb } from './thumbs';
 import {
@@ -78,6 +78,10 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
   // Ausgabefenster meldet „Video zu Ende" → ans Hauptfenster weiterreichen.
   ipcMain.handle('output:ended', () => {
     getWin()?.webContents.send('output:ended');
+  });
+  // Ausgabefenster meldet die Wiedergabe-Position → ans Hauptfenster (Issue #41).
+  ipcMain.handle('output:time', (_e, t: OutputTime) => {
+    getWin()?.webContents.send('output:time', t);
   });
 
   ipcMain.handle('shell:reveal', (_e, p: string) => {

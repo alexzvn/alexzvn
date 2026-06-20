@@ -116,6 +116,12 @@ export type OutputCommand =
   | { type: 'resume' }
   | { type: 'black' };
 
+/** Wiedergabe-Position des Ausgabe-Videos (Ausgabe → Hauptfenster, Issue #41). */
+export interface OutputTime {
+  currentTime: number;
+  duration: number;
+}
+
 export interface ImportResult {
   added: number;
   skipped: number;
@@ -181,10 +187,14 @@ export interface JmplayApi {
     command: (cmd: OutputCommand) => Promise<void>;
     /** Ausgabefenster meldet, dass das aktuelle Video natürlich endete. */
     notifyEnded: () => Promise<void>;
+    /** Ausgabe-Seite: aktuelle Wiedergabe-Position melden (Issue #41). */
+    reportTime: (t: OutputTime) => Promise<void>;
     /** Ausgabe-Seite: auf Befehle hören. Liefert Unsubscribe. */
     onCommand: (cb: (cmd: OutputCommand) => void) => () => void;
     /** Hauptfenster-Seite: auf „Video zu Ende" hören. Liefert Unsubscribe. */
     onEnded: (cb: () => void) => () => void;
+    /** Hauptfenster-Seite: auf Positions-Updates des Ausgabe-Videos hören. */
+    onTime: (cb: (t: OutputTime) => void) => () => void;
   };
   shell: {
     reveal: (path: string) => Promise<void>;

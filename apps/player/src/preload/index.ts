@@ -7,6 +7,7 @@ import type {
   JmplayApi,
   MediaItem,
   OutputCommand,
+  OutputTime,
   Playlist,
   PlaylistItem,
   PlaylistKind,
@@ -71,6 +72,7 @@ const api: JmplayApi = {
     toggleFullscreen: () => ipcRenderer.invoke('output:toggleFullscreen') as Promise<boolean>,
     command: (cmd) => ipcRenderer.invoke('output:command', cmd) as Promise<void>,
     notifyEnded: () => ipcRenderer.invoke('output:ended') as Promise<void>,
+    reportTime: (t) => ipcRenderer.invoke('output:time', t) as Promise<void>,
     onCommand: (cb) => {
       const listener = (_e: unknown, cmd: OutputCommand): void => cb(cmd);
       ipcRenderer.on('output:cmd', listener);
@@ -80,6 +82,11 @@ const api: JmplayApi = {
       const listener = (): void => cb();
       ipcRenderer.on('output:ended', listener);
       return () => ipcRenderer.off('output:ended', listener);
+    },
+    onTime: (cb) => {
+      const listener = (_e: unknown, t: OutputTime): void => cb(t);
+      ipcRenderer.on('output:time', listener);
+      return () => ipcRenderer.off('output:time', listener);
     },
   },
   shell: {

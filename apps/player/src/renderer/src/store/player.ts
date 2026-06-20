@@ -3,6 +3,7 @@ import type {
   Cue,
   CueInput,
   MediaItem,
+  OutputTime,
   Playlist,
   PlaylistItem,
   PlaylistKind,
@@ -53,6 +54,8 @@ interface PlayerStore {
   showPaused: boolean;
   /** Aktuell im Ausgabefenster laufender Video-Cue (für Ende → Auto-Continue). */
   videoCue: { id: number; index: number; autoContinue: boolean } | null;
+  /** Wiedergabe-Position des laufenden Ausgabe-Videos (Issue #41). */
+  videoProgress: OutputTime | null;
   /** Gewählter Ausgabe-Bildschirm (null = primär). */
   outputDisplayId: number | null;
 
@@ -107,6 +110,8 @@ interface PlayerStore {
   closeOutput: () => Promise<void>;
   /** Vom Ausgabefenster gemeldetes Video-Ende → ggf. Auto-Continue. */
   onOutputEnded: () => void;
+  /** Vom Ausgabefenster gemeldete Wiedergabe-Position (Issue #41). */
+  onOutputTime: (t: OutputTime) => void;
 }
 
 export const usePlayer = create<PlayerStore>((set, get) => ({
@@ -129,6 +134,7 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   playingCueIds: [],
   showPaused: false,
   videoCue: null,
+  videoProgress: null,
   outputDisplayId: null,
 
   setNotice: (notice) => set({ notice }),
@@ -145,6 +151,7 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
     if (!outputEndedSubscribed) {
       outputEndedSubscribed = true;
       window.jmplay.output.onEnded(() => get().onOutputEnded());
+      window.jmplay.output.onTime((t) => get().onOutputTime(t));
     }
   },
 
@@ -370,7 +377,7 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
       if (media.kind === 'video') {
         // Video → Ausgabefenster (ggf. öffnen). Ende-/Auto-Continue läuft über
         // onOutputEnded (das Ausgabefenster meldet das natürliche Ende zurück).
-        set({ videoCue: { id: cue.id, index, autoContinue: cue.autoContinue } });
+        set({ videoCue: { id: cue.id, index, autoContinue: cue.autoContinue }, videoProgress: null });
         const load = (): Promise<void> =>
           window.jmplay.output.command({
             type: 'load',
@@ -420,14 +427,14 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
       void window.jmplay.output.command({ type: 'stop', fadeOutSec: 0 });
     }
     clearShowTimers();
-    set({ playingCueIds: [], videoCue: null });
+    set({ playingCueIds: [], videoCue: null, videoProgress: null });
   },
 
   showPanic: () => {
     showAudio.panic();
     void window.jmplay.output.command({ type: 'black' });
     clearShowTimers();
-    set({ playingCueIds: [], videoCue: null, showPaused: false });
+    set({ playingCueIds: [], videoCue: null, videoProgress: null, showPaused: false });
   },
 
   showTogglePause: () => {
@@ -448,12 +455,21 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   },
   closeOutput: async () => {
     await window.jmplay.output.close();
-    set({ videoCue: null });
+    set({ videoCue: null, videoProgress: null });
   },
   onOutputEnded: () => {
     const vc = get().videoCue;
     if (!vc) return;
-    set((s) => ({ playingCueIds: s.playingCueIds.filter((x) => x !== vc.id), videoCue: null }));
+    set((s) => ({
+      playingCueIds: s.playingCueIds.filter((x) => x !== vc.id),
+      videoCue: null,
+      videoProgress: null,
+    }));
     if (vc.autoContinue) get().fireCue(vc.index + 1);
+  },
+  onOutputTime: (t) => {
+    // Nur übernehmen, solange wirklich ein Video-Cue läuft (verwirft Spät-Events
+    // nach Stop/Ende).
+    if (get().videoCue) set({ videoProgress: t });
   },
 }));

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, cn } from '@jm/ui';
-import type { DisplayInfo, MediaItem, ShowCue } from '@shared/types';
+import type { DisplayInfo, MediaItem, OutputTime, ShowCue } from '@shared/types';
 import { usePlayer } from '@/store/player';
 import { formatDuration } from '@/lib/format';
 
@@ -11,6 +11,8 @@ export function ShowView() {
   const standbyIndex = usePlayer((s) => s.standbyIndex);
   const playingCueIds = usePlayer((s) => s.playingCueIds);
   const showPaused = usePlayer((s) => s.showPaused);
+  const videoProgress = usePlayer((s) => s.videoProgress);
+  const videoCue = usePlayer((s) => s.videoCue);
 
   const createShow = usePlayer((s) => s.createShow);
   const renameShow = usePlayer((s) => s.renameShow);
@@ -159,6 +161,18 @@ export function ShowView() {
           </div>
         )}
       </div>
+
+      {/* Laufendes Ausgabe-Video: Position + Restzeit (#41) */}
+      {videoProgress && videoProgress.duration > 0 && (
+        <VideoProgress
+          progress={videoProgress}
+          label={
+            showCues.find((c) => c.id === videoCue?.id)?.label ||
+            showCues.find((c) => c.id === videoCue?.id)?.media?.fileName ||
+            'Video'
+          }
+        />
+      )}
 
       {/* Transport */}
       <div className="shrink-0 border-t border-[var(--border)]/60 bg-[var(--card)]/50 px-5 py-3 flex items-center gap-4">
@@ -503,6 +517,39 @@ function AddCuesModal({ onClose }: { onClose: () => void }) {
 
 function fmt(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+/** Live-Laufzeit als mm:ss (immer, auch bei 0 — anders als formatDuration). */
+function clock(sec: number): string {
+  const total = Math.max(0, Math.round(sec));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+function VideoProgress({ progress, label }: { progress: OutputTime; label: string }) {
+  const { currentTime, duration } = progress;
+  const remaining = Math.max(0, duration - currentTime);
+  const pct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+  return (
+    <div className="shrink-0 border-t border-[var(--border)]/60 bg-[var(--card)]/30 px-5 pt-2.5 pb-1.5">
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] font-bold tabular">
+        <span className="min-w-0 truncate text-[var(--foreground)]">▦ {label}</span>
+        <span className="shrink-0 text-[var(--muted-foreground)]">
+          {clock(currentTime)} / {clock(duration)}
+          <span className="ml-2 text-[var(--primary)]">noch −{clock(remaining)}</span>
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-[var(--radius-full)] bg-[var(--muted)]">
+        <div
+          className="h-full rounded-[var(--radius-full)] bg-[var(--primary)] transition-[width] duration-200"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 function Badge({ children }: { children: React.ReactNode }) {
