@@ -96,7 +96,10 @@ export function Toolbar() {
     <header
       style={dragRegion}
       className={cn(
-        'h-14 flex items-center gap-3 pr-4 border-b border-[var(--border)]/60 bg-[var(--card)]/60 backdrop-blur-md',
+        // relative + z-50: the backdrop-blur makes the header its own stacking
+        // context; without a raised z-index the editor body (slide canvas +
+        // inspector) paints over the settings dropdown that drops out of it.
+        'relative z-50 h-14 flex items-center gap-3 pr-4 border-b border-[var(--border)]/60 bg-[var(--card)]/60 backdrop-blur-md',
         isElectronMac ? 'pl-20' : 'pl-4',
       )}
     >
