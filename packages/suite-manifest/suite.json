@@ -199,7 +199,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.presenter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.4.0",
+      "latestVersion": "0.5.0",
       "platforms": {
         "mac": {
           "artifact": "JM Presenter-${version}-mac-${arch}.dmg",
@@ -241,7 +241,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.stage-display",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.1",
+      "latestVersion": "0.2.0",
       "platforms": {
         "mac": {
           "artifact": "JM Stage Display-${version}-mac-${arch}.dmg",

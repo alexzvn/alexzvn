@@ -166,6 +166,14 @@
     "name": "JM Presenter",
     "entries": [
       {
+        "version": "0.5.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Referentenansicht zeigt jetzt den Countdown vom JM Timer live an — farbig (normal/Warnung/Overtime), mit aktivem Programmpunkt und Endzeit.",
+          "Aktivierung im Zahnrad-Menü: JM Timer synchronisieren (Host und Port des Timers), mit Verbindungsanzeige."
+        ]
+      },
+      {
         "version": "0.4.0",
         "date": "2026-06-20",
         "notes": [
@@ -315,6 +323,14 @@
     "app": "stage-display",
     "name": "JM Stage Display",
     "entries": [
+      {
+        "version": "0.2.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Neue Quelle JM Presenter: Sobald eine Präsentation läuft, wird der Bühnenschirm zur Referentenansicht mit aktueller Folie, Notizen und nächster Folie — inklusive kompaktem Countdown und Uhr.",
+          "Voraussetzung: im JM Presenter die Fernsteuerung aktivieren (Port 7330, PIN optional)."
+        ]
+      },
       {
         "version": "0.1.1",
         "notes": ["Eigenes App-Icon."]
