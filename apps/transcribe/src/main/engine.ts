@@ -123,9 +123,12 @@ async function processJob(job: Job, config: TranscribeConfig): Promise<void> {
     onChange();
     const dir = config.outputDir ?? dirname(job.filePath);
     const outBase = join(dir, basename(job.filePath, extname(job.filePath)));
+    // Ohne ein Ausgabeformat schreibt whisper KEINE Datei (Issue #36: „transkribiert,
+    // aber kein File"). Mindestens TXT erzwingen, falls der Nutzer alle abgewählt hat.
+    const formats: OutputFormat[] = config.formats.length ? config.formats : ['txt'];
     const args = ['-m', model, '-f', wav, '-l', config.language, '-of', outBase, '-pp'];
     if (config.task === 'translate') args.push('-tr');
-    for (const f of config.formats) args.push(formatFlag(f));
+    for (const f of formats) args.push(formatFlag(f));
 
     await spawnStep(whisper, args, (line) => {
       const m = /progress\s*=\s*(\d+)\s*%/.exec(line);
@@ -139,7 +142,12 @@ async function processJob(job: Job, config: TranscribeConfig): Promise<void> {
     });
     if (canceled.has(job.id)) return fail('');
 
-    job.outputs = config.formats.map((f) => `${outBase}.${f}`).filter((p) => existsSync(p));
+    job.outputs = formats.map((f) => `${outBase}.${f}`).filter((p) => existsSync(p));
+    // Job lief durch, aber es liegt keine Datei vor → klaren Fehler zeigen statt
+    // stillem „done" ohne Ergebnis (Issue #36).
+    if (job.outputs.length === 0) {
+      return fail('Keine Ausgabedatei erzeugt — Schreibrechte/Zielordner prüfen.');
+    }
     job.status = 'done';
     job.progress = 1;
     cleanup(wav);
