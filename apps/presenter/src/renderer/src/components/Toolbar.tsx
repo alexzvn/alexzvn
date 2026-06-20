@@ -15,6 +15,7 @@ export function Toolbar() {
   const selectedId = useProject((s) => s.selectedId);
   const importDocs = useProject((s) => s.importDocs);
   const importOffice = useProject((s) => s.importOffice);
+  const newProject = useProject((s) => s.newProject);
   const openProject = useProject((s) => s.openProject);
   const saveProject = useProject((s) => s.saveProject);
   const exportPdf = useProject((s) => s.exportPdf);
@@ -59,6 +60,22 @@ export function Toolbar() {
     await window.jmpr.present.start(payload, audienceDisplay);
   };
 
+  // Frisch beginnen, ohne die App zu schließen (Issue #40): leert das Projekt,
+  // danach führt der Empty-State direkt zum Import der neuen PDF. Bei
+  // ungespeicherten Änderungen erst rückfragen, damit nichts verloren geht.
+  const handleNew = (): void => {
+    if (
+      dirty &&
+      doc.slides.length > 0 &&
+      !window.confirm(
+        'Aktuelle Präsentation verwerfen und neu beginnen? Nicht gespeicherte Änderungen gehen verloren.',
+      )
+    ) {
+      return;
+    }
+    newProject();
+  };
+
   return (
     <header
       style={dragRegion}
@@ -80,6 +97,9 @@ export function Toolbar() {
       <div className="h-6 w-px bg-[var(--border)]" />
 
       <div className="flex items-center gap-1.5" style={noDragRegion}>
+        <button type="button" className={btn} disabled={busy.active} onClick={handleNew}>
+          Neu
+        </button>
         <button type="button" className={btn} disabled={busy.active} onClick={() => void importDocs()}>
           + PDF / Bilder
         </button>

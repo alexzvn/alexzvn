@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import type { Overlay, ProjectDoc, Slide, SourceMeta } from '@shared/types';
 import { uid } from '@/lib/ids';
-import { getSource, getImageBytes, putImage, putSource } from '@/lib/assets';
-import { pdfPageCount } from '@/lib/pdf';
+import { clearAssets, getSource, getImageBytes, putImage, putSource } from '@/lib/assets';
+import { clearPdfCaches, pdfPageCount } from '@/lib/pdf';
 import { deserializeProject, serializeProject } from '@/lib/project-file';
 import { exportSlidesToPdf } from '@/lib/export-pdf';
 import { getExpandPptxBuilds } from '@/lib/settings';
@@ -178,7 +178,13 @@ export const useProject = create<ProjectState>((set, get) => ({
     }
   },
 
-  newProject: () => set({ doc: emptyDoc(), selectedId: null, selectedOverlayId: null, dirty: false }),
+  newProject: () => {
+    // Frischer Start ohne App-Neustart (Issue #40): Caches der alten Quellen
+    // leeren, damit über mehrere Neu+Import-Zyklen kein Speicher zurückbleibt.
+    clearPdfCaches();
+    clearAssets();
+    set({ doc: emptyDoc(), selectedId: null, selectedOverlayId: null, dirty: false });
+  },
 
   openProject: async () => {
     set({ busy: { active: true, label: 'Öffne Projekt…' }, error: null });
