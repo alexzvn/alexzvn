@@ -67,10 +67,34 @@ export interface SwitcherSource {
   scenes: number;
 }
 
+/** Audience screen mode reported by the presenter (black/white pause screen). */
+export type PresenterScreen = 'live' | 'black' | 'white';
+
+/**
+ * Live reference view fed from JM Presenter over the LAN (#38). Mirrors the
+ * compact view the presenter's network remote already broadcasts via SSE
+ * (`/events`): current slide title + notes, next title and position. Slice 2a is
+ * text-only; the slide image follows in slice 2b over the same channel.
+ */
+export interface PresenterSource {
+  connected: boolean;
+  /** A presentation is currently running. */
+  active: boolean;
+  index: number; // 0-based slide index
+  total: number;
+  title: string;
+  notes: string;
+  nextTitle: string | null;
+  screen: PresenterScreen;
+}
+
 export interface StageConfig {
   timer: { enabled: boolean; host: string; port: number };
   switcher: { enabled: boolean; host: string; port: number };
-  widgets: { clock: boolean; timer: boolean; switcher: boolean; message: boolean };
+  /** JM Presenter feed (Referentenansicht). `pin` only needed if the presenter
+   *  remote runs with a PIN; leave empty to connect to a PIN-less remote. */
+  presenter: { enabled: boolean; host: string; port: number; pin: string };
+  widgets: { clock: boolean; timer: boolean; switcher: boolean; message: boolean; presenter: boolean };
   /** Ad-hoc-Nachricht, die der Operator auf dem Bühnenschirm einblendet. */
   message: string;
   /** Gewählter Ausgabe-Bildschirm (null = primär). */
@@ -81,6 +105,7 @@ export interface StageState {
   config: StageConfig;
   timer: TimerSource;
   switcher: SwitcherSource;
+  presenter: PresenterSource;
 }
 
 export interface DisplayInfo {
@@ -110,6 +135,7 @@ export interface JmstageApi {
 export interface PartialStageConfig {
   timer?: Partial<StageConfig['timer']>;
   switcher?: Partial<StageConfig['switcher']>;
+  presenter?: Partial<StageConfig['presenter']>;
   widgets?: Partial<StageConfig['widgets']>;
   message?: string;
   outputDisplayId?: number | null;

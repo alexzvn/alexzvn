@@ -96,13 +96,27 @@ export function OperatorView() {
                 onHost={(host) => setConfig({ switcher: { host } })}
                 onPort={(port) => setConfig({ switcher: { port } })}
               />
+              <SourceRow
+                label="JM Presenter"
+                hint="Referentenansicht: Folie · Notizen · Nächste (Fernsteuerung im Presenter aktivieren, Port 7330)"
+                enabled={c.presenter.enabled}
+                host={c.presenter.host}
+                port={c.presenter.port}
+                connected={state.presenter.connected}
+                pin={c.presenter.pin}
+                pinHint="PIN nur falls die Presenter-Fernsteuerung mit PIN läuft — sonst leer lassen"
+                onToggle={(enabled) => setConfig({ presenter: { enabled } })}
+                onHost={(host) => setConfig({ presenter: { host } })}
+                onPort={(port) => setConfig({ presenter: { port } })}
+                onPin={(pin) => setConfig({ presenter: { pin } })}
+              />
             </div>
           </Section>
 
           {/* Anzeige-Elemente */}
           <Section title="Anzeige-Elemente">
             <div className="flex flex-wrap gap-4">
-              {(['clock', 'timer', 'switcher', 'message'] as (keyof StageConfig['widgets'])[]).map((key) => (
+              {(['clock', 'timer', 'switcher', 'presenter', 'message'] as (keyof StageConfig['widgets'])[]).map((key) => (
                 <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
@@ -134,6 +148,7 @@ const WIDGET_LABEL: Record<keyof StageConfig['widgets'], string> = {
   clock: 'Uhr',
   timer: 'Timer/Countdown',
   switcher: 'Switcher-Status',
+  presenter: 'Presenter (REF)',
   message: 'Nachricht',
 };
 
@@ -144,9 +159,12 @@ function SourceRow({
   host,
   port,
   connected,
+  pin,
+  pinHint,
   onToggle,
   onHost,
   onPort,
+  onPin,
 }: {
   label: string;
   hint: string;
@@ -154,9 +172,13 @@ function SourceRow({
   host: string;
   port: number;
   connected: boolean;
+  /** Optional PIN field (only rendered when `onPin` is provided). */
+  pin?: string;
+  pinHint?: string;
   onToggle: (v: boolean) => void;
   onHost: (v: string) => void;
   onPort: (v: number) => void;
+  onPin?: (v: string) => void;
 }) {
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--border)] p-3.5">
@@ -197,7 +219,20 @@ function SourceRow({
             onChange={(e) => onPort(Math.max(1, Number(e.target.value) || port))}
             className="h-9 w-24 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm tabular-nums"
           />
+          {onPin && (
+            <input
+              value={pin ?? ''}
+              onChange={(e) => onPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
+              inputMode="numeric"
+              placeholder="PIN"
+              title={pinHint}
+              className="h-9 w-20 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm tabular-nums"
+            />
+          )}
         </div>
+      )}
+      {enabled && onPin && pinHint && (
+        <div className="mt-1.5 text-[11px] text-[var(--muted-foreground)]">{pinHint}</div>
       )}
     </div>
   );

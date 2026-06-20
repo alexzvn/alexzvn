@@ -5,6 +5,7 @@ import type { PartialStageConfig, StageState } from '@shared/types';
 import { getConfig, patchConfig } from './config';
 import { TimerClient, TIMER_OFFLINE } from './timer-client';
 import { SwitcherClient, SWITCHER_OFFLINE } from './switcher-client';
+import { PresenterClient, PRESENTER_OFFLINE } from './presenter-client';
 
 declare const __dirname: string;
 
@@ -14,6 +15,7 @@ const output = new OutputWindow('stage:state');
 
 let lastTimer = { ...TIMER_OFFLINE };
 let lastSwitcher = { ...SWITCHER_OFFLINE };
+let lastPresenter = { ...PRESENTER_OFFLINE };
 
 const timerClient = new TimerClient((s) => {
   lastTimer = s;
@@ -23,9 +25,18 @@ const switcherClient = new SwitcherClient((s) => {
   lastSwitcher = s;
   broadcast();
 });
+const presenterClient = new PresenterClient((s) => {
+  lastPresenter = s;
+  broadcast();
+});
 
 function buildState(): StageState {
-  return { config: getConfig(), timer: lastTimer, switcher: lastSwitcher };
+  return {
+    config: getConfig(),
+    timer: lastTimer,
+    switcher: lastSwitcher,
+    presenter: lastPresenter,
+  };
 }
 
 function broadcast(): void {
@@ -38,6 +49,7 @@ function broadcast(): void {
 // Host/Port/Enabled tatsächlich geändert haben — Widget-Toggles lösen nichts aus).
 let appliedTimerKey = '';
 let appliedSwitcherKey = '';
+let appliedPresenterKey = '';
 function applyConnections(): void {
   const cfg = getConfig();
   const tKey = cfg.timer.enabled ? `${cfg.timer.host}:${cfg.timer.port}` : '';
@@ -51,6 +63,14 @@ function applyConnections(): void {
     appliedSwitcherKey = sKey;
     if (sKey) switcherClient.connect(cfg.switcher.host, cfg.switcher.port);
     else switcherClient.disconnect();
+  }
+  const pKey = cfg.presenter.enabled
+    ? `${cfg.presenter.host}:${cfg.presenter.port}:${cfg.presenter.pin}`
+    : '';
+  if (pKey !== appliedPresenterKey) {
+    appliedPresenterKey = pKey;
+    if (pKey) presenterClient.connect(cfg.presenter.host, cfg.presenter.port, cfg.presenter.pin);
+    else presenterClient.disconnect();
   }
 }
 

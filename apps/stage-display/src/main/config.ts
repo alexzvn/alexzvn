@@ -5,11 +5,13 @@ import { DEFAULT_CONTROL_PORT } from '@jm/companion-protocol';
 import type { PartialStageConfig, StageConfig } from '@shared/types';
 
 const TIMER_DEFAULT_PORT = 7777;
+const PRESENTER_DEFAULT_PORT = 7330;
 
 const DEFAULT_CONFIG: StageConfig = {
   timer: { enabled: false, host: '127.0.0.1', port: TIMER_DEFAULT_PORT },
   switcher: { enabled: false, host: '127.0.0.1', port: DEFAULT_CONTROL_PORT },
-  widgets: { clock: true, timer: true, switcher: true, message: true },
+  presenter: { enabled: false, host: '127.0.0.1', port: PRESENTER_DEFAULT_PORT, pin: '' },
+  widgets: { clock: true, timer: true, switcher: true, message: true, presenter: true },
   message: '',
   outputDisplayId: null,
 };
@@ -30,6 +32,7 @@ export function getConfig(): StageConfig {
         ...data,
         timer: { ...DEFAULT_CONFIG.timer, ...data.timer },
         switcher: { ...DEFAULT_CONFIG.switcher, ...data.switcher },
+        presenter: { ...DEFAULT_CONFIG.presenter, ...data.presenter },
         widgets: { ...DEFAULT_CONFIG.widgets, ...data.widgets },
       };
       return cache;
@@ -50,6 +53,7 @@ export function patchConfig(patch: PartialStageConfig): StageConfig {
     ...(patch.outputDisplayId !== undefined ? { outputDisplayId: patch.outputDisplayId } : {}),
     timer: { ...cur.timer, ...patch.timer },
     switcher: { ...cur.switcher, ...patch.switcher },
+    presenter: { ...cur.presenter, ...patch.presenter },
     widgets: { ...cur.widgets, ...patch.widgets },
   };
   cache = next;
