@@ -1,10 +1,11 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
 import { OutputWindow, listDisplays } from '@jm/output-window';
 import { RemoteServer } from '@jm/remote';
 import { INITIAL_TRANSPORT, positionEm } from '@shared/types';
 import type { PartialPrompterConfig, PrompterState, PrompterTransport, RemoteInfo } from '@shared/types';
 import { getConfig, patchConfig } from './config';
+import { readScriptFile } from './docx';
 import { REMOTE_PAGE } from './remote-page';
 
 declare const __dirname: string;
@@ -219,6 +220,24 @@ function registerIpc(): void {
     patchConfig(patch);
     // Tempo/Zeilenabstand wirken sofort: Anker neu setzen, damit kein Sprung.
     if (patch.speed !== undefined || patch.lineHeight !== undefined) reanchor();
+    broadcast();
+    return buildState();
+  });
+
+  // Skript aus Datei laden: .docx (entpackt) oder .txt/.md (Issue #28).
+  ipcMain.handle('prompter:importScript', async () => {
+    if (!mainWindow) return buildState();
+    const r = await dialog.showOpenDialog(mainWindow, {
+      title: 'Skript laden',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Skript / Word', extensions: ['docx', 'txt', 'md', 'markdown'] },
+        { name: 'Alle Dateien', extensions: ['*'] },
+      ],
+    });
+    if (r.canceled || r.filePaths.length === 0) return buildState();
+    const text = readScriptFile(r.filePaths[0]); // wirft bei Lese-/Parse-Fehler
+    patchConfig({ script: text });
     broadcast();
     return buildState();
   });

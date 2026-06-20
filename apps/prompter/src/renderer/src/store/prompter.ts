@@ -9,6 +9,8 @@ interface PrompterStore {
   markersEm: number[];
   load: () => Promise<void>;
   setConfig: (patch: PartialPrompterConfig) => Promise<void>;
+  /** Skript aus Datei laden (.docx/.txt/.md); wirft bei Lese-/Parse-Fehler. */
+  importScript: () => Promise<void>;
   setRemote: (enabled: boolean) => Promise<void>;
   setMarkers: (m: number[]) => void;
   refreshDisplays: () => Promise<void>;
@@ -38,6 +40,10 @@ export const usePrompter = create<PrompterStore>((set, get) => ({
   },
   setConfig: async (patch) => {
     const s = await window.jmprompt.setConfig(patch);
+    set({ state: s });
+  },
+  importScript: async () => {
+    const s = await window.jmprompt.importScript();
     set({ state: s });
   },
   setRemote: async (enabled) => {

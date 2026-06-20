@@ -142,6 +142,8 @@ export interface JmpromptApi {
   platform: NodeJS.Platform;
   getState: () => Promise<PrompterState>;
   setConfig: (patch: PartialPrompterConfig) => Promise<PrompterState>;
+  /** Skript aus Datei laden (.docx/.txt/.md) und in die Config übernehmen (#28). */
+  importScript: () => Promise<PrompterState>;
   onState: (cb: (s: PrompterState) => void) => () => void;
   transport: {
     play: () => Promise<PrompterState>;

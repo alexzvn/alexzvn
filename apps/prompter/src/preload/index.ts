@@ -11,6 +11,7 @@ const api: JmpromptApi = {
   getState: () => ipcRenderer.invoke('prompter:getState') as Promise<PrompterState>,
   setConfig: (patch: PartialPrompterConfig) =>
     ipcRenderer.invoke('prompter:setConfig', patch) as Promise<PrompterState>,
+  importScript: () => ipcRenderer.invoke('prompter:importScript') as Promise<PrompterState>,
   onState: (cb) => {
     const listener = (_e: unknown, s: PrompterState): void => cb(s);
     ipcRenderer.on('prompter:state', listener);

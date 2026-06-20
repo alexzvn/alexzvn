@@ -7,6 +7,7 @@ import { usePrompterHotkeys } from '@/lib/useHotkeys';
 export function OperatorView(): React.JSX.Element {
   const state = usePrompter((s) => s.state);
   const setConfig = usePrompter((s) => s.setConfig);
+  const importScript = usePrompter((s) => s.importScript);
   const setMarkers = usePrompter((s) => s.setMarkers);
   const markersEm = usePrompter((s) => s.markersEm);
   const displays = usePrompter((s) => s.displays);
@@ -57,6 +58,20 @@ export function OperatorView(): React.JSX.Element {
             <span className="text-[11px] text-[var(--muted-foreground)]">
               Zeilen mit <code className="text-[var(--foreground)]"># </code> werden zu Abschnitts-Marken
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                void importScript().catch((e: unknown) =>
+                  window.alert(
+                    `Datei konnte nicht geladen werden: ${e instanceof Error ? e.message : String(e)}`,
+                  ),
+                );
+              }}
+              title=".docx, .txt oder .md laden (ersetzt das Skript)"
+              className="ml-auto h-7 px-2.5 rounded-[var(--radius)] border border-[var(--border)] text-[11px] font-bold hover:bg-[var(--highlight)]"
+            >
+              📄 Datei laden
+            </button>
           </div>
           <textarea
             value={c.script}
