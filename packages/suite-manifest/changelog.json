@@ -115,6 +115,13 @@
     "name": "JM Audio Recorder",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Einzelspur-Aufnahme: je Kanal zusätzlich eine Mono-WAV in einen Unterordner, parallel zur kombinierten Mehrkanal-Datei."
+        ]
+      },
+      {
         "version": "0.1.0",
         "notes": [
           "Mehrkanal-Audioaufnahme über Dante/ASIO als 32-Bit-Float-WAV.",
