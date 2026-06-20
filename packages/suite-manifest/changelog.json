@@ -166,6 +166,13 @@
     "name": "JM Presenter",
     "entries": [
       {
+        "version": "0.6.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Spielt die live gerenderte Folie (Programmausgabe inkl. Overlays) übers Netzwerk aus, damit das JM Stage Display das echte Folienbild zeigen kann. Dafür im Presenter die Fernsteuerung aktivieren."
+        ]
+      },
+      {
         "version": "0.5.3",
         "date": "2026-06-20",
         "notes": [
@@ -344,6 +351,14 @@
     "app": "stage-display",
     "name": "JM Stage Display",
     "entries": [
+      {
+        "version": "0.3.0",
+        "date": "2026-06-20",
+        "notes": [
+          "Zeigt jetzt das echte Folienbild des JM Presenters: Referenzansicht (Folie + Notizen + nächste Folie + Countdown) oder Hauptansicht (Folie als Vollbild) — umschaltbar in den Quellen.",
+          "Das Bild aktualisiert sich automatisch bei jedem Folienwechsel."
+        ]
+      },
       {
         "version": "0.2.0",
         "date": "2026-06-20",

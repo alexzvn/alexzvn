@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { cn } from '@jm/ui';
 import {
   getCountdownRemaining,
   getProjectedEndMs,
   isCountdownPaused,
   isCountdownRunning,
+  type StageConfig,
   type StageState,
 } from '@shared/types';
 import { formatClock, formatHMS, formatWall } from '@/lib/format';
@@ -21,7 +23,11 @@ export function StageScreen({ state, now }: { state: StageState; now: number }) 
   // (confidence) screen — current slide + notes + next, with a compact countdown
   // kept in the corner. Otherwise the normal countdown-centric layout shows.
   if (w.presenter && presenter.connected && presenter.active) {
-    return <PresenterRefScreen state={state} now={now} />;
+    return config.presenter.mode === 'main' ? (
+      <PresenterMainScreen state={state} now={now} />
+    ) : (
+      <PresenterRefScreen state={state} now={now} />
+    );
   }
 
   const cd = timer.countdown;
@@ -133,15 +139,55 @@ export function StageScreen({ state, now }: { state: StageState; now: number }) 
   );
 }
 
-/**
- * Referentenansicht (REF) — gespeist vom JM Presenter. Zeigt die aktuelle Folie
- * (Titel + Notizen), die nächste Folie und die Position, mit kompaktem Countdown
- * und Uhr oben. Slice 2a ist Text-only; das Folienbild folgt in slice 2b.
- */
-function PresenterRefScreen({ state, now }: { state: StageState; now: number }) {
-  const { config, timer, switcher, presenter } = state;
-  const w = config.widgets;
+/** Build the live rendered-slide URL on the presenter's remote server. `rev`
+ *  busts the cache so the <img> refetches whenever the slide changes. */
+function slideImageUrl(cfg: StageConfig['presenter'], rev: number): string {
+  const pin = cfg.pin ? `&pin=${encodeURIComponent(cfg.pin)}` : '';
+  return `http://${cfg.host}:${cfg.port}/slide/current.jpg?rev=${rev}${pin}`;
+}
 
+/**
+ * Live rendered slide fetched from the presenter (#38, 2b). Keeps the previous
+ * image visible across a slide change until the new one decodes (no flash), and
+ * shows a placeholder only on the very first load or a hard error.
+ */
+function SlideImage({ url, className }: { url: string; className?: string }) {
+  const [shown, setShown] = useState<string | null>(null);
+  const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setErrored(false);
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled) setShown(url);
+    };
+    img.onerror = () => {
+      if (!cancelled) setErrored(true);
+    };
+    img.src = url;
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  if (!shown) {
+    return (
+      <div
+        className={cn('flex items-center justify-center bg-black text-white/35', className)}
+        style={{ fontSize: '2.6cqh' }}
+      >
+        {errored ? 'Folie nicht verfügbar' : 'Folie wird geladen…'}
+      </div>
+    );
+  }
+  return <img src={shown} alt="" className={cn('object-contain', className)} draggable={false} />;
+}
+
+/** Compact countdown + clock + PGM header shared by the presenter screens. */
+function PresenterHeader({ state, now }: { state: StageState; now: number }) {
+  const { config, timer, switcher } = state;
+  const w = config.widgets;
   const cd = timer.countdown;
   const timerActive = Boolean(
     w.timer && timer.connected && cd && (isCountdownRunning(cd) || isCountdownPaused(cd)),
@@ -154,78 +200,128 @@ function PresenterRefScreen({ state, now }: { state: StageState; now: number }) 
         ? timer.colors.warning
         : timer.colors.normal
     : '#ffffff';
+  return (
+    <div className="flex items-center justify-between" style={{ fontVariantNumeric: 'tabular-nums' }}>
+      <div className="font-extrabold text-white/80" style={{ fontSize: '4cqh' }}>
+        {formatClock(now)}
+      </div>
+      <div className="flex items-center gap-[1.5cqw]">
+        {w.switcher && switcher.connected && (
+          <span className="rounded bg-white/12 px-[1.2cqh] py-[0.4cqh] font-extrabold" style={{ fontSize: '2.4cqh' }}>
+            PGM {switcher.program || '–'}
+          </span>
+        )}
+        {timerActive && (
+          <span className="font-extrabold leading-none" style={{ fontSize: '5cqh', color }}>
+            {formatHMS(remaining)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
+function BlankBadge({ screen }: { screen: 'black' | 'white' }) {
+  return (
+    <span
+      className="rounded px-[1.2cqh] py-[0.4cqh] font-extrabold uppercase tracking-[0.1em]"
+      style={{
+        fontSize: '2.2cqh',
+        background: screen === 'white' ? '#ffffff' : '#222',
+        color: screen === 'white' ? '#000' : '#fff',
+      }}
+    >
+      {screen === 'white' ? '⬜ Weißbild' : '⬛ Schwarzbild'}
+    </span>
+  );
+}
+
+/**
+ * Referentenansicht (REF) — gespeist vom JM Presenter (#38). Zweispaltig: links
+ * die live gerenderte Folie (Bild), rechts Position, Notizen und nächste Folie;
+ * oben kompakter Countdown + Uhr.
+ */
+function PresenterRefScreen({ state, now }: { state: StageState; now: number }) {
+  const { config, presenter } = state;
   const blanked = presenter.screen !== 'live';
+  const imgUrl = slideImageUrl(config.presenter, presenter.rev);
 
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden bg-black text-white select-none flex flex-col"
+      style={{ containerType: 'size' }}
+    >
+      <div className="px-[3%] pt-[2.5cqh] pb-[1.5cqh]">
+        <PresenterHeader state={state} now={now} />
+      </div>
+
+      <div className="flex-1 min-h-0 flex gap-[3cqw] px-[3%] pb-[3cqh]">
+        {/* aktuelle Folie als Bild */}
+        <div className="basis-[62%] min-w-0 flex items-center justify-center rounded-[1cqh] overflow-hidden ring-1 ring-white/10 bg-black">
+          <SlideImage url={imgUrl} className="w-full h-full" />
+        </div>
+
+        {/* Meta: Position, Notizen, Nächste */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex items-baseline gap-[1.5cqw]">
+            <span className="font-extrabold" style={{ fontSize: '3.4cqh', color: '#FFE819' }}>
+              Folie {presenter.index + 1}
+            </span>
+            <span className="text-white/45" style={{ fontSize: '2.4cqh' }}>
+              / {presenter.total}
+            </span>
+            {blanked && (
+              <span className="ml-auto">
+                <BlankBadge screen={presenter.screen === 'white' ? 'white' : 'black'} />
+              </span>
+            )}
+          </div>
+
+          <div className="mt-[1.5cqh] uppercase tracking-[0.14em] text-white/40" style={{ fontSize: '1.8cqh' }}>
+            Notizen
+          </div>
+          <div
+            className="flex-1 min-h-0 overflow-hidden whitespace-pre-wrap leading-relaxed text-white/90"
+            style={{ fontSize: '3cqh' }}
+          >
+            {presenter.notes.trim() || '—'}
+          </div>
+
+          {presenter.nextTitle && (
+            <div className="mt-[1.5cqh] pt-[1.5cqh] border-t border-white/15">
+              <span className="uppercase tracking-[0.14em] text-white/40" style={{ fontSize: '1.8cqh' }}>
+                Nächste
+              </span>
+              <div className="truncate font-semibold text-white/85" style={{ fontSize: '2.8cqh' }}>
+                {presenter.nextTitle}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Hauptansicht — spiegelt die Publikumsausgabe: die live gerenderte Folie als
+ * Vollbild, mit dezentem Countdown/Uhr oben (#38, 2b).
+ */
+function PresenterMainScreen({ state, now }: { state: StageState; now: number }) {
+  const { config, presenter } = state;
+  const imgUrl = slideImageUrl(config.presenter, presenter.rev);
   return (
     <div
       className="relative h-full w-full overflow-hidden bg-black text-white select-none"
       style={{ containerType: 'size' }}
     >
-      {/* Kopfzeile: Uhr links, Countdown + PGM rechts */}
-      <div className="absolute inset-x-0 top-0 flex items-center justify-between px-[3%] py-[2.5cqh]">
-        <div className="font-extrabold text-white/80" style={{ fontSize: '4cqh', fontVariantNumeric: 'tabular-nums' }}>
-          {formatClock(now)}
-        </div>
-        <div className="flex items-center gap-[1.5cqw]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {w.switcher && switcher.connected && (
-            <span className="rounded bg-white/12 px-[1.2cqh] py-[0.4cqh] font-extrabold" style={{ fontSize: '2.4cqh' }}>
-              PGM {switcher.program || '–'}
-            </span>
-          )}
-          {timerActive && (
-            <span className="font-extrabold leading-none" style={{ fontSize: '5cqh', color }}>
-              {formatHMS(remaining)}
-            </span>
-          )}
-        </div>
+      <SlideImage url={imgUrl} className="absolute inset-0 w-full h-full" />
+      <div className="absolute inset-x-0 top-0 px-[3%] pt-[2.5cqh] pointer-events-none">
+        <PresenterHeader state={state} now={now} />
       </div>
-
-      {/* Hauptbereich: Folie + Notizen */}
-      <div className="absolute inset-x-0 top-[10%] bottom-[10%] flex flex-col px-[5%]">
-        <div className="flex items-baseline gap-[2cqw]">
-          <span className="font-extrabold text-[var(--primary)]" style={{ fontSize: '3.6cqh', color: '#FFE819', fontVariantNumeric: 'tabular-nums' }}>
-            Folie {presenter.index + 1}
-          </span>
-          <span className="text-white/45" style={{ fontSize: '2.6cqh', fontVariantNumeric: 'tabular-nums' }}>
-            / {presenter.total}
-          </span>
-          {blanked && (
-            <span
-              className="ml-auto rounded px-[1.2cqh] py-[0.4cqh] font-extrabold uppercase tracking-[0.1em]"
-              style={{ fontSize: '2.2cqh', background: presenter.screen === 'white' ? '#ffffff' : '#222', color: presenter.screen === 'white' ? '#000' : '#fff' }}
-            >
-              {presenter.screen === 'white' ? '⬜ Weißbild' : '⬛ Schwarzbild'}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-[1cqh] font-extrabold leading-tight line-clamp-2" style={{ fontSize: '6.5cqh' }}>
-          {presenter.title || `Folie ${presenter.index + 1}`}
-        </div>
-
-        <div className="mt-[2cqh] mb-[1.5cqh] h-px bg-white/15" />
-
-        <div className="uppercase tracking-[0.14em] text-white/40" style={{ fontSize: '2cqh' }}>
-          Notizen
-        </div>
-        <div
-          className="flex-1 min-h-0 overflow-hidden whitespace-pre-wrap leading-relaxed text-white/90"
-          style={{ fontSize: '3.6cqh' }}
-        >
-          {presenter.notes.trim() || '—'}
-        </div>
-      </div>
-
-      {/* Nächste Folie unten */}
-      {presenter.nextTitle && (
-        <div className="absolute inset-x-0 bottom-[2.5%] px-[5%] flex items-center gap-[1.5cqw]">
-          <span className="uppercase tracking-[0.14em] text-white/40" style={{ fontSize: '2cqh' }}>
-            Nächste
-          </span>
-          <span className="truncate font-semibold text-white/85" style={{ fontSize: '3.2cqh' }}>
-            {presenter.nextTitle}
-          </span>
+      {presenter.screen !== 'live' && (
+        <div className="absolute right-[3%] bottom-[3cqh]">
+          <BlankBadge screen={presenter.screen === 'white' ? 'white' : 'black'} />
         </div>
       )}
     </div>

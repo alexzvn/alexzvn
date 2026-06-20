@@ -10,6 +10,7 @@ export const PRESENTER_OFFLINE: PresenterSource = {
   notes: '',
   nextTitle: null,
   screen: 'live',
+  rev: 0,
 };
 
 const RECONNECT_MS = 2000;
@@ -23,6 +24,7 @@ interface IncomingView {
   title: string;
   notes: string;
   nextTitle: string | null;
+  rev: number;
 }
 
 /**
@@ -126,6 +128,7 @@ export class PresenterClient {
       notes: typeof v.notes === 'string' ? v.notes : '',
       nextTitle: typeof v.nextTitle === 'string' ? v.nextTitle : null,
       screen: v.screen === 'black' || v.screen === 'white' ? v.screen : 'live',
+      rev: Number.isFinite(v.rev) ? v.rev : 0,
     };
   }
 

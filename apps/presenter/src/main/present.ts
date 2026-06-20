@@ -12,6 +12,10 @@ import {
 let payload: PresentationPayload | null = null;
 let state: PresentationState = { active: false, index: 0, total: 0, screen: 'live' };
 
+// Monotonic revision, bumped on every state change. Network consumers (the stage
+// display) use it to know when to refetch the rendered slide image (#38, 2b).
+let rev = 0;
+
 // Subscribers notified on every state change (the network remote pushes these to
 // connected phones via SSE). Kept here so present.ts stays the single source of
 // truth — windows get the broadcast, the remote gets the callback.
@@ -27,6 +31,7 @@ function clampIndex(i: number): number {
 }
 
 function publish(): void {
+  rev++;
   broadcastAll('present:state', state);
   for (const cb of listeners) cb();
 }
@@ -48,6 +53,7 @@ export function getRemoteView(): {
   title: string;
   notes: string;
   nextTitle: string | null;
+  rev: number;
 } {
   const slides = payload?.slides ?? [];
   const current = slides[state.index];
@@ -60,6 +66,7 @@ export function getRemoteView(): {
     title: current?.title ?? '',
     notes: current?.notes ?? '',
     nextTitle: next ? next.title || `Folie ${state.index + 2}` : null,
+    rev,
   };
 }
 

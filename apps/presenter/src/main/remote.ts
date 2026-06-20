@@ -3,6 +3,7 @@ import { randomInt } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
 import type { NetInterface, RemoteConfig, RemoteStatus } from '@shared/types';
 import { getRemoteView, goto, next, prev, setScreen, stopPresentation, subscribe } from './present';
+import { captureAudience } from './windows';
 import { controllerHtml } from './remote-page';
 
 // Embedded LAN clicker: a tiny HTTP server in the main process serves a mobile
@@ -133,6 +134,24 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       clearInterval(ping);
       sseClients.delete(res);
     });
+    return;
+  }
+
+  // Live rendered slide (program output) as JPEG — the stage display fetches this
+  // when the SSE `rev` changes (#38, slice 2b). PIN travels as a query param like
+  // /events. 404 while no presentation window is open.
+  if (req.method === 'GET' && pathname === '/slide/current.jpg') {
+    if (!authorized(url.searchParams.get('pin'))) {
+      res.writeHead(401).end();
+      return;
+    }
+    const jpeg = await captureAudience(1280);
+    if (!jpeg) {
+      res.writeHead(404).end();
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'image/jpeg', 'cache-control': 'no-store' });
+    res.end(jpeg);
     return;
   }
 

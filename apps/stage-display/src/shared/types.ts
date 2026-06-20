@@ -86,14 +86,21 @@ export interface PresenterSource {
   notes: string;
   nextTitle: string | null;
   screen: PresenterScreen;
+  /** Monotonic revision from the presenter — bumps on every change; drives the
+   *  rendered-slide image refetch (#38, slice 2b). */
+  rev: number;
 }
+
+/** How the presenter feed is shown on the stage screen. */
+export type PresenterMode = 'ref' | 'main';
 
 export interface StageConfig {
   timer: { enabled: boolean; host: string; port: number };
   switcher: { enabled: boolean; host: string; port: number };
   /** JM Presenter feed (Referentenansicht). `pin` only needed if the presenter
-   *  remote runs with a PIN; leave empty to connect to a PIN-less remote. */
-  presenter: { enabled: boolean; host: string; port: number; pin: string };
+   *  remote runs with a PIN; leave empty to connect to a PIN-less remote.
+   *  `mode`: 'ref' = slide + notes + next + countdown, 'main' = slide fullscreen. */
+  presenter: { enabled: boolean; host: string; port: number; pin: string; mode: PresenterMode };
   widgets: { clock: boolean; timer: boolean; switcher: boolean; message: boolean; presenter: boolean };
   /** Ad-hoc-Nachricht, die der Operator auf dem Bühnenschirm einblendet. */
   message: string;
@@ -137,6 +144,7 @@ export interface PartialStageConfig {
   switcher?: Partial<StageConfig['switcher']>;
   presenter?: Partial<StageConfig['presenter']>;
   widgets?: Partial<StageConfig['widgets']>;
+  // presenter.mode is patched via the nested `presenter` partial above.
   message?: string;
   outputDisplayId?: number | null;
 }

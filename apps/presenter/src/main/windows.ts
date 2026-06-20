@@ -183,6 +183,24 @@ export function toggleAudienceFullscreen(): boolean {
   return next;
 }
 
+/**
+ * Snapshot the live audience (program) output as JPEG bytes — the exact slide the
+ * audience sees, overlays + black/white pause screens included. Used to feed the
+ * rendered slide into the JM Stage Display over the LAN (#38, slice 2b). Returns
+ * null when no presentation window is open or the capture fails.
+ */
+export async function captureAudience(maxWidth = 1280): Promise<Buffer | null> {
+  if (!audienceWindow || audienceWindow.isDestroyed()) return null;
+  try {
+    const img = await audienceWindow.webContents.capturePage();
+    if (img.isEmpty()) return null;
+    const scaled = img.getSize().width > maxWidth ? img.resize({ width: maxWidth }) : img;
+    return scaled.toJPEG(72);
+  } catch {
+    return null;
+  }
+}
+
 export function closePresentationWindows(): void {
   if (audienceWindow && !audienceWindow.isDestroyed()) audienceWindow.close();
   if (presenterWindow && !presenterWindow.isDestroyed()) presenterWindow.close();

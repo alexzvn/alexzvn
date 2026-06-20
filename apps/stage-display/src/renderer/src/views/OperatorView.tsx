@@ -1,5 +1,5 @@
 import { Button, cn, Logo } from '@jm/ui';
-import type { StageConfig } from '@shared/types';
+import type { PresenterMode, StageConfig } from '@shared/types';
 import { useStage } from '@/store/stage';
 import { useTick } from '@/lib/format';
 import { StageScreen } from '@/components/StageScreen';
@@ -109,6 +109,36 @@ export function OperatorView() {
                 onHost={(host) => setConfig({ presenter: { host } })}
                 onPort={(port) => setConfig({ presenter: { port } })}
                 onPin={(pin) => setConfig({ presenter: { pin } })}
+                footer={
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-[var(--muted-foreground)]">Anzeige</span>
+                    <div className="inline-flex rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
+                      {(
+                        [
+                          ['ref', 'Referenzansicht'],
+                          ['main', 'Hauptansicht'],
+                        ] as [PresenterMode, string][]
+                      ).map(([m, label]) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setConfig({ presenter: { mode: m } })}
+                          className={cn(
+                            'px-3 h-8 text-xs font-semibold transition-colors',
+                            c.presenter.mode === m
+                              ? 'bg-[var(--primary)] text-[var(--brand-dark)]'
+                              : 'hover:bg-[var(--highlight)]',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-[var(--muted-foreground)]">
+                      Folienbild erscheint, sobald eine Präsentation läuft
+                    </span>
+                  </div>
+                }
               />
             </div>
           </Section>
@@ -161,6 +191,7 @@ function SourceRow({
   connected,
   pin,
   pinHint,
+  footer,
   onToggle,
   onHost,
   onPort,
@@ -175,6 +206,8 @@ function SourceRow({
   /** Optional PIN field (only rendered when `onPin` is provided). */
   pin?: string;
   pinHint?: string;
+  /** Optional extra controls rendered at the bottom of the card when enabled. */
+  footer?: React.ReactNode;
   onToggle: (v: boolean) => void;
   onHost: (v: string) => void;
   onPort: (v: number) => void;
@@ -234,6 +267,7 @@ function SourceRow({
       {enabled && onPin && pinHint && (
         <div className="mt-1.5 text-[11px] text-[var(--muted-foreground)]">{pinHint}</div>
       )}
+      {enabled && footer && <div className="mt-3">{footer}</div>}
     </div>
   );
 }

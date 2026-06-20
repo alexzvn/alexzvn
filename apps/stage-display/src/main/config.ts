@@ -10,7 +10,7 @@ const PRESENTER_DEFAULT_PORT = 7330;
 const DEFAULT_CONFIG: StageConfig = {
   timer: { enabled: false, host: '127.0.0.1', port: TIMER_DEFAULT_PORT },
   switcher: { enabled: false, host: '127.0.0.1', port: DEFAULT_CONTROL_PORT },
-  presenter: { enabled: false, host: '127.0.0.1', port: PRESENTER_DEFAULT_PORT, pin: '' },
+  presenter: { enabled: false, host: '127.0.0.1', port: PRESENTER_DEFAULT_PORT, pin: '', mode: 'ref' },
   widgets: { clock: true, timer: true, switcher: true, message: true, presenter: true },
   message: '',
   outputDisplayId: null,
