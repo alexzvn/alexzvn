@@ -132,6 +132,11 @@ interface State {
   addSend: (trackId: string, busId: string) => void;
   removeSend: (trackId: string, busId: string) => void;
 
+  // ── Automation ──────────────────────────────────────────────────────────────
+  addAutoPoint: (trackId: string, param: 'gain' | 'pan', us: number, value: number) => void;
+  removeAutoPoint: (trackId: string, param: 'gain' | 'pan', index: number) => void;
+  clearAutomation: (trackId: string, param: 'gain' | 'pan') => void;
+
   setExportStatus: (patch: Partial<ExportStatus>) => void;
 
   // ── Aufnahme ──────────────────────────────────────────────────────────────
@@ -493,6 +498,32 @@ export const useProject = create<State>((set, get) => ({
     get().commit('Send entfernen', (draft) => {
       const t = draft.tracks.find((tt) => tt.id === trackId);
       if (t?.sends) t.sends = t.sends.filter((s) => s.busId !== busId);
+    }),
+
+  addAutoPoint: (trackId, param, us, value) =>
+    get().commit('Automationspunkt', (draft) => {
+      const t = draft.tracks.find((tt) => tt.id === trackId);
+      if (!t) return;
+      if (!t.automation) t.automation = {};
+      const arr = t.automation[param] ?? (t.automation[param] = []);
+      arr.push({ us: Math.max(0, Math.round(us)), value });
+      arr.sort((a, b) => a.us - b.us);
+    }),
+
+  removeAutoPoint: (trackId, param, index) =>
+    get().commit('Automationspunkt entfernen', (draft) => {
+      const t = draft.tracks.find((tt) => tt.id === trackId);
+      const arr = t?.automation?.[param];
+      if (arr && index >= 0 && index < arr.length) {
+        arr.splice(index, 1);
+        if (arr.length === 0) delete t!.automation![param];
+      }
+    }),
+
+  clearAutomation: (trackId, param) =>
+    get().commit('Automation löschen', (draft) => {
+      const t = draft.tracks.find((tt) => tt.id === trackId);
+      if (t?.automation) delete t.automation[param];
     }),
 
   setExportStatus: (patch) => set((state) => ({ exportStatus: { ...state.exportStatus, ...patch } })),

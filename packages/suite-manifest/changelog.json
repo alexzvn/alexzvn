@@ -486,6 +486,15 @@
     "name": "JM DAW",
     "entries": [
       {
+        "version": "0.6.0",
+        "date": "2026-06-22",
+        "notes": [
+          "Automation: Lautstärke- und Pan-Hüllkurven pro Spur. Mit dem A-Schalter im Spurkopf zwischen Aus/Vol/Pan umschalten.",
+          "Kurve direkt in der Spur bearbeiten: klicken setzt einen Punkt, ziehen verschiebt ihn, Doppelklick löscht ihn; ⌫ leert die Kurve.",
+          "Automation wirkt sample-genau in Wiedergabe und Export; Mute/Solo bleiben davon unabhängig."
+        ]
+      },
+      {
         "version": "0.5.0",
         "date": "2026-06-22",
         "notes": [

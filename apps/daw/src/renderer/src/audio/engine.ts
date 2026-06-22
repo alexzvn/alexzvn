@@ -4,12 +4,14 @@
 // offline (OfflineAudioContext). Bewusst hinter dem schmalen AudioEngine-
 // Interface gekapselt, damit später eine native Engine andocken kann (Slice ≥).
 import {
+  anySolo,
+  automationValueAt,
   clipDurationUs,
   dbToGain,
-  effectiveTrackGain,
   projectDurationUs,
   usToSec,
   secToUs,
+  type AutomationPoint,
   type Project,
   type Clip,
 } from '@shared/project';
@@ -41,7 +43,12 @@ export interface AudioEngine {
 interface TrackNodes {
   gain: GainNode;
   pan: StereoPannerNode;
+  /** Mute/Solo-Gate (nur Audio-Spuren) — getrennt vom Vol-Wert für Automation. */
+  gate?: GainNode;
   analyser?: AnalyserNode;
+  /** Ob Vol/Pan automatisiert sind (dann nicht durch updateMix überschreiben). */
+  gainAuto?: boolean;
+  panAuto?: boolean;
 }
 
 /** Kleiner Vorlauf, damit alle Quellen sicher gleichzeitig starten. */
@@ -131,13 +138,20 @@ class WebAudioEngine implements AudioEngine {
     }
     const ctx = audioContext();
     const t = ctx.currentTime;
+    const solo = anySolo(project);
     for (const track of project.tracks) {
       const nodes = this.trackNodes.get(track.id);
       if (nodes) {
-        // Busse ignorieren Solo (Returns sollen beim Solo nicht verstummen).
-        const gain = track.kind === 'bus' ? (track.muted ? 0 : track.gain) : effectiveTrackGain(project, track);
-        nodes.gain.gain.setTargetAtTime(gain, t, 0.01);
-        nodes.pan.pan.setTargetAtTime(track.pan, t, 0.01);
+        if (track.kind === 'bus') {
+          // Busse ignorieren Solo (Returns sollen beim Solo nicht verstummen).
+          nodes.gain.gain.setTargetAtTime(track.muted ? 0 : track.gain, t, 0.01);
+          nodes.pan.pan.setTargetAtTime(track.pan, t, 0.01);
+        } else {
+          nodes.gate?.gain.setTargetAtTime(track.muted || (solo && !track.solo) ? 0 : 1, t, 0.01);
+          // Statische Werte nur ohne Automation live übernehmen.
+          if (!nodes.gainAuto) nodes.gain.gain.setTargetAtTime(track.gain, t, 0.01);
+          if (!nodes.panAuto) nodes.pan.pan.setTargetAtTime(track.pan, t, 0.01);
+        }
       }
       const fx = this.trackFx.get(track.id);
       if (fx && track.effects) for (const inst of track.effects) fx.get(inst.id)?.update(inst.params as EffectParams);
@@ -245,35 +259,43 @@ class WebAudioEngine implements AudioEngine {
   ): void {
     for (const track of project.tracks) {
       if (track.kind !== 'audio') continue;
-      // Clips → [Spur-FX] → Fader → Pan → (Analyser) → Master; Sends post-Pan → Bus.
+      // Clips → [Spur-FX] → Vol → Pan → Gate(Mute/Solo) → (Analyser) → Master.
       const fxMap = opts.realtime ? new Map<string, EffectNode>() : undefined;
       const chain = this.buildChain(ctx, track.effects, fxMap);
       const tg = ctx.createGain();
-      tg.gain.value = effectiveTrackGain(project, track);
       const tp = ctx.createStereoPanner();
-      tp.pan.value = track.pan;
+      const gate = ctx.createGain();
+      const gainAuto = !!track.automation?.gain?.length;
+      const panAuto = !!track.automation?.pan?.length;
+      // Vol/Pan: automatisierte Hüllkurve planen oder statischen Wert setzen.
+      if (gainAuto) this.scheduleEnvelope(tg.gain, track.automation!.gain!, opts.when, opts.fromUs, (v) => Math.max(0, v));
+      else tg.gain.value = track.gain;
+      if (panAuto) this.scheduleEnvelope(tp.pan, track.automation!.pan!, opts.when, opts.fromUs, (v) => Math.max(-1, Math.min(1, v)));
+      else tp.pan.value = track.pan;
+      gate.gain.value = track.muted || (anySolo(project) && !track.solo) ? 0 : 1;
       chain.output.connect(tg);
       tg.connect(tp);
+      tp.connect(gate);
 
       if (opts.realtime) {
         const analyser = (ctx as AudioContext).createAnalyser();
         analyser.fftSize = 512;
-        tp.connect(analyser);
+        gate.connect(analyser);
         analyser.connect(masterBusInput);
-        this.trackNodes.set(track.id, { gain: tg, pan: tp, analyser });
+        this.trackNodes.set(track.id, { gain: tg, pan: tp, gate, analyser, gainAuto, panAuto });
         this.trackFx.set(track.id, fxMap!);
       } else {
-        tp.connect(masterBusInput);
+        gate.connect(masterBusInput);
       }
 
-      // Post-Pan-Sends auf die AUX-Busse.
+      // Post-Fader-Sends (nach Mute) auf die AUX-Busse.
       if (track.sends) {
         for (const s of track.sends) {
           const target = busInputs.get(s.busId);
           if (!target) continue;
           const sg = ctx.createGain();
           sg.gain.value = dbToGain(s.gainDb);
-          tp.connect(sg);
+          gate.connect(sg);
           sg.connect(target);
           if (opts.realtime) this.sendNodes.set(`${track.id}:${s.busId}`, sg);
         }
@@ -283,6 +305,23 @@ class WebAudioEngine implements AudioEngine {
         if (!clip.enabled) continue;
         this.scheduleClip(ctx, clip, chain.input, opts);
       }
+    }
+  }
+
+  /** Hüllkurve auf einen AudioParam planen (ab Wiedergabestart `when`/`fromUs`). */
+  private scheduleEnvelope(
+    param: AudioParam,
+    points: AutomationPoint[],
+    when: number,
+    fromUs: number,
+    clamp: (v: number) => number,
+  ): void {
+    if (!points.length) return;
+    const initial = clamp(automationValueAt(points, fromUs) ?? points[0].value);
+    param.setValueAtTime(initial, when);
+    for (const p of points) {
+      if (p.us <= fromUs) continue;
+      param.linearRampToValueAtTime(clamp(p.value), when + usToSec(p.us - fromUs));
     }
   }
 
@@ -373,8 +412,10 @@ function fxSignature(project: Project): string {
   const sig = (effs?: { id: string; kind: string }[]): string =>
     (effs ?? []).map((e) => `${e.id}:${e.kind}`).join(',');
   const sends = (ss?: { busId: string }[]): string => (ss ?? []).map((s) => s.busId).join(',');
+  const auto = (t: Project['tracks'][number]): string =>
+    `${t.automation?.gain?.length ? 1 : 0}${t.automation?.pan?.length ? 1 : 0}`;
   const tracks = project.tracks
-    .map((t) => `${t.kind}:${t.id}[${sig(t.effects)}](${sends(t.sends)})`)
+    .map((t) => `${t.kind}:${t.id}[${sig(t.effects)}](${sends(t.sends)}){${auto(t)}}`)
     .join('|');
   return `${tracks}#M[${sig(project.master.effects)}]`;
 }

@@ -53,6 +53,18 @@ export interface ClipFade {
   outUs: number;
 }
 
+/** Ein Automations-Stützpunkt: Wert zum Zeitpunkt (µs). */
+export interface AutomationPoint {
+  us: number;
+  value: number;
+}
+
+/** Automations-Hüllkurven einer Spur (Vol linear, Pan -1..+1). */
+export interface TrackAutomation {
+  gain?: AutomationPoint[];
+  pan?: AutomationPoint[];
+}
+
 export interface Clip {
   id: string;
   /** Quelle (MediaAsset.id). */
@@ -93,6 +105,8 @@ export interface Track {
   muted: boolean;
   solo: boolean;
   locked: boolean;
+  /** Vol-/Pan-Automation (Hüllkurven); überschreibt bei Wiedergabe den statischen Wert. */
+  automation?: TrackAutomation;
   /** Insert-Effekte der Spur (pre-Fader). */
   effects?: EffectInstance[];
   /** Reserviert für AUX-Sends (Slice 3). */
@@ -223,6 +237,7 @@ function normalizeTrack(t: Partial<Track>): Track {
     muted: t.muted ?? false,
     solo: t.solo ?? false,
     locked: t.locked ?? false,
+    automation: t.automation,
     effects: t.effects,
     sends: t.sends,
     outputBusId: t.outputBusId ?? null,
@@ -286,3 +301,20 @@ export function effectiveTrackGain(project: Project, track: Track): number {
 /** dB ↔ linear (für Fader-Anzeige). */
 export const dbToGain = (db: number): number => (db <= -60 ? 0 : Math.pow(10, db / 20));
 export const gainToDb = (g: number): number => (g <= 0 ? -Infinity : 20 * Math.log10(g));
+
+/** Interpolierter Automationswert zum Zeitpunkt us (Punkte nach us sortiert). */
+export function automationValueAt(points: AutomationPoint[], us: number): number | undefined {
+  if (!points.length) return undefined;
+  if (us <= points[0].us) return points[0].value;
+  const last = points[points.length - 1];
+  if (us >= last.us) return last.value;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1];
+    const b = points[i];
+    if (us <= b.us) {
+      const span = b.us - a.us || 1;
+      return a.value + (b.value - a.value) * ((us - a.us) / span);
+    }
+  }
+  return last.value;
+}

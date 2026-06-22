@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@jm/ui';
 import {
   clipDurationUs,
@@ -6,6 +6,7 @@ import {
   projectDurationUs,
   secToUs,
   usToSec,
+  type AutomationPoint,
   type Clip,
   type MediaAsset,
   type Project,
@@ -26,11 +27,15 @@ const SNAP_PX = 7;
 const GAIN_MAX = 1.6;
 const CLIP_INSET = 4; // top-1/bottom-1 des Clips (px)
 
-type DragMode = 'move' | 'trim-l' | 'trim-r' | 'fade-l' | 'fade-r' | 'gain' | 'playhead' | 'loop';
+type DragMode = 'move' | 'trim-l' | 'trim-r' | 'fade-l' | 'fade-r' | 'gain' | 'playhead' | 'loop' | 'auto';
+type AutoParam = 'gain' | 'pan';
 interface DragState {
   mode: DragMode;
   clipId?: string;
   grabOffsetUs?: number;
+  autoTrackId?: string;
+  autoParam?: AutoParam;
+  autoIndex?: number;
 }
 
 export function Timeline() {
@@ -58,6 +63,19 @@ export function Timeline() {
   const setLoopRegion = useProject((s) => s.setLoopRegion);
   const toggleLoop = useProject((s) => s.toggleLoop);
   const clearLoop = useProject((s) => s.clearLoop);
+  const addAutoPoint = useProject((s) => s.addAutoPoint);
+  const removeAutoPoint = useProject((s) => s.removeAutoPoint);
+  const clearAutomation = useProject((s) => s.clearAutomation);
+
+  // Welche Automations-Hüllkurve je Spur sichtbar/editierbar ist (View-Status).
+  const [autoView, setAutoView] = useState<Record<string, AutoParam>>({});
+  const cycleAuto = (trackId: string): void =>
+    setAutoView((v) => {
+      const cur = v[trackId];
+      const next: AutoParam | undefined = cur === undefined ? 'gain' : cur === 'gain' ? 'pan' : undefined;
+      const { [trackId]: _drop, ...rest } = v;
+      return next ? { ...rest, [trackId]: next } : rest;
+    });
 
   const lanesRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -101,6 +119,16 @@ export function Timeline() {
     return GAIN_MAX * (1 - rel);
   };
 
+  // Cursor-Y → Automationswert (Vol 0..GAIN_MAX, Pan -1..+1) über die volle Lane-Höhe.
+  const clientToAutoValue = (clientY: number, laneIndex: number, param: AutoParam): number => {
+    const el = lanesRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const laneTop = rect.top + LOOP_H + RULER_H + laneIndex * TRACK_H;
+    const rel = Math.max(0, Math.min(1, (clientY - laneTop) / TRACK_H));
+    return param === 'gain' ? GAIN_MAX * (1 - rel) : 1 - 2 * rel;
+  };
+
   const snapTargets = (excludeId?: string): number[] => {
     const out = [0, playheadUs];
     for (const t of present.tracks)
@@ -141,6 +169,15 @@ export function Timeline() {
         if (li >= 0) {
           const g = clientToGain(e.clientY, li);
           dragUpdate((d) => setClipGain(d, drag.clipId!, g));
+        }
+        return;
+      }
+      if (drag.mode === 'auto') {
+        const li = lanes.findIndex((t) => t.id === drag.autoTrackId);
+        if (li >= 0 && drag.autoParam) {
+          const us = clientToUs(e.clientX);
+          const value = clientToAutoValue(e.clientY, li, drag.autoParam);
+          dragUpdate((d) => moveAutoPoint(d, drag, us, value));
         }
         return;
       }
@@ -233,6 +270,12 @@ export function Timeline() {
               track={track}
               active={track.id === effectiveActiveId}
               removable={lanes.length > 1}
+              autoParam={autoView[track.id]}
+              onCycleAuto={() => cycleAuto(track.id)}
+              onClearAuto={() => {
+                const p = autoView[track.id];
+                if (p) clearAutomation(track.id, p);
+              }}
             />
           ))}
         </div>
@@ -269,26 +312,48 @@ export function Timeline() {
                 dragRef.current = { mode: 'playhead' };
               }}
             />
-            {lanes.map((track) => (
-              <div
-                key={track.id}
-                className="relative border-b border-[var(--border)]/30"
-                style={{ height: TRACK_H }}
-                onPointerDown={() => select(null)}
-              >
-                {track.clips.map((clip) => (
-                  <ClipBlock
-                    key={clip.id}
-                    clip={clip}
-                    project={present}
-                    selected={selectedClipId === clip.id}
-                    leftPx={usToPx(clip.startUs)}
-                    widthPx={Math.max(6, usToPx(clipDurationUs(clip)))}
-                    onStart={(e, mode) => startClipDrag(e, clip, mode)}
-                  />
-                ))}
-              </div>
-            ))}
+            {lanes.map((track, li) => {
+              const ap = autoView[track.id];
+              return (
+                <div
+                  key={track.id}
+                  className="relative border-b border-[var(--border)]/30"
+                  style={{ height: TRACK_H }}
+                  onPointerDown={ap ? undefined : () => select(null)}
+                >
+                  <div className={cn('absolute inset-0', ap && 'opacity-40 pointer-events-none')}>
+                    {track.clips.map((clip) => (
+                      <ClipBlock
+                        key={clip.id}
+                        clip={clip}
+                        project={present}
+                        selected={selectedClipId === clip.id}
+                        leftPx={usToPx(clip.startUs)}
+                        widthPx={Math.max(6, usToPx(clipDurationUs(clip)))}
+                        onStart={(e, mode) => startClipDrag(e, clip, mode)}
+                      />
+                    ))}
+                  </div>
+                  {ap && (
+                    <AutomationOverlay
+                      points={track.automation?.[ap] ?? []}
+                      param={ap}
+                      widthPx={widthPx}
+                      toX={(us) => usToPx(us)}
+                      onAdd={(clientX, clientY) =>
+                        addAutoPoint(track.id, ap, clientToUs(clientX), clientToAutoValue(clientY, li, ap))
+                      }
+                      onPointDown={(e, idx) => {
+                        e.stopPropagation();
+                        dragRef.current = { mode: 'auto', autoTrackId: track.id, autoParam: ap, autoIndex: idx };
+                        beginDrag();
+                      }}
+                      onPointRemove={(idx) => removeAutoPoint(track.id, ap, idx)}
+                    />
+                  )}
+                </div>
+              );
+            })}
 
             {/* Loop-Bereich über die Spuren (visuelle Markierung) */}
             {loopEnabled && loopEndUs > loopStartUs && (
@@ -433,6 +498,19 @@ function laneIndexOfClip(lanes: Track[], clipId: string): number {
   return -1;
 }
 
+/** Automationspunkt verschieben; us zwischen Nachbarn geklemmt (Reihenfolge bleibt). */
+function moveAutoPoint(draft: Project, drag: DragState, us: number, value: number): void {
+  const t = draft.tracks.find((tt) => tt.id === drag.autoTrackId);
+  const arr = drag.autoParam ? t?.automation?.[drag.autoParam] : undefined;
+  if (!arr || drag.autoIndex === undefined) return;
+  const i = drag.autoIndex;
+  if (i < 0 || i >= arr.length) return;
+  const lo = i > 0 ? arr[i - 1].us + 1 : 0;
+  const hi = i < arr.length - 1 ? arr[i + 1].us - 1 : Number.MAX_SAFE_INTEGER;
+  arr[i].us = Math.max(lo, Math.min(hi, Math.round(us)));
+  arr[i].value = value;
+}
+
 // ── Sub-Komponenten ───────────────────────────────────────────────────────────
 
 function Ruler({
@@ -476,7 +554,21 @@ function Ruler({
   );
 }
 
-function TrackHeader({ track, active, removable }: { track: Track; active: boolean; removable: boolean }) {
+function TrackHeader({
+  track,
+  active,
+  removable,
+  autoParam,
+  onCycleAuto,
+  onClearAuto,
+}: {
+  track: Track;
+  active: boolean;
+  removable: boolean;
+  autoParam?: AutoParam;
+  onCycleAuto: () => void;
+  onClearAuto: () => void;
+}) {
   const setActiveTrack = useProject((s) => s.setActiveTrack);
   const removeTrack = useProject((s) => s.removeTrack);
   const toggleMute = useProject((s) => s.toggleMute);
@@ -519,6 +611,29 @@ function TrackHeader({ track, active, removable }: { track: Track; active: boole
       <div className="flex items-center gap-1">
         <MiniToggle active={track.muted} label="M" title="Stumm" tone="mute" onClick={() => toggleMute(track.id)} />
         <MiniToggle active={track.solo} label="S" title="Solo" tone="solo" onClick={() => toggleSolo(track.id)} />
+        <button
+          type="button"
+          title="Automation: aus → Vol → Pan"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={onCycleAuto}
+          className={cn(
+            'h-5 px-1.5 rounded text-[9px] font-bold ml-auto',
+            autoParam ? 'bg-amber-400 text-black' : 'border border-[var(--border)] text-[var(--muted-foreground)]',
+          )}
+        >
+          {autoParam === 'gain' ? 'A·Vol' : autoParam === 'pan' ? 'A·Pan' : 'A'}
+        </button>
+        {autoParam && (
+          <button
+            type="button"
+            title="Automation dieser Kurve löschen"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onClearAuto}
+            className="h-5 w-5 rounded text-[10px] text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+          >
+            ⌫
+          </button>
+        )}
       </div>
     </div>
   );
@@ -673,6 +788,79 @@ function ClipWave({ asset, clip, widthPx }: { asset: MediaAsset | undefined; cli
   }, [peaks, w, h, clip.inUs, clip.outUs]);
 
   return <canvas ref={canvasRef} width={w} height={h} className="absolute top-[5px] left-0" style={{ width: w, height: h }} />;
+}
+
+/** Editierbare Automations-Hüllkurve über einer Spur-Lane (Vol/Pan). */
+function AutomationOverlay({
+  points,
+  param,
+  widthPx,
+  toX,
+  onAdd,
+  onPointDown,
+  onPointRemove,
+}: {
+  points: AutomationPoint[];
+  param: AutoParam;
+  widthPx: number;
+  toX: (us: number) => number;
+  onAdd: (clientX: number, clientY: number) => void;
+  onPointDown: (e: React.PointerEvent, index: number) => void;
+  onPointRemove: (index: number) => void;
+}) {
+  const H = TRACK_H;
+  const toY = (value: number): number =>
+    param === 'gain'
+      ? (1 - Math.min(1, Math.max(0, value / GAIN_MAX))) * H
+      : ((1 - Math.max(-1, Math.min(1, value))) / 2) * H;
+  const neutralY = toY(param === 'gain' ? 1 : 0);
+
+  let d = '';
+  if (points.length) {
+    const first = points[0];
+    d = `M 0 ${toY(first.value)} L ${toX(first.us)} ${toY(first.value)}`;
+    for (let i = 1; i < points.length; i++) d += ` L ${toX(points[i].us)} ${toY(points[i].value)}`;
+    d += ` L ${widthPx} ${toY(points[points.length - 1].value)}`;
+  }
+
+  return (
+    <svg className="absolute left-0 top-0" width={widthPx} height={H} style={{ width: widthPx, height: H }}>
+      <rect
+        x={0}
+        y={0}
+        width={widthPx}
+        height={H}
+        fill="transparent"
+        style={{ cursor: 'crosshair' }}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          onAdd(e.clientX, e.clientY);
+        }}
+      />
+      <line x1={0} y1={neutralY} x2={widthPx} y2={neutralY} stroke="rgba(251,191,36,0.25)" strokeWidth={1} strokeDasharray="3 3" />
+      {d && <path d={d} fill="none" stroke="rgb(251,191,36)" strokeWidth={1.5} />}
+      {points.map((p, i) => (
+        <circle
+          key={i}
+          cx={toX(p.us)}
+          cy={toY(p.value)}
+          r={4}
+          fill="rgb(251,191,36)"
+          stroke="black"
+          strokeWidth={0.5}
+          style={{ cursor: 'grab' }}
+          onPointerDown={(e) => onPointDown(e, i)}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onPointRemove(i);
+          }}
+        />
+      ))}
+      <text x={4} y={12} fill="rgba(251,191,36,0.85)" fontSize={9} fontWeight="bold" style={{ pointerEvents: 'none' }}>
+        {param === 'gain' ? 'Vol' : 'Pan'}
+      </text>
+    </svg>
+  );
 }
 
 function TlButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
