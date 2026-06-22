@@ -18,6 +18,7 @@ import { PEAKS_PER_SEC } from '@/audio/waveform';
 import { snapSourceUsToZero } from '@/lib/zerocross';
 
 const RULER_H = 26;
+const LOOP_H = 16;
 const TRACK_H = 76;
 const HEADER_W = 150;
 const MIN_DUR_US = secToUs(0.05);
@@ -25,7 +26,7 @@ const SNAP_PX = 7;
 const GAIN_MAX = 1.6;
 const CLIP_INSET = 4; // top-1/bottom-1 des Clips (px)
 
-type DragMode = 'move' | 'trim-l' | 'trim-r' | 'fade-l' | 'fade-r' | 'gain' | 'playhead';
+type DragMode = 'move' | 'trim-l' | 'trim-r' | 'fade-l' | 'fade-r' | 'gain' | 'playhead' | 'loop';
 interface DragState {
   mode: DragMode;
   clipId?: string;
@@ -51,6 +52,12 @@ export function Timeline() {
   const endDrag = useProject((s) => s.endDrag);
   const zeroCrossEnabled = useProject((s) => s.zeroCrossEnabled);
   const setZeroCross = useProject((s) => s.setZeroCross);
+  const loopEnabled = useProject((s) => s.loopEnabled);
+  const loopStartUs = useProject((s) => s.loopStartUs);
+  const loopEndUs = useProject((s) => s.loopEndUs);
+  const setLoopRegion = useProject((s) => s.setLoopRegion);
+  const toggleLoop = useProject((s) => s.toggleLoop);
+  const clearLoop = useProject((s) => s.clearLoop);
 
   const lanesRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -123,6 +130,10 @@ export function Timeline() {
         setPlayhead(snap(clientToUs(e.clientX)));
         return;
       }
+      if (drag.mode === 'loop') {
+        setLoopRegion(drag.grabOffsetUs ?? 0, clientToUs(e.clientX));
+        return;
+      }
       if (drag.mode === 'gain') {
         const ti = trackIndexOfClip(present, drag.clipId!);
         if (ti >= 0) {
@@ -144,7 +155,7 @@ export function Timeline() {
       if (!drag) return;
       const { mode, clipId } = drag;
       dragRef.current = null;
-      if (mode === 'playhead') return;
+      if (mode === 'playhead' || mode === 'loop') return;
       // Nulldurchgang-Rastung beim Loslassen eines Trims.
       if ((mode === 'trim-l' || mode === 'trim-r') && clipId && zeroCrossEnabled) {
         dragUpdate((d) => snapTrimToZero(d, clipId, mode));
@@ -159,6 +170,31 @@ export function Timeline() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pxPerSec, present, playheadUs, zeroCrossEnabled, tracks.length]);
+
+  // Alt + Mausrad → Zoom (am Cursor verankert); normales Rad → horizontal scrollen.
+  useEffect(() => {
+    const el = lanesRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent): void => {
+      const st = useProject.getState();
+      if (e.altKey) {
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        const cursorSec = (e.clientX - rect.left + el.scrollLeft) / st.pxPerSec;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        const newPx = Math.max(8, Math.min(600, st.pxPerSec * factor));
+        st.setZoom(newPx);
+        // Scrollposition so anpassen, dass die Zeit unter dem Cursor stehen bleibt.
+        requestAnimationFrame(() => {
+          el.scrollLeft = cursorSec * newPx - (e.clientX - rect.left);
+        });
+      } else if (e.deltaY !== 0 && !e.shiftKey) {
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   const startClipDrag = (e: React.PointerEvent, clip: Clip, mode: DragMode): void => {
     e.stopPropagation();
@@ -178,7 +214,8 @@ export function Timeline() {
         <TlButton label="⧉ Duplizieren" onClick={duplicateSelected} disabled={!selectedClipId} />
         <TlButton label="🗑 Löschen" onClick={deleteSelected} disabled={!selectedClipId} />
         <TlButton label="+ Spur" onClick={addTrack} />
-        <TlToggle label="⌁ Nulldurchgang" active={zeroCrossEnabled} onClick={() => setZeroCross(!zeroCrossEnabled)} />
+        <TlToggle label="⌁ Nulldurchgang" active={zeroCrossEnabled} onClick={() => setZeroCross(!zeroCrossEnabled)} title="Schnitte/Trims auf den nächsten Nulldurchgang rasten" />
+        <TlToggle label="⟳ Loop" active={loopEnabled} onClick={toggleLoop} title="Loop-Wiedergabe (Bereich in der Loop-Leiste ziehen)" />
         <div className="flex-1" />
         <span className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider">Zoom</span>
         <TlButton label="–" onClick={() => setZoom(pxPerSec / 1.3)} />
@@ -187,7 +224,7 @@ export function Timeline() {
 
       <div className="flex-1 min-h-0 flex">
         <div className="shrink-0 border-r border-[var(--border)]/50" style={{ width: HEADER_W }}>
-          <div style={{ height: RULER_H }} className="border-b border-[var(--border)]/40" />
+          <div style={{ height: LOOP_H + RULER_H }} className="border-b border-[var(--border)]/40" />
           {tracks.map((track) => (
             <TrackHeader
               key={track.id}
@@ -200,6 +237,28 @@ export function Timeline() {
 
         <div ref={lanesRef} className="flex-1 overflow-x-auto overflow-y-hidden relative">
           <div style={{ width: widthPx, position: 'relative' }}>
+            {/* Loop-Leiste: ziehen setzt den Bereich, Doppelklick löscht ihn. */}
+            <div
+              className="relative border-b border-[var(--border)]/40 bg-[var(--background)]/40 cursor-crosshair select-none"
+              style={{ height: LOOP_H }}
+              title="Ziehen: Loop-Bereich setzen · Doppelklick: löschen"
+              onPointerDown={(e) => {
+                const a = clientToUs(e.clientX);
+                dragRef.current = { mode: 'loop', grabOffsetUs: a };
+                setLoopRegion(a, a);
+              }}
+              onDoubleClick={() => clearLoop()}
+            >
+              {loopEndUs > loopStartUs && (
+                <div
+                  className={cn(
+                    'absolute top-[2px] bottom-[2px] rounded-sm',
+                    loopEnabled ? 'bg-[var(--primary)]/70' : 'bg-[var(--muted-foreground)]/40',
+                  )}
+                  style={{ left: usToPx(loopStartUs), width: Math.max(2, usToPx(loopEndUs - loopStartUs)) }}
+                />
+              )}
+            </div>
             <Ruler
               widthPx={widthPx}
               pxPerSec={pxPerSec}
@@ -229,9 +288,22 @@ export function Timeline() {
               </div>
             ))}
 
+            {/* Loop-Bereich über die Spuren (visuelle Markierung) */}
+            {loopEnabled && loopEndUs > loopStartUs && (
+              <div
+                className="absolute pointer-events-none bg-[var(--primary)]/8 border-x border-[var(--primary)]/40"
+                style={{
+                  left: usToPx(loopStartUs),
+                  width: Math.max(2, usToPx(loopEndUs - loopStartUs)),
+                  top: LOOP_H,
+                  height: RULER_H + tracks.length * TRACK_H,
+                }}
+              />
+            )}
+
             <div
               className="absolute top-0 bottom-0 w-px bg-[var(--primary)] pointer-events-none"
-              style={{ left: usToPx(playheadUs), height: RULER_H + tracks.length * TRACK_H }}
+              style={{ left: usToPx(playheadUs), height: LOOP_H + RULER_H + tracks.length * TRACK_H }}
             >
               <div className="absolute -top-0 -left-[5px] w-[11px] h-[11px] rotate-45 bg-[var(--primary)]" />
             </div>
@@ -618,12 +690,12 @@ function TlButton({ label, onClick, disabled }: { label: string; onClick: () => 
   );
 }
 
-function TlToggle({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TlToggle({ label, active, onClick, title }: { label: string; active: boolean; onClick: () => void; title?: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title="Schnitte/Trims auf den nächsten Nulldurchgang rasten"
+      title={title}
       className={cn(
         'h-7 px-2.5 rounded-[var(--radius)] text-[11px] font-bold transition-colors whitespace-nowrap border',
         active

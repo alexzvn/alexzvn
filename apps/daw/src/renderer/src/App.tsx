@@ -74,6 +74,9 @@ export function App() {
       } else if (!mod && e.key.toLowerCase() === 's') {
         e.preventDefault();
         st.splitAtPlayhead();
+      } else if (!mod && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        st.toggleLoop();
       }
     };
     window.addEventListener('keydown', onKey);

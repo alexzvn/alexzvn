@@ -486,6 +486,14 @@
     "name": "JM DAW",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-22",
+        "notes": [
+          "Loop-Wiedergabe: in der Loop-Leiste über der Zeitachse einen Bereich ziehen, mit der Taste L oder dem Loop-Schalter aktivieren; Aufnahme läuft parallel zum geloopten Playback.",
+          "Zoom per Alt + Mausrad, am Mauszeiger verankert; normales Mausrad scrollt die Timeline waagerecht."
+        ]
+      },
+      {
         "version": "0.3.0",
         "date": "2026-06-22",
         "notes": [

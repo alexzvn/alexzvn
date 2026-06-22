@@ -72,6 +72,10 @@ interface State {
   activeTrackId: string | null;
   /** Schnitte/Trims auf den nächsten Nulldurchgang einrasten. */
   zeroCrossEnabled: boolean;
+  /** Loop-Wiedergabe zwischen loopStartUs und loopEndUs. */
+  loopEnabled: boolean;
+  loopStartUs: number;
+  loopEndUs: number;
 
   exportStatus: ExportStatus;
   rec: RecUiState;
@@ -96,6 +100,9 @@ interface State {
   setPlaying: (playing: boolean) => void;
   setZoom: (pxPerSec: number) => void;
   setZeroCross: (on: boolean) => void;
+  setLoopRegion: (startUs: number, endUs: number) => void;
+  toggleLoop: () => void;
+  clearLoop: () => void;
 
   // ── Spuren ────────────────────────────────────────────────────────────────
   setActiveTrack: (trackId: string) => void;
@@ -183,6 +190,9 @@ export const useProject = create<State>((set, get) => ({
   pxPerSec: 90,
   activeTrackId: null,
   zeroCrossEnabled: true,
+  loopEnabled: false,
+  loopStartUs: 0,
+  loopEndUs: 0,
   exportStatus: { running: false, percent: 0 },
   rec: initialRec(),
   _dragBefore: null,
@@ -198,6 +208,9 @@ export const useProject = create<State>((set, get) => ({
       playheadUs: 0,
       playing: false,
       activeTrackId: null,
+      loopEnabled: false,
+      loopStartUs: 0,
+      loopEndUs: 0,
       rec: initialRec(),
     }),
 
@@ -212,6 +225,9 @@ export const useProject = create<State>((set, get) => ({
       playheadUs: 0,
       playing: false,
       activeTrackId: null,
+      loopEnabled: false,
+      loopStartUs: 0,
+      loopEndUs: 0,
       rec: initialRec(),
     }),
 
@@ -265,6 +281,13 @@ export const useProject = create<State>((set, get) => ({
   setPlaying: (playing) => set({ playing }),
   setZoom: (pxPerSec) => set({ pxPerSec: Math.max(8, Math.min(600, pxPerSec)) }),
   setZeroCross: (on) => set({ zeroCrossEnabled: on }),
+  setLoopRegion: (startUs, endUs) => {
+    const lo = Math.max(0, Math.min(startUs, endUs));
+    const hi = Math.max(startUs, endUs);
+    set({ loopStartUs: lo, loopEndUs: hi, loopEnabled: hi > lo });
+  },
+  toggleLoop: () => set((s) => ({ loopEnabled: !s.loopEnabled })),
+  clearLoop: () => set({ loopEnabled: false, loopStartUs: 0, loopEndUs: 0 }),
 
   // ── Spuren ────────────────────────────────────────────────────────────────
   setActiveTrack: (trackId) => set({ activeTrackId: trackId }),

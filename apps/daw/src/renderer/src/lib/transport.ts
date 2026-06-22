@@ -18,10 +18,18 @@ export function useTransport(): void {
       void engine.play(st.present, st.playheadUs);
       const tick = (): void => {
         const pos = engine.positionUs();
-        const dur = projectDurationUs(useProject.getState().present);
+        const s = useProject.getState();
+        // Loop: am Loop-Ende zurück zum Loop-Anfang springen.
+        if (s.loopEnabled && s.loopEndUs > s.loopStartUs && pos >= s.loopEndUs) {
+          void engine.play(s.present, s.loopStartUs);
+          useProject.setState({ playheadUs: s.loopStartUs });
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        const dur = projectDurationUs(s.present);
         if (dur > 0 && pos >= dur) {
-          useProject.getState().setPlayhead(dur);
-          useProject.getState().setPlaying(false);
+          s.setPlayhead(dur);
+          s.setPlaying(false);
           return;
         }
         useProject.setState({ playheadUs: pos });
