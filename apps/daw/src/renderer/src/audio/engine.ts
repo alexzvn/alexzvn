@@ -5,6 +5,7 @@
 // Interface gekapselt, damit später eine native Engine andocken kann (Slice ≥).
 import {
   clipDurationUs,
+  dbToGain,
   effectiveTrackGain,
   projectDurationUs,
   usToSec,
@@ -57,6 +58,8 @@ class WebAudioEngine implements AudioEngine {
   /** Live-Effekt-Knoten je Spur bzw. Master (für Param-Tweaks ohne Neuaufbau). */
   private trackFx = new Map<string, Map<string, EffectNode>>();
   private masterFx = new Map<string, EffectNode>();
+  /** Send-Gain-Knoten je `${trackId}:${busId}` (für Live-Send-Pegel). */
+  private sendNodes = new Map<string, GainNode>();
   /** Signatur der Effekt-/Spur-Struktur; weicht sie ab → Graph neu aufbauen. */
   private liveFxSignature = '';
 
@@ -94,7 +97,8 @@ class WebAudioEngine implements AudioEngine {
     this.masterGainNode = masterGain;
     this.masterFx = masterFx;
 
-    this.buildTracks(ctx, project, masterChain.input, { when, fromUs, realtime: true });
+    const busInputs = this.buildBuses(ctx, project, masterChain.input, true);
+    this.buildTracks(ctx, project, masterChain.input, busInputs, { when, fromUs, realtime: true });
     this.liveFxSignature = fxSignature(project);
     this.playing = true;
   }
@@ -130,11 +134,18 @@ class WebAudioEngine implements AudioEngine {
     for (const track of project.tracks) {
       const nodes = this.trackNodes.get(track.id);
       if (nodes) {
-        nodes.gain.gain.setTargetAtTime(effectiveTrackGain(project, track), t, 0.01);
+        // Busse ignorieren Solo (Returns sollen beim Solo nicht verstummen).
+        const gain = track.kind === 'bus' ? (track.muted ? 0 : track.gain) : effectiveTrackGain(project, track);
+        nodes.gain.gain.setTargetAtTime(gain, t, 0.01);
         nodes.pan.pan.setTargetAtTime(track.pan, t, 0.01);
       }
       const fx = this.trackFx.get(track.id);
       if (fx && track.effects) for (const inst of track.effects) fx.get(inst.id)?.update(inst.params as EffectParams);
+      if (track.sends) {
+        for (const s of track.sends) {
+          this.sendNodes.get(`${track.id}:${s.busId}`)?.gain.setTargetAtTime(dbToGain(s.gainDb), t, 0.01);
+        }
+      }
     }
     this.masterGainNode?.gain.setTargetAtTime(project.master.gain, t, 0.01);
     if (project.master.effects) {
@@ -165,7 +176,8 @@ class WebAudioEngine implements AudioEngine {
     masterGain.gain.value = project.master.gain;
     masterChain.output.connect(masterGain);
     masterGain.connect(offline.destination);
-    this.buildTracks(offline, project, masterChain.input, { when: 0, fromUs: 0, realtime: false });
+    const busInputs = this.buildBuses(offline, project, masterChain.input, false);
+    this.buildTracks(offline, project, masterChain.input, busInputs, { when: 0, fromUs: 0, realtime: false });
     return offline.startRendering();
   }
 
@@ -191,15 +203,49 @@ class WebAudioEngine implements AudioEngine {
     return { input, output: prev };
   }
 
+  /** AUX-Busse: Bus-Eingang → [Bus-FX] → Bus-Fader → Bus-Pan → Master. */
+  private buildBuses(
+    ctx: BaseAudioContext,
+    project: Project,
+    masterBusInput: AudioNode,
+    realtime: boolean,
+  ): Map<string, AudioNode> {
+    const busInputs = new Map<string, AudioNode>();
+    for (const bus of project.tracks) {
+      if (bus.kind !== 'bus') continue;
+      const fxMap = realtime ? new Map<string, EffectNode>() : undefined;
+      const chain = this.buildChain(ctx, bus.effects, fxMap);
+      const bg = ctx.createGain();
+      bg.gain.value = bus.muted ? 0 : bus.gain;
+      const bp = ctx.createStereoPanner();
+      bp.pan.value = bus.pan;
+      chain.output.connect(bg);
+      bg.connect(bp);
+      if (realtime) {
+        const analyser = (ctx as AudioContext).createAnalyser();
+        analyser.fftSize = 512;
+        bp.connect(analyser);
+        analyser.connect(masterBusInput);
+        this.trackNodes.set(bus.id, { gain: bg, pan: bp, analyser });
+        this.trackFx.set(bus.id, fxMap!);
+      } else {
+        bp.connect(masterBusInput);
+      }
+      busInputs.set(bus.id, chain.input);
+    }
+    return busInputs;
+  }
+
   private buildTracks(
     ctx: BaseAudioContext,
     project: Project,
-    busInput: AudioNode,
+    masterBusInput: AudioNode,
+    busInputs: Map<string, AudioNode>,
     opts: { when: number; fromUs: number; realtime: boolean },
   ): void {
     for (const track of project.tracks) {
       if (track.kind !== 'audio') continue;
-      // Clips → [Spur-FX] → Fader → Pan → (Analyser) → Bus.
+      // Clips → [Spur-FX] → Fader → Pan → (Analyser) → Master; Sends post-Pan → Bus.
       const fxMap = opts.realtime ? new Map<string, EffectNode>() : undefined;
       const chain = this.buildChain(ctx, track.effects, fxMap);
       const tg = ctx.createGain();
@@ -213,11 +259,24 @@ class WebAudioEngine implements AudioEngine {
         const analyser = (ctx as AudioContext).createAnalyser();
         analyser.fftSize = 512;
         tp.connect(analyser);
-        analyser.connect(busInput);
+        analyser.connect(masterBusInput);
         this.trackNodes.set(track.id, { gain: tg, pan: tp, analyser });
         this.trackFx.set(track.id, fxMap!);
       } else {
-        tp.connect(busInput);
+        tp.connect(masterBusInput);
+      }
+
+      // Post-Pan-Sends auf die AUX-Busse.
+      if (track.sends) {
+        for (const s of track.sends) {
+          const target = busInputs.get(s.busId);
+          if (!target) continue;
+          const sg = ctx.createGain();
+          sg.gain.value = dbToGain(s.gainDb);
+          tp.connect(sg);
+          sg.connect(target);
+          if (opts.realtime) this.sendNodes.set(`${track.id}:${s.busId}`, sg);
+        }
       }
 
       for (const clip of track.clips) {
@@ -299,6 +358,7 @@ class WebAudioEngine implements AudioEngine {
     this.trackNodes.clear();
     this.trackFx.clear();
     this.masterFx.clear();
+    this.sendNodes.clear();
     this.masterAnalyser = null;
     this.masterGainNode = null;
   }
@@ -312,7 +372,10 @@ class WebAudioEngine implements AudioEngine {
 function fxSignature(project: Project): string {
   const sig = (effs?: { id: string; kind: string }[]): string =>
     (effs ?? []).map((e) => `${e.id}:${e.kind}`).join(',');
-  const tracks = project.tracks.map((t) => `${t.id}[${sig(t.effects)}]`).join('|');
+  const sends = (ss?: { busId: string }[]): string => (ss ?? []).map((s) => s.busId).join(',');
+  const tracks = project.tracks
+    .map((t) => `${t.kind}:${t.id}[${sig(t.effects)}](${sends(t.sends)})`)
+    .join('|');
   return `${tracks}#M[${sig(project.master.effects)}]`;
 }
 

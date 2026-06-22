@@ -486,6 +486,15 @@
     "name": "JM DAW",
     "entries": [
       {
+        "version": "0.5.0",
+        "date": "2026-06-22",
+        "notes": [
+          "AUX-Busse: im Mixer mit + Bus anlegen (Return-Kanal mit eigenen Effekten, Fader und Pan).",
+          "Sends pro Spur im Eigenschaften-Panel an-/ausschalten und im Pegel regeln (post-Fader) — z. B. mehrere Spuren auf einen gemeinsamen Reverb-Bus schicken.",
+          "Busse erscheinen nur im Mixer (nicht als Timeline-Spur) und sind beim Solo der Spuren weiterhin hörbar; Sends und Busse sind im Export enthalten."
+        ]
+      },
+      {
         "version": "0.4.0",
         "date": "2026-06-22",
         "notes": [

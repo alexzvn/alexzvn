@@ -3,6 +3,7 @@ import {
   clipDurationUs,
   clipEndUs,
   makeAudioTrack,
+  makeBusTrack,
   makeEmptyProject,
   newId,
   projectDurationUs,
@@ -124,6 +125,12 @@ interface State {
   // ── Effekte ───────────────────────────────────────────────────────────────
   addEffect: (target: FxTarget, kind: EffectKind) => void;
   removeEffect: (target: FxTarget, effectId: string) => void;
+
+  // ── AUX-Busse / Sends ───────────────────────────────────────────────────────
+  addBus: () => void;
+  removeBus: (busId: string) => void;
+  addSend: (trackId: string, busId: string) => void;
+  removeSend: (trackId: string, busId: string) => void;
 
   setExportStatus: (patch: Partial<ExportStatus>) => void;
 
@@ -454,6 +461,38 @@ export const useProject = create<State>((set, get) => ({
     get().commit('Effekt entfernen', (draft) => {
       const holder = fxHolder(draft, target);
       if (holder?.effects) holder.effects = holder.effects.filter((e) => e.id !== effectId);
+    }),
+
+  addBus: () => {
+    const id = newId('bus');
+    get().commit('Bus hinzufügen', (draft) => {
+      const count = draft.tracks.filter((t) => t.kind === 'bus').length;
+      const bus = makeBusTrack(`Bus ${count + 1}`);
+      bus.id = id;
+      draft.tracks.push(bus);
+    });
+    set({ activeTrackId: id });
+  },
+
+  removeBus: (busId) =>
+    get().commit('Bus entfernen', (draft) => {
+      draft.tracks = draft.tracks.filter((t) => t.id !== busId);
+      // Sends, die auf diesen Bus zeigen, aus allen Spuren entfernen.
+      for (const t of draft.tracks) if (t.sends) t.sends = t.sends.filter((s) => s.busId !== busId);
+    }),
+
+  addSend: (trackId, busId) =>
+    get().commit('Send hinzufügen', (draft) => {
+      const t = draft.tracks.find((tt) => tt.id === trackId);
+      if (!t) return;
+      if (!t.sends) t.sends = [];
+      if (!t.sends.some((s) => s.busId === busId)) t.sends.push({ busId, gainDb: 0 });
+    }),
+
+  removeSend: (trackId, busId) =>
+    get().commit('Send entfernen', (draft) => {
+      const t = draft.tracks.find((tt) => tt.id === trackId);
+      if (t?.sends) t.sends = t.sends.filter((s) => s.busId !== busId);
     }),
 
   setExportStatus: (patch) => set((state) => ({ exportStatus: { ...state.exportStatus, ...patch } })),

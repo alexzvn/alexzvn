@@ -66,8 +66,10 @@ export function Timeline() {
   const contentUs = Math.max(totalUs, secToUs(30));
   const widthPx = usToSec(contentUs) * pxPerSec + 80;
 
+  // Nur Audio-Spuren erscheinen als Timeline-Lanes; Busse leben im Mixer.
+  const lanes = tracks.filter((t) => t.kind === 'audio');
   const effectiveActiveId =
-    activeTrackId && tracks.some((t) => t.id === activeTrackId) ? activeTrackId : tracks[0]?.id;
+    activeTrackId && lanes.some((t) => t.id === activeTrackId) ? activeTrackId : lanes[0]?.id;
 
   const usToPx = (us: number): number => usToSec(us) * pxPerSec;
   const pxToUs = (px: number): number => secToUs(px / pxPerSec);
@@ -79,21 +81,21 @@ export function Timeline() {
     return Math.max(0, pxToUs(clientX - rect.left + el.scrollLeft));
   };
 
-  // Spur-Index unter dem Cursor (für Cross-Track-Move).
+  // Spur-Index unter dem Cursor (für Cross-Track-Move). Bezieht die Loop-Leiste mit ein.
   const trackIndexAtY = (clientY: number): number => {
     const el = lanesRef.current;
     if (!el) return 0;
     const rect = el.getBoundingClientRect();
-    const idx = Math.floor((clientY - rect.top - RULER_H) / TRACK_H);
-    return Math.max(0, Math.min(tracks.length - 1, idx));
+    const idx = Math.floor((clientY - rect.top - LOOP_H - RULER_H) / TRACK_H);
+    return Math.max(0, Math.min(lanes.length - 1, idx));
   };
 
-  // Cursor-Y → linearer Gain (oben = laut), bezogen auf die Spur eines Clips.
-  const clientToGain = (clientY: number, trackIndex: number): number => {
+  // Cursor-Y → linearer Gain (oben = laut), bezogen auf die Lane eines Clips.
+  const clientToGain = (clientY: number, laneIndex: number): number => {
     const el = lanesRef.current;
     if (!el) return 1;
     const rect = el.getBoundingClientRect();
-    const bodyTop = rect.top + RULER_H + trackIndex * TRACK_H + CLIP_INSET;
+    const bodyTop = rect.top + LOOP_H + RULER_H + laneIndex * TRACK_H + CLIP_INSET;
     const bodyH = TRACK_H - 2 * CLIP_INSET;
     const rel = Math.max(0, Math.min(1, (clientY - bodyTop) / bodyH));
     return GAIN_MAX * (1 - rel);
@@ -135,16 +137,16 @@ export function Timeline() {
         return;
       }
       if (drag.mode === 'gain') {
-        const ti = trackIndexOfClip(present, drag.clipId!);
-        if (ti >= 0) {
-          const g = clientToGain(e.clientY, ti);
+        const li = laneIndexOfClip(lanes, drag.clipId!);
+        if (li >= 0) {
+          const g = clientToGain(e.clientY, li);
           dragUpdate((d) => setClipGain(d, drag.clipId!, g));
         }
         return;
       }
       const us = clientToUs(e.clientX);
       if (drag.mode === 'move') {
-        const targetId = tracks[trackIndexAtY(e.clientY)]?.id;
+        const targetId = lanes[trackIndexAtY(e.clientY)]?.id;
         dragUpdate((d) => applyMove(d, drag, us, snap, targetId));
         return;
       }
@@ -225,12 +227,12 @@ export function Timeline() {
       <div className="flex-1 min-h-0 flex">
         <div className="shrink-0 border-r border-[var(--border)]/50" style={{ width: HEADER_W }}>
           <div style={{ height: LOOP_H + RULER_H }} className="border-b border-[var(--border)]/40" />
-          {tracks.map((track) => (
+          {lanes.map((track) => (
             <TrackHeader
               key={track.id}
               track={track}
               active={track.id === effectiveActiveId}
-              removable={tracks.length > 1}
+              removable={lanes.length > 1}
             />
           ))}
         </div>
@@ -267,7 +269,7 @@ export function Timeline() {
                 dragRef.current = { mode: 'playhead' };
               }}
             />
-            {tracks.map((track) => (
+            {lanes.map((track) => (
               <div
                 key={track.id}
                 className="relative border-b border-[var(--border)]/30"
@@ -296,14 +298,14 @@ export function Timeline() {
                   left: usToPx(loopStartUs),
                   width: Math.max(2, usToPx(loopEndUs - loopStartUs)),
                   top: LOOP_H,
-                  height: RULER_H + tracks.length * TRACK_H,
+                  height: RULER_H + lanes.length * TRACK_H,
                 }}
               />
             )}
 
             <div
               className="absolute top-0 bottom-0 w-px bg-[var(--primary)] pointer-events-none"
-              style={{ left: usToPx(playheadUs), height: LOOP_H + RULER_H + tracks.length * TRACK_H }}
+              style={{ left: usToPx(playheadUs), height: LOOP_H + RULER_H + lanes.length * TRACK_H }}
             >
               <div className="absolute -top-0 -left-[5px] w-[11px] h-[11px] rotate-45 bg-[var(--primary)]" />
             </div>
@@ -424,9 +426,9 @@ function findClip(project: Project, clipId: string): { track: Track; clip: Clip 
   return null;
 }
 
-function trackIndexOfClip(project: Project, clipId: string): number {
-  for (let i = 0; i < project.tracks.length; i++) {
-    if (project.tracks[i].clips.some((c) => c.id === clipId)) return i;
+function laneIndexOfClip(lanes: Track[], clipId: string): number {
+  for (let i = 0; i < lanes.length; i++) {
+    if (lanes[i].clips.some((c) => c.id === clipId)) return i;
   }
   return -1;
 }

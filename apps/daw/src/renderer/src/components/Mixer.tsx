@@ -19,8 +19,11 @@ export function Mixer() {
   const masterGain = useProject((s) => s.present.master.gain);
   const activeTrackId = useProject((s) => s.activeTrackId);
   const setActiveTrack = useProject((s) => s.setActiveTrack);
+  const addBus = useProject((s) => s.addBus);
+  const removeBus = useProject((s) => s.removeBus);
   const [meters, setMeters] = useState<MeterData>({ master: 0, tracks: {} });
-  const effectiveActiveId = activeTrackId && tracks.some((t) => t.id === activeTrackId) ? activeTrackId : tracks[0]?.id;
+  const audioTracks = tracks.filter((t) => t.kind === 'audio');
+  const buses = tracks.filter((t) => t.kind === 'bus');
 
   useEffect(() => {
     let raf = 0;
@@ -38,19 +41,42 @@ export function Mixer() {
 
   return (
     <div className="h-full flex flex-col bg-[var(--card)]/30 border-l border-[var(--border)]/60">
-      <div className="px-3 py-2.5 border-b border-[var(--border)]/50">
+      <div className="px-3 py-2.5 border-b border-[var(--border)]/50 flex items-center justify-between">
         <span className="text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--muted-foreground)]">
           Mixer
         </span>
+        <button
+          type="button"
+          onClick={addBus}
+          title="AUX-Bus hinzufügen (für Sends, z. B. Reverb-Return)"
+          className={cn(
+            'h-6 px-2 rounded-[var(--radius)] text-[10px] font-bold border border-[var(--border)]',
+            'text-[var(--foreground)]/85 hover:bg-[var(--highlight)]',
+          )}
+        >
+          + Bus
+        </button>
       </div>
       <div className="flex-1 min-h-0 overflow-x-auto flex gap-2 p-3">
-        {tracks.map((track) => (
+        {audioTracks.map((track) => (
           <ChannelStrip
             key={track.id}
             track={track}
             meter={meters.tracks[track.id] ?? 0}
-            active={track.id === effectiveActiveId}
+            active={track.id === activeTrackId}
             onSelect={() => setActiveTrack(track.id)}
+          />
+        ))}
+        {buses.length > 0 && <div className="w-px shrink-0 bg-[var(--border)]/60 mx-1" />}
+        {buses.map((track) => (
+          <ChannelStrip
+            key={track.id}
+            track={track}
+            meter={meters.tracks[track.id] ?? 0}
+            active={track.id === activeTrackId}
+            onSelect={() => setActiveTrack(track.id)}
+            isBus
+            onRemove={() => removeBus(track.id)}
           />
         ))}
         <MasterStrip gain={masterGain} meter={meters.master} />
@@ -64,11 +90,15 @@ function ChannelStrip({
   meter,
   active,
   onSelect,
+  isBus,
+  onRemove,
 }: {
   track: Track;
   meter: number;
   active: boolean;
   onSelect: () => void;
+  isBus?: boolean;
+  onRemove?: () => void;
 }) {
   const beginDrag = useProject((s) => s.beginDrag);
   const dragUpdate = useProject((s) => s.dragUpdate);
@@ -91,13 +121,19 @@ function ChannelStrip({
   return (
     <div
       onPointerDown={onSelect}
-      title="Klick: Spur für Effekte wählen"
+      title="Klick: Kanal für Effekte/Sends wählen"
       className={cn(
-        'w-[72px] shrink-0 h-full flex flex-col items-center gap-1.5 overflow-hidden rounded-[var(--radius)] border bg-[var(--background)]/40 p-2 cursor-pointer',
-        active ? 'border-[var(--primary)]/70 ring-1 ring-[var(--primary)]/40' : 'border-[var(--border)]/50',
+        'w-[72px] shrink-0 h-full flex flex-col items-center gap-1.5 overflow-hidden rounded-[var(--radius)] border p-2 cursor-pointer',
+        isBus ? 'bg-violet-500/5' : 'bg-[var(--background)]/40',
+        active
+          ? 'border-[var(--primary)]/70 ring-1 ring-[var(--primary)]/40'
+          : isBus
+            ? 'border-violet-400/40'
+            : 'border-[var(--border)]/50',
       )}
     >
       <div className="shrink-0 w-full flex items-center gap-1">
+        {isBus && <span className="text-[7px] font-extrabold uppercase text-violet-300 tracking-wide">Bus</span>}
         <span className="text-[10px] font-bold truncate flex-1 text-center" title={track.name}>
           {track.name}
         </span>
@@ -105,6 +141,17 @@ function ChannelStrip({
           <span className="text-[8px] font-bold text-[var(--primary)]" title={`${fxCount} Effekt(e)`}>
             ƒx{fxCount}
           </span>
+        )}
+        {isBus && onRemove && (
+          <button
+            type="button"
+            title="Bus entfernen"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onRemove}
+            className="text-[9px] text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+          >
+            ✕
+          </button>
         )}
       </div>
 
@@ -140,7 +187,7 @@ function ChannelStrip({
 
       <div className="shrink-0 flex items-center gap-1">
         <StripToggle active={track.muted} label="M" tone="mute" onClick={() => toggleMute(track.id)} />
-        <StripToggle active={track.solo} label="S" tone="solo" onClick={() => toggleSolo(track.id)} />
+        {!isBus && <StripToggle active={track.solo} label="S" tone="solo" onClick={() => toggleSolo(track.id)} />}
       </div>
     </div>
   );

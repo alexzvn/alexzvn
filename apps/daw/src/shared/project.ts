@@ -163,6 +163,21 @@ export function makeAudioTrack(name: string): Track {
   };
 }
 
+/** AUX-Bus (Return-Spur ohne Clips) — empfängt Sends, hat eigene FX/Fader/Pan. */
+export function makeBusTrack(name: string): Track {
+  return {
+    id: newId('bus'),
+    kind: 'bus',
+    name,
+    clips: [],
+    gain: 1,
+    pan: 0,
+    muted: false,
+    solo: false,
+    locked: false,
+  };
+}
+
 export function makeEmptyProject(name = 'Unbenanntes Projekt'): Project {
   const now = Date.now();
   return {
@@ -256,9 +271,9 @@ export function clipAt(track: Track, tUs: number): Clip | undefined {
   return track.clips.find((c) => tUs >= c.startUs && tUs < clipEndUs(c));
 }
 
-/** Ob irgendeine Spur solo-geschaltet ist (Solo blendet alle anderen aus). */
+/** Ob eine Audio-Spur solo-geschaltet ist (Solo betrifft nur Audio-Spuren, nicht Busse). */
 export function anySolo(project: Project): boolean {
-  return project.tracks.some((t) => t.solo);
+  return project.tracks.some((t) => t.kind === 'audio' && t.solo);
 }
 
 /** Effektive lineare Spurverstärkung unter Berücksichtigung von Mute/Solo. */

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@jm/ui';
-import { clipDurationUs, secToUs, usToSec, type Clip, type EffectInstance } from '@shared/project';
+import { clipDurationUs, secToUs, usToSec, type Clip, type EffectInstance, type Track } from '@shared/project';
 import { useProject, locateClip, fxHolder, type FxTarget } from '@/store/project';
 import { formatDb, formatTimecode } from '@/lib/format';
 import { EFFECT_DEFS, type EffectKind, type ParamDef } from '@/audio/effects';
@@ -15,6 +15,7 @@ export function Inspector() {
   const loc = locateClip(present, selectedClipId);
 
   const activeTrack = present.tracks.find((t) => t.id === activeTrackId) ?? present.tracks[0];
+  const buses = present.tracks.filter((t) => t.kind === 'bus');
   const [scope, setScope] = useState<'track' | 'master'>('track');
   const target: FxTarget = scope === 'master' ? { scope: 'master' } : { scope: 'track', trackId: activeTrack?.id ?? '' };
   const holder = fxHolder(present, target);
@@ -55,6 +56,73 @@ export function Inspector() {
 
           <AddEffect target={target} />
         </div>
+
+        {/* ── Sends (nur Audio-Spuren) ─────────────────────────────────── */}
+        {activeTrack && activeTrack.kind === 'audio' && buses.length > 0 && (
+          <SendsSection track={activeTrack} buses={buses} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SendsSection({ track, buses }: { track: Track; buses: Track[] }) {
+  const addSend = useProject((s) => s.addSend);
+  const removeSend = useProject((s) => s.removeSend);
+  const beginDrag = useProject((s) => s.beginDrag);
+  const dragUpdate = useProject((s) => s.dragUpdate);
+  const endDrag = useProject((s) => s.endDrag);
+
+  const sends = track.sends ?? [];
+  const setSendGain = (busId: string, db: number): void =>
+    dragUpdate((d) => {
+      const s = d.tracks.find((t) => t.id === track.id)?.sends?.find((ss) => ss.busId === busId);
+      if (s) s.gainDb = db;
+    });
+
+  return (
+    <div className="pt-3 border-t border-[var(--border)]/40">
+      <span className="text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">Sends</span>
+      <div className="mt-2 space-y-1.5">
+        {buses.map((bus) => {
+          const send = sends.find((s) => s.busId === bus.id);
+          return (
+            <div key={bus.id} className="flex items-center gap-2">
+              <button
+                type="button"
+                title={send ? 'Send aus' : 'Send an'}
+                onClick={() => (send ? removeSend(track.id, bus.id) : addSend(track.id, bus.id))}
+                className={cn(
+                  'w-5 h-5 shrink-0 rounded text-[10px] font-bold',
+                  send ? 'bg-violet-500 text-white' : 'border border-[var(--border)] text-[var(--muted-foreground)]',
+                )}
+              >
+                {send ? '●' : '○'}
+              </button>
+              <span className="text-[11px] truncate w-[64px]" title={bus.name}>{bus.name}</span>
+              {send ? (
+                <>
+                  <input
+                    type="range"
+                    min={-60}
+                    max={6}
+                    step={1}
+                    value={send.gainDb}
+                    onPointerDown={beginDrag}
+                    onPointerUp={endDrag}
+                    onChange={(e) => setSendGain(bus.id, Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-[10px] tabular-nums w-[44px] text-right">
+                    {send.gainDb <= -60 ? '−∞' : `${send.gainDb > 0 ? '+' : ''}${send.gainDb}`} dB
+                  </span>
+                </>
+              ) : (
+                <span className="flex-1 text-[10px] text-[var(--muted-foreground)]">aus</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
