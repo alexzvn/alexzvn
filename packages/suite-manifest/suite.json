@@ -338,7 +338,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.daw",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM DAW-${version}-mac-${arch}.dmg",

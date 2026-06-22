@@ -93,6 +93,8 @@ export interface Track {
   muted: boolean;
   solo: boolean;
   locked: boolean;
+  /** Insert-Effekte der Spur (pre-Fader). */
+  effects?: EffectInstance[];
   /** Reserviert für AUX-Sends (Slice 3). */
   sends?: TrackSend[];
   /** Reserviert für Bus-Routing (Slice 3); null/undefined = Master. */
@@ -206,6 +208,7 @@ function normalizeTrack(t: Partial<Track>): Track {
     muted: t.muted ?? false,
     solo: t.solo ?? false,
     locked: t.locked ?? false,
+    effects: t.effects,
     sends: t.sends,
     outputBusId: t.outputBusId ?? null,
   };

@@ -13,6 +13,7 @@ import {
   type Clip,
 } from '@shared/project';
 import { audioContext, cachedBuffer, decodeAsset } from './decode';
+import { createEffect, type EffectNode, type EffectParams } from './effects';
 
 export interface MeterData {
   /** Master-Spitze 0..1. */
@@ -53,6 +54,11 @@ class WebAudioEngine implements AudioEngine {
   private sources: AudioBufferSourceNode[] = [];
   private trackNodes = new Map<string, TrackNodes>();
   private masterAnalyser: AnalyserNode | null = null;
+  /** Live-Effekt-Knoten je Spur bzw. Master (für Param-Tweaks ohne Neuaufbau). */
+  private trackFx = new Map<string, Map<string, EffectNode>>();
+  private masterFx = new Map<string, EffectNode>();
+  /** Signatur der Effekt-/Spur-Struktur; weicht sie ab → Graph neu aufbauen. */
+  private liveFxSignature = '';
 
   async ensureDecoded(project: Project): Promise<void> {
     const ids = new Set<string>();
@@ -74,15 +80,22 @@ class WebAudioEngine implements AudioEngine {
     this.startUs = fromUs;
     this.lastPositionUs = fromUs;
 
-    const master = ctx.createGain();
-    master.gain.value = project.master.gain;
+    // Master: Bus → [Master-FX] → Master-Fader → Analyser → Ausgabe.
+    const masterFx = new Map<string, EffectNode>();
+    const masterChain = this.buildChain(ctx, project.master.effects, masterFx);
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = project.master.gain;
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
-    master.connect(analyser);
+    masterChain.output.connect(masterGain);
+    masterGain.connect(analyser);
     analyser.connect(ctx.destination);
     this.masterAnalyser = analyser;
+    this.masterGainNode = masterGain;
+    this.masterFx = masterFx;
 
-    this.buildTracks(ctx, project, master, { when, fromUs, realtime: true });
+    this.buildTracks(ctx, project, masterChain.input, { when, fromUs, realtime: true });
+    this.liveFxSignature = fxSignature(project);
     this.playing = true;
   }
 
@@ -105,17 +118,27 @@ class WebAudioEngine implements AudioEngine {
 
   updateMix(project: Project): void {
     if (!this.playing) return;
+    // Strukturänderung (Spur/Effekt hinzugefügt/entfernt) → Graph neu aufbauen.
+    const sig = fxSignature(project);
+    if (sig !== this.liveFxSignature) {
+      this.liveFxSignature = sig;
+      void this.play(project, this.positionUs());
+      return;
+    }
     const ctx = audioContext();
     const t = ctx.currentTime;
     for (const track of project.tracks) {
       const nodes = this.trackNodes.get(track.id);
-      if (!nodes) continue;
-      nodes.gain.gain.setTargetAtTime(effectiveTrackGain(project, track), t, 0.01);
-      nodes.pan.pan.setTargetAtTime(track.pan, t, 0.01);
+      if (nodes) {
+        nodes.gain.gain.setTargetAtTime(effectiveTrackGain(project, track), t, 0.01);
+        nodes.pan.pan.setTargetAtTime(track.pan, t, 0.01);
+      }
+      const fx = this.trackFx.get(track.id);
+      if (fx && track.effects) for (const inst of track.effects) fx.get(inst.id)?.update(inst.params as EffectParams);
     }
-    if (this.masterAnalyser) {
-      // Master-Gain hängt am ersten Knoten vor dem Analyser — über gespeicherte Referenz.
-      this.masterGainNode?.gain.setTargetAtTime(project.master.gain, t, 0.01);
+    this.masterGainNode?.gain.setTargetAtTime(project.master.gain, t, 0.01);
+    if (project.master.effects) {
+      for (const inst of project.master.effects) this.masterFx.get(inst.id)?.update(inst.params as EffectParams);
     }
   }
 
@@ -137,10 +160,12 @@ class WebAudioEngine implements AudioEngine {
     if (lengthSamples <= 0) throw new Error('Timeline ist leer.');
 
     const offline = new OfflineAudioContext(2, lengthSamples, sampleRate);
-    const master = offline.createGain();
-    master.gain.value = project.master.gain;
-    master.connect(offline.destination);
-    this.buildTracks(offline, project, master, { when: 0, fromUs: 0, realtime: false });
+    const masterChain = this.buildChain(offline, project.master.effects);
+    const masterGain = offline.createGain();
+    masterGain.gain.value = project.master.gain;
+    masterChain.output.connect(masterGain);
+    masterGain.connect(offline.destination);
+    this.buildTracks(offline, project, masterChain.input, { when: 0, fromUs: 0, realtime: false });
     return offline.startRendering();
   }
 
@@ -148,35 +173,56 @@ class WebAudioEngine implements AudioEngine {
 
   private masterGainNode: GainNode | null = null;
 
+  /** Effekt-Kette: input → fx1 → fx2 → … → output (leer = neutraler Durchgang). */
+  private buildChain(
+    ctx: BaseAudioContext,
+    effects: { id: string; kind: string; params: Record<string, number | string> }[] | undefined,
+    refMap?: Map<string, EffectNode>,
+  ): { input: GainNode; output: AudioNode } {
+    const input = ctx.createGain();
+    let prev: AudioNode = input;
+    for (const inst of effects ?? []) {
+      const node = createEffect(ctx, inst);
+      node.update(inst.params as EffectParams);
+      prev.connect(node.input);
+      prev = node.output;
+      refMap?.set(inst.id, node);
+    }
+    return { input, output: prev };
+  }
+
   private buildTracks(
     ctx: BaseAudioContext,
     project: Project,
-    master: GainNode,
+    busInput: AudioNode,
     opts: { when: number; fromUs: number; realtime: boolean },
   ): void {
-    this.masterGainNode = master;
     for (const track of project.tracks) {
       if (track.kind !== 'audio') continue;
+      // Clips → [Spur-FX] → Fader → Pan → (Analyser) → Bus.
+      const fxMap = opts.realtime ? new Map<string, EffectNode>() : undefined;
+      const chain = this.buildChain(ctx, track.effects, fxMap);
       const tg = ctx.createGain();
       tg.gain.value = effectiveTrackGain(project, track);
       const tp = ctx.createStereoPanner();
       tp.pan.value = track.pan;
+      chain.output.connect(tg);
       tg.connect(tp);
 
-      let analyser: AnalyserNode | undefined;
       if (opts.realtime) {
-        analyser = (ctx as AudioContext).createAnalyser();
+        const analyser = (ctx as AudioContext).createAnalyser();
         analyser.fftSize = 512;
         tp.connect(analyser);
-        analyser.connect(master);
+        analyser.connect(busInput);
+        this.trackNodes.set(track.id, { gain: tg, pan: tp, analyser });
+        this.trackFx.set(track.id, fxMap!);
       } else {
-        tp.connect(master);
+        tp.connect(busInput);
       }
-      this.trackNodes.set(track.id, { gain: tg, pan: tp, analyser });
 
       for (const clip of track.clips) {
         if (!clip.enabled) continue;
-        this.scheduleClip(ctx, clip, tg, opts);
+        this.scheduleClip(ctx, clip, chain.input, opts);
       }
     }
   }
@@ -251,9 +297,23 @@ class WebAudioEngine implements AudioEngine {
     }
     this.sources = [];
     this.trackNodes.clear();
+    this.trackFx.clear();
+    this.masterFx.clear();
     this.masterAnalyser = null;
     this.masterGainNode = null;
   }
+}
+
+/**
+ * Signatur der Graphen-Struktur: Spuren + ihre Effekte (id:kind) + Master-Effekte.
+ * Ändert sie sich gegenüber dem laufenden Graphen, wird neu aufgebaut (Param-
+ * Tweaks ändern sie nicht → laufen live).
+ */
+function fxSignature(project: Project): string {
+  const sig = (effs?: { id: string; kind: string }[]): string =>
+    (effs ?? []).map((e) => `${e.id}:${e.kind}`).join(',');
+  const tracks = project.tracks.map((t) => `${t.id}[${sig(t.effects)}]`).join('|');
+  return `${tracks}#M[${sig(project.master.effects)}]`;
 }
 
 /** Abs-Spitze aus dem Zeitbereich eines Analysers (0..1). */

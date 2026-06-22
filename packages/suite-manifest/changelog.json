@@ -486,6 +486,15 @@
     "name": "JM DAW",
     "entries": [
       {
+        "version": "0.3.0",
+        "date": "2026-06-22",
+        "notes": [
+          "Insert-Effekte pro Spur und Master: 3-Band-EQ, Kompressor und Reverb — im Eigenschaften-Panel hinzufügen und einstellen.",
+          "Effekt-Parameter wirken live während der Wiedergabe; Mixer markiert die aktive Spur und zeigt die Effekt-Anzahl.",
+          "Effekte sind im Export enthalten (offline gerendert)."
+        ]
+      },
+      {
         "version": "0.2.0",
         "date": "2026-06-22",
         "notes": [

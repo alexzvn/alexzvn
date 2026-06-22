@@ -9,12 +9,26 @@ import {
   trackEndUs,
   type Clip,
   type ClipFade,
+  type EffectInstance,
   type MediaAsset,
   type Project,
   type Track,
 } from '@shared/project';
 import type { RecorderState, RecorderStatus } from '@shared/ipc-types';
 import { snapSourceUsToZero } from '@/lib/zerocross';
+import { defaultEffect, type EffectKind } from '@/audio/effects';
+
+/** Ziel einer Effekt-Kette: eine Spur oder der Master. */
+export type FxTarget = { scope: 'track'; trackId: string } | { scope: 'master' };
+
+/** Liefert den Effekt-Träger (Spur oder Master) für ein Ziel. */
+export function fxHolder(
+  project: Project,
+  target: FxTarget,
+): { effects?: EffectInstance[] } | undefined {
+  if (target.scope === 'master') return project.master;
+  return project.tracks.find((t) => t.id === target.trackId);
+}
 
 const HISTORY_CAP = 50;
 
@@ -99,6 +113,10 @@ interface State {
   duplicateSelected: () => void;
   updateClip: (clipId: string, patch: Partial<Clip>, label?: string) => void;
   setClipFade: (clipId: string, fade: ClipFade) => void;
+
+  // ── Effekte ───────────────────────────────────────────────────────────────
+  addEffect: (target: FxTarget, kind: EffectKind) => void;
+  removeEffect: (target: FxTarget, effectId: string) => void;
 
   setExportStatus: (patch: Partial<ExportStatus>) => void;
 
@@ -400,6 +418,20 @@ export const useProject = create<State>((set, get) => ({
     }),
 
   setClipFade: (clipId, fade) => get().updateClip(clipId, { fade }, 'Blende ändern'),
+
+  addEffect: (target, kind) =>
+    get().commit('Effekt hinzufügen', (draft) => {
+      const holder = fxHolder(draft, target);
+      if (!holder) return;
+      if (!holder.effects) holder.effects = [];
+      holder.effects.push(defaultEffect(kind));
+    }),
+
+  removeEffect: (target, effectId) =>
+    get().commit('Effekt entfernen', (draft) => {
+      const holder = fxHolder(draft, target);
+      if (holder?.effects) holder.effects = holder.effects.filter((e) => e.id !== effectId);
+    }),
 
   setExportStatus: (patch) => set((state) => ({ exportStatus: { ...state.exportStatus, ...patch } })),
 

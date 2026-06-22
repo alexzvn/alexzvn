@@ -17,7 +17,10 @@ function meterPct(peak: number): number {
 export function Mixer() {
   const tracks = useProject((s) => s.present.tracks);
   const masterGain = useProject((s) => s.present.master.gain);
+  const activeTrackId = useProject((s) => s.activeTrackId);
+  const setActiveTrack = useProject((s) => s.setActiveTrack);
   const [meters, setMeters] = useState<MeterData>({ master: 0, tracks: {} });
+  const effectiveActiveId = activeTrackId && tracks.some((t) => t.id === activeTrackId) ? activeTrackId : tracks[0]?.id;
 
   useEffect(() => {
     let raf = 0;
@@ -42,7 +45,13 @@ export function Mixer() {
       </div>
       <div className="flex-1 min-h-0 overflow-x-auto flex gap-2 p-3">
         {tracks.map((track) => (
-          <ChannelStrip key={track.id} track={track} meter={meters.tracks[track.id] ?? 0} />
+          <ChannelStrip
+            key={track.id}
+            track={track}
+            meter={meters.tracks[track.id] ?? 0}
+            active={track.id === effectiveActiveId}
+            onSelect={() => setActiveTrack(track.id)}
+          />
         ))}
         <MasterStrip gain={masterGain} meter={meters.master} />
       </div>
@@ -50,12 +59,23 @@ export function Mixer() {
   );
 }
 
-function ChannelStrip({ track, meter }: { track: Track; meter: number }) {
+function ChannelStrip({
+  track,
+  meter,
+  active,
+  onSelect,
+}: {
+  track: Track;
+  meter: number;
+  active: boolean;
+  onSelect: () => void;
+}) {
   const beginDrag = useProject((s) => s.beginDrag);
   const dragUpdate = useProject((s) => s.dragUpdate);
   const endDrag = useProject((s) => s.endDrag);
   const toggleMute = useProject((s) => s.toggleMute);
   const toggleSolo = useProject((s) => s.toggleSolo);
+  const fxCount = track.effects?.length ?? 0;
 
   const setGain = (v: number): void =>
     dragUpdate((d) => {
@@ -69,10 +89,24 @@ function ChannelStrip({ track, meter }: { track: Track; meter: number }) {
     });
 
   return (
-    <div className="w-[72px] shrink-0 h-full flex flex-col items-center gap-1.5 overflow-hidden rounded-[var(--radius)] border border-[var(--border)]/50 bg-[var(--background)]/40 p-2">
-      <span className="shrink-0 text-[10px] font-bold truncate w-full text-center" title={track.name}>
-        {track.name}
-      </span>
+    <div
+      onPointerDown={onSelect}
+      title="Klick: Spur für Effekte wählen"
+      className={cn(
+        'w-[72px] shrink-0 h-full flex flex-col items-center gap-1.5 overflow-hidden rounded-[var(--radius)] border bg-[var(--background)]/40 p-2 cursor-pointer',
+        active ? 'border-[var(--primary)]/70 ring-1 ring-[var(--primary)]/40' : 'border-[var(--border)]/50',
+      )}
+    >
+      <div className="shrink-0 w-full flex items-center gap-1">
+        <span className="text-[10px] font-bold truncate flex-1 text-center" title={track.name}>
+          {track.name}
+        </span>
+        {fxCount > 0 && (
+          <span className="text-[8px] font-bold text-[var(--primary)]" title={`${fxCount} Effekt(e)`}>
+            ƒx{fxCount}
+          </span>
+        )}
+      </div>
 
       <div className="shrink-0 w-full flex flex-col items-center">
         <input

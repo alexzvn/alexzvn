@@ -1,6 +1,9 @@
-import { clipDurationUs, secToUs, usToSec, type Clip } from '@shared/project';
-import { useProject, locateClip } from '@/store/project';
+import { useState } from 'react';
+import { cn } from '@jm/ui';
+import { clipDurationUs, secToUs, usToSec, type Clip, type EffectInstance } from '@shared/project';
+import { useProject, locateClip, fxHolder, type FxTarget } from '@/store/project';
 import { formatDb, formatTimecode } from '@/lib/format';
+import { EFFECT_DEFS, type EffectKind, type ParamDef } from '@/audio/effects';
 
 const inputCls =
   'w-full h-8 px-2 rounded-[var(--radius)] bg-[var(--background)] border border-[var(--border)] text-sm';
@@ -8,7 +11,14 @@ const inputCls =
 export function Inspector() {
   const selectedClipId = useProject((s) => s.selectedClipId);
   const present = useProject((s) => s.present);
+  const activeTrackId = useProject((s) => s.activeTrackId);
   const loc = locateClip(present, selectedClipId);
+
+  const activeTrack = present.tracks.find((t) => t.id === activeTrackId) ?? present.tracks[0];
+  const [scope, setScope] = useState<'track' | 'master'>('track');
+  const target: FxTarget = scope === 'master' ? { scope: 'master' } : { scope: 'track', trackId: activeTrack?.id ?? '' };
+  const holder = fxHolder(present, target);
+  const effects = holder?.effects ?? [];
 
   return (
     <div className="h-full flex flex-col bg-[var(--card)]/30 border-l border-[var(--border)]/60">
@@ -18,14 +28,154 @@ export function Inspector() {
         </span>
       </div>
       <div className="flex-1 overflow-auto p-3 space-y-4">
-        {!loc ? (
-          <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
-            Kein Clip ausgewählt. Klicke einen Clip in der Timeline an, um Pegel und Blenden zu bearbeiten.
-          </p>
-        ) : (
+        {loc && (
           <ClipInspector clip={loc.clip} assetName={present.assets.find((a) => a.id === loc.clip.assetId)?.fileName} />
         )}
+
+        {/* ── Effekte ──────────────────────────────────────────────────── */}
+        <div className="pt-1">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-[10px] uppercase tracking-wider text-[var(--muted-foreground)] mr-auto">Effekte</span>
+            <ScopeTab label={activeTrack ? activeTrack.name : 'Spur'} active={scope === 'track'} onClick={() => setScope('track')} />
+            <ScopeTab label="Master" active={scope === 'master'} onClick={() => setScope('master')} />
+          </div>
+
+          {effects.length === 0 && (
+            <p className="text-[11px] text-[var(--muted-foreground)] leading-relaxed mb-2">
+              Keine Effekte auf {scope === 'master' ? 'dem Master' : `„${activeTrack?.name}"`}. Füge EQ, Kompressor
+              oder Reverb hinzu.
+            </p>
+          )}
+
+          <div className="space-y-2">
+            {effects.map((eff) => (
+              <EffectCard key={eff.id} effect={eff} target={target} />
+            ))}
+          </div>
+
+          <AddEffect target={target} />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function ScopeTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      className={cn(
+        'h-6 max-w-[96px] truncate px-2 rounded text-[10px] font-bold border',
+        active
+          ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+          : 'border-[var(--border)] text-[var(--muted-foreground)] hover:bg-[var(--highlight)]',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function AddEffect({ target }: { target: FxTarget }) {
+  const addEffect = useProject((s) => s.addEffect);
+  return (
+    <select
+      className={cn(inputCls, 'mt-2 text-xs')}
+      value=""
+      onChange={(e) => {
+        if (e.target.value) addEffect(target, e.target.value as EffectKind);
+        e.currentTarget.selectedIndex = 0;
+      }}
+    >
+      <option value="">+ Effekt hinzufügen …</option>
+      {(Object.keys(EFFECT_DEFS) as EffectKind[]).map((k) => (
+        <option key={k} value={k}>
+          {EFFECT_DEFS[k].label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function EffectCard({ effect, target }: { effect: EffectInstance; target: FxTarget }) {
+  const def = EFFECT_DEFS[effect.kind as EffectKind];
+  const removeEffect = useProject((s) => s.removeEffect);
+  const beginDrag = useProject((s) => s.beginDrag);
+  const dragUpdate = useProject((s) => s.dragUpdate);
+  const endDrag = useProject((s) => s.endDrag);
+  if (!def) return null;
+
+  const setParam = (key: string, value: number): void =>
+    dragUpdate((d) => {
+      const eff = fxHolder(d, target)?.effects?.find((e) => e.id === effect.id);
+      if (eff) eff.params[key] = value;
+    });
+
+  return (
+    <div className="rounded-[var(--radius)] border border-[var(--border)]/60 bg-[var(--background)]/40 p-2">
+      <div className="flex items-center gap-1 mb-1.5">
+        <span className="text-[11px] font-bold">{def.label}</span>
+        <button
+          type="button"
+          title="Effekt entfernen"
+          onClick={() => removeEffect(target, effect.id)}
+          className="ml-auto w-4 h-4 rounded text-[10px] text-[var(--muted-foreground)] hover:text-[var(--destructive)]"
+        >
+          ✕
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {def.params.map((p) => (
+          <ParamSlider
+            key={p.key}
+            def={p}
+            value={typeof effect.params[p.key] === 'number' ? (effect.params[p.key] as number) : p.default}
+            onBegin={beginDrag}
+            onEnd={endDrag}
+            onChange={(v) => setParam(p.key, v)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ParamSlider({
+  def,
+  value,
+  onBegin,
+  onEnd,
+  onChange,
+}: {
+  def: ParamDef;
+  value: number;
+  onBegin: () => void;
+  onEnd: () => void;
+  onChange: (v: number) => void;
+}) {
+  const decimals = def.step < 1 ? 2 : 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[10px]">
+        <span className="text-[var(--muted-foreground)]">{def.label}</span>
+        <span className="tabular-nums">
+          {value.toFixed(decimals)}
+          {def.unit ? ` ${def.unit}` : ''}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={def.min}
+        max={def.max}
+        step={def.step}
+        value={value}
+        onPointerDown={onBegin}
+        onPointerUp={onEnd}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full"
+      />
     </div>
   );
 }
@@ -53,7 +203,6 @@ function ClipInspector({ clip, assetName }: { clip: Clip; assetName?: string }) 
     });
 
   const updateFade = (inSec: number, outSec: number): void => {
-    // Ein-/Ausblende dürfen zusammen die Cliplänge nicht überschreiten.
     const maxTotal = durSec;
     let i = Math.max(0, inSec);
     let o = Math.max(0, outSec);
@@ -65,7 +214,7 @@ function ClipInspector({ clip, assetName }: { clip: Clip; assetName?: string }) 
   };
 
   return (
-    <>
+    <div className="space-y-4 pb-2 border-b border-[var(--border)]/40">
       <div>
         <span className="text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">Clip</span>
         <p className="text-sm font-semibold truncate mt-1" title={assetName}>{assetName ?? 'Clip'}</p>
@@ -112,7 +261,7 @@ function ClipInspector({ clip, assetName }: { clip: Clip; assetName?: string }) 
           />
         </Field>
       </div>
-    </>
+    </div>
   );
 }
 
