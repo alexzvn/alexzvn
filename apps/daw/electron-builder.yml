@@ -3,6 +3,11 @@ productName: JM DAW
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 copyright: "© Jakobs Medien GmbH"
 
+# Electron ist im Monorepo nach node_modules/ (Root) gehoist und liegt nicht in
+# apps/daw/node_modules — darum die Version explizit setzen, sonst kann
+# electron-builder sie nicht ermitteln. Muss zur installierten Version passen.
+electronVersion: 33.4.11
+
 directories:
   output: release
   buildResources: build
