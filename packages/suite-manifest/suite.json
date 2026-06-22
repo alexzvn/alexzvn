@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-20T12:00:00.000Z",
+  "updatedAt": "2026-06-22T12:00:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -329,6 +329,27 @@
         }
       },
       "app": "editor"
+    },
+    {
+      "id": "jm-daw",
+      "name": "JM DAW",
+      "tagline": "Audio-Workstation · Mehrspur/Mix/Aufnahme",
+      "description": "Digitale Audio-Workstation: Audiodateien importieren, auf mehreren Spuren schneiden und anordnen, mischen (Fader, Pan, Mute/Solo, Master) und über die Soundkarte aufnehmen. Wiedergabe und Mix laufen sample-genau über Web Audio; Export als WAV/FLAC/MP3/AAC/OGG.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.daw",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM DAW-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM DAW.app"
+        },
+        "win": {
+          "artifact": "JM DAW-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM DAW\\JM DAW.exe"
+        }
+      },
+      "app": "daw"
     }
   ]
 }

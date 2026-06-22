@@ -31,6 +31,9 @@
     "editor:dev": "npm run dev -w @jm/editor",
     "editor:build": "npm run build -w @jm/editor",
     "editor:dist": "npm run dist -w @jm/editor",
+    "daw:dev": "npm run dev -w @jm/daw",
+    "daw:build": "npm run build -w @jm/daw",
+    "daw:dist": "npm run dist -w @jm/daw",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }

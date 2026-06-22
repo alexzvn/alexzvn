@@ -480,5 +480,21 @@
         ]
       }
     ]
+  },
+  {
+    "app": "daw",
+    "name": "JM DAW",
+    "entries": [
+      {
+        "version": "0.1.0",
+        "date": "2026-06-22",
+        "notes": [
+          "Erste Version: Mehrspur-Audio — Dateien importieren (WAV/MP3/FLAC/AAC/OGG), auf Spuren schneiden, trimmen und mit Snap anordnen; Wellenform-Darstellung pro Clip.",
+          "Mischpult: Fader, Pan, Mute/Solo je Spur und Master; sample-genaue Wiedergabe über Web Audio mit Pegelanzeige.",
+          "Ein- und Ausblenden pro Clip; Aufnahme über die Soundkarte (ASIO/WASAPI) direkt auf eine Spur.",
+          "Export des Mix als WAV/FLAC/MP3/AAC/OGG; Projekte als portable .jmdaw-Datei."
+        ]
+      }
+    ]
   }
 ]
