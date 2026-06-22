@@ -15,14 +15,17 @@ import { useProject } from '@/store/project';
 import { formatShort } from '@/lib/format';
 import { useWaveform } from '@/lib/useWaveform';
 import { PEAKS_PER_SEC } from '@/audio/waveform';
+import { snapSourceUsToZero } from '@/lib/zerocross';
 
 const RULER_H = 26;
 const TRACK_H = 76;
 const HEADER_W = 150;
 const MIN_DUR_US = secToUs(0.05);
 const SNAP_PX = 7;
+const GAIN_MAX = 1.6;
+const CLIP_INSET = 4; // top-1/bottom-1 des Clips (px)
 
-type DragMode = 'move' | 'trim-l' | 'trim-r' | 'playhead';
+type DragMode = 'move' | 'trim-l' | 'trim-r' | 'fade-l' | 'fade-r' | 'gain' | 'playhead';
 interface DragState {
   mode: DragMode;
   clipId?: string;
@@ -40,11 +43,14 @@ export function Timeline() {
   const selectedClipId = useProject((s) => s.selectedClipId);
   const splitAtPlayhead = useProject((s) => s.splitAtPlayhead);
   const deleteSelected = useProject((s) => s.deleteSelected);
+  const duplicateSelected = useProject((s) => s.duplicateSelected);
   const addTrack = useProject((s) => s.addTrack);
   const activeTrackId = useProject((s) => s.activeTrackId);
   const beginDrag = useProject((s) => s.beginDrag);
   const dragUpdate = useProject((s) => s.dragUpdate);
   const endDrag = useProject((s) => s.endDrag);
+  const zeroCrossEnabled = useProject((s) => s.zeroCrossEnabled);
+  const setZeroCross = useProject((s) => s.setZeroCross);
 
   const lanesRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -64,6 +70,26 @@ export function Timeline() {
     if (!el) return 0;
     const rect = el.getBoundingClientRect();
     return Math.max(0, pxToUs(clientX - rect.left + el.scrollLeft));
+  };
+
+  // Spur-Index unter dem Cursor (für Cross-Track-Move).
+  const trackIndexAtY = (clientY: number): number => {
+    const el = lanesRef.current;
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const idx = Math.floor((clientY - rect.top - RULER_H) / TRACK_H);
+    return Math.max(0, Math.min(tracks.length - 1, idx));
+  };
+
+  // Cursor-Y → linearer Gain (oben = laut), bezogen auf die Spur eines Clips.
+  const clientToGain = (clientY: number, trackIndex: number): number => {
+    const el = lanesRef.current;
+    if (!el) return 1;
+    const rect = el.getBoundingClientRect();
+    const bodyTop = rect.top + RULER_H + trackIndex * TRACK_H + CLIP_INSET;
+    const bodyH = TRACK_H - 2 * CLIP_INSET;
+    const rel = Math.max(0, Math.min(1, (clientY - bodyTop) / bodyH));
+    return GAIN_MAX * (1 - rel);
   };
 
   const snapTargets = (excludeId?: string): number[] => {
@@ -93,18 +119,37 @@ export function Timeline() {
     const onMove = (e: PointerEvent): void => {
       const drag = dragRef.current;
       if (!drag) return;
-      const us = clientToUs(e.clientX);
       if (drag.mode === 'playhead') {
-        setPlayhead(snap(us));
+        setPlayhead(snap(clientToUs(e.clientX)));
         return;
       }
-      dragUpdate((draft) => applyDrag(draft, drag, us, snap));
+      if (drag.mode === 'gain') {
+        const ti = trackIndexOfClip(present, drag.clipId!);
+        if (ti >= 0) {
+          const g = clientToGain(e.clientY, ti);
+          dragUpdate((d) => setClipGain(d, drag.clipId!, g));
+        }
+        return;
+      }
+      const us = clientToUs(e.clientX);
+      if (drag.mode === 'move') {
+        const targetId = tracks[trackIndexAtY(e.clientY)]?.id;
+        dragUpdate((d) => applyMove(d, drag, us, snap, targetId));
+        return;
+      }
+      dragUpdate((d) => applyTrimFade(d, drag, us, snap));
     };
     const onUp = (): void => {
-      if (!dragRef.current) return;
-      const mode = dragRef.current.mode;
+      const drag = dragRef.current;
+      if (!drag) return;
+      const { mode, clipId } = drag;
       dragRef.current = null;
-      if (mode !== 'playhead') endDrag();
+      if (mode === 'playhead') return;
+      // Nulldurchgang-Rastung beim Loslassen eines Trims.
+      if ((mode === 'trim-l' || mode === 'trim-r') && clipId && zeroCrossEnabled) {
+        dragUpdate((d) => snapTrimToZero(d, clipId, mode));
+      }
+      endDrag();
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -113,16 +158,16 @@ export function Timeline() {
       window.removeEventListener('pointerup', onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pxPerSec, present, playheadUs]);
+  }, [pxPerSec, present, playheadUs, zeroCrossEnabled, tracks.length]);
 
   const startClipDrag = (e: React.PointerEvent, clip: Clip, mode: DragMode): void => {
     e.stopPropagation();
     select(clip.id);
-    if (mode === 'move') {
-      dragRef.current = { mode, clipId: clip.id, grabOffsetUs: clientToUs(e.clientX) - clip.startUs };
-    } else {
-      dragRef.current = { mode, clipId: clip.id };
-    }
+    dragRef.current = {
+      mode,
+      clipId: clip.id,
+      grabOffsetUs: mode === 'move' ? clientToUs(e.clientX) - clip.startUs : undefined,
+    };
     beginDrag();
   };
 
@@ -130,8 +175,10 @@ export function Timeline() {
     <div className="h-full flex flex-col bg-[var(--card)]/20 border-t border-[var(--border)]/60">
       <div className="h-10 shrink-0 flex items-center gap-1.5 px-2 border-b border-[var(--border)]/50">
         <TlButton label="✂ Teilen" onClick={splitAtPlayhead} />
+        <TlButton label="⧉ Duplizieren" onClick={duplicateSelected} disabled={!selectedClipId} />
         <TlButton label="🗑 Löschen" onClick={deleteSelected} disabled={!selectedClipId} />
         <TlButton label="+ Spur" onClick={addTrack} />
+        <TlToggle label="⌁ Nulldurchgang" active={zeroCrossEnabled} onClick={() => setZeroCross(!zeroCrossEnabled)} />
         <div className="flex-1" />
         <span className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider">Zoom</span>
         <TlButton label="–" onClick={() => setZoom(pxPerSec / 1.3)} />
@@ -176,9 +223,7 @@ export function Timeline() {
                     selected={selectedClipId === clip.id}
                     leftPx={usToPx(clip.startUs)}
                     widthPx={Math.max(6, usToPx(clipDurationUs(clip)))}
-                    onBodyDown={(e) => startClipDrag(e, clip, 'move')}
-                    onTrimLeftDown={(e) => startClipDrag(e, clip, 'trim-l')}
-                    onTrimRightDown={(e) => startClipDrag(e, clip, 'trim-r')}
+                    onStart={(e, mode) => startClipDrag(e, clip, mode)}
                   />
                 ))}
               </div>
@@ -197,18 +242,35 @@ export function Timeline() {
   );
 }
 
-function applyDrag(draft: Project, drag: DragState, pointerUs: number, snap: (us: number, ex?: string) => number): void {
+// ── Drag-Anwendung ────────────────────────────────────────────────────────────
+
+function applyMove(
+  draft: Project,
+  drag: DragState,
+  pointerUs: number,
+  snap: (us: number, ex?: string) => number,
+  targetTrackId: string | undefined,
+): void {
+  const loc = findClip(draft, drag.clipId!);
+  if (!loc) return;
+  const { track: curTrack, clip } = loc;
+  const raw = pointerUs - (drag.grabOffsetUs ?? 0);
+  clip.startUs = Math.max(0, snap(raw, clip.id));
+  if (targetTrackId && targetTrackId !== curTrack.id) {
+    const target = draft.tracks.find((t) => t.id === targetTrackId);
+    if (target && !target.locked) {
+      curTrack.clips = curTrack.clips.filter((c) => c.id !== clip.id);
+      target.clips.push(clip);
+    }
+  }
+}
+
+function applyTrimFade(draft: Project, drag: DragState, pointerUs: number, snap: (us: number, ex?: string) => number): void {
   const loc = findClip(draft, drag.clipId!);
   if (!loc) return;
   const { clip } = loc;
   const asset = draft.assets.find((a) => a.id === clip.assetId);
   const maxOutUs = asset ? asset.durationUs : Number.MAX_SAFE_INTEGER;
-
-  if (drag.mode === 'move') {
-    const raw = pointerUs - (drag.grabOffsetUs ?? 0);
-    clip.startUs = Math.max(0, snap(raw, clip.id));
-    return;
-  }
 
   if (drag.mode === 'trim-l') {
     const end = clipEndUs(clip);
@@ -217,19 +279,69 @@ function applyDrag(draft: Project, drag: DragState, pointerUs: number, snap: (us
     const delta = newStart - clip.startUs;
     const newIn = clip.inUs + delta;
     if (newIn < 0) {
-      clip.startUs -= clip.inUs; // an Quellanfang andocken
+      clip.startUs -= clip.inUs;
       clip.inUs = 0;
     } else {
       clip.startUs = newStart;
       clip.inUs = newIn;
     }
+    clampFade(clip);
     return;
   }
 
-  // trim-r
-  const newEnd = Math.max(clip.startUs + MIN_DUR_US, snap(pointerUs, clip.id));
-  const newDur = newEnd - clip.startUs;
-  clip.outUs = Math.min(maxOutUs, clip.inUs + newDur);
+  if (drag.mode === 'trim-r') {
+    const newEnd = Math.max(clip.startUs + MIN_DUR_US, snap(pointerUs, clip.id));
+    const newDur = newEnd - clip.startUs;
+    clip.outUs = Math.min(maxOutUs, clip.inUs + newDur);
+    clampFade(clip);
+    return;
+  }
+
+  const dur = clipDurationUs(clip);
+  if (drag.mode === 'fade-l') {
+    const inUs = Math.max(0, Math.min(pointerUs - clip.startUs, dur));
+    const out = clip.fade?.outUs ?? 0;
+    clip.fade = { inUs: Math.min(inUs, dur - out), outUs: out };
+    return;
+  }
+  if (drag.mode === 'fade-r') {
+    const outUs = Math.max(0, Math.min(clipEndUs(clip) - pointerUs, dur));
+    const inn = clip.fade?.inUs ?? 0;
+    clip.fade = { inUs: inn, outUs: Math.min(outUs, dur - inn) };
+    return;
+  }
+}
+
+/** Blende auf neue Cliplänge begrenzen (nach Trim). */
+function clampFade(clip: Clip): void {
+  if (!clip.fade) return;
+  const dur = clipDurationUs(clip);
+  const inUs = Math.max(0, Math.min(clip.fade.inUs, dur));
+  const outUs = Math.max(0, Math.min(clip.fade.outUs, dur - inUs));
+  clip.fade = inUs === 0 && outUs === 0 ? undefined : { inUs, outUs };
+}
+
+function setClipGain(draft: Project, clipId: string, gain: number): void {
+  const loc = findClip(draft, clipId);
+  if (loc) loc.clip.gain = Math.max(0, Math.min(GAIN_MAX, gain));
+}
+
+/** Trim-Kante beim Loslassen auf den nächsten Nulldurchgang rasten. */
+function snapTrimToZero(draft: Project, clipId: string, mode: 'trim-l' | 'trim-r'): void {
+  const loc = findClip(draft, clipId);
+  if (!loc) return;
+  const { clip } = loc;
+  if (mode === 'trim-l') {
+    const snapped = snapSourceUsToZero(clip.assetId, clip.inUs);
+    const bounded = Math.max(0, Math.min(snapped, clip.outUs - MIN_DUR_US));
+    const delta = bounded - clip.inUs;
+    clip.inUs = bounded;
+    clip.startUs = Math.max(0, clip.startUs + delta);
+  } else {
+    const snapped = snapSourceUsToZero(clip.assetId, clip.outUs);
+    clip.outUs = Math.max(clip.inUs + MIN_DUR_US, snapped);
+  }
+  clampFade(clip);
 }
 
 function findClip(project: Project, clipId: string): { track: Track; clip: Clip } | null {
@@ -239,6 +351,15 @@ function findClip(project: Project, clipId: string): { track: Track; clip: Clip 
   }
   return null;
 }
+
+function trackIndexOfClip(project: Project, clipId: string): number {
+  for (let i = 0; i < project.tracks.length; i++) {
+    if (project.tracks[i].clips.some((c) => c.id === clipId)) return i;
+  }
+  return -1;
+}
+
+// ── Sub-Komponenten ───────────────────────────────────────────────────────────
 
 function Ruler({
   widthPx,
@@ -368,27 +489,26 @@ function ClipBlock({
   selected,
   leftPx,
   widthPx,
-  onBodyDown,
-  onTrimLeftDown,
-  onTrimRightDown,
+  onStart,
 }: {
   clip: Clip;
   project: Project;
   selected: boolean;
   leftPx: number;
   widthPx: number;
-  onBodyDown: (e: React.PointerEvent) => void;
-  onTrimLeftDown: (e: React.PointerEvent) => void;
-  onTrimRightDown: (e: React.PointerEvent) => void;
+  onStart: (e: React.PointerEvent, mode: DragMode) => void;
 }) {
   const asset = project.assets.find((a) => a.id === clip.assetId);
   const label = asset?.fileName ?? 'Clip';
-  const fadeInPx = clip.fade ? Math.min(widthPx, usToSec(clip.fade.inUs) * (widthPx / Math.max(1, usToSec(clipDurationUs(clip))))) : 0;
-  const fadeOutPx = clip.fade ? Math.min(widthPx, usToSec(clip.fade.outUs) * (widthPx / Math.max(1, usToSec(clipDurationUs(clip))))) : 0;
+  const durUs = Math.max(1, clipDurationUs(clip));
+  const pxPerUs = widthPx / durUs;
+  const fadeInPx = Math.min(widthPx, (clip.fade?.inUs ?? 0) * pxPerUs);
+  const fadeOutPx = Math.min(widthPx, (clip.fade?.outUs ?? 0) * pxPerUs);
+  const gainTopPct = (1 - Math.min(1, clip.gain / GAIN_MAX)) * 100;
 
   return (
     <div
-      onPointerDown={onBodyDown}
+      onPointerDown={(e) => onStart(e, 'move')}
       className={cn(
         'absolute top-1 bottom-1 rounded-md border overflow-hidden cursor-grab active:cursor-grabbing select-none',
         'bg-emerald-500/20 border-emerald-400/60',
@@ -401,31 +521,51 @@ function ClipBlock({
         <ClipWave asset={asset} clip={clip} widthPx={widthPx} />
       </div>
 
-      {/* Fade-Visualisierung */}
+      {/* Fade-Rampen (Verlauf + Diagonale) */}
       {fadeInPx > 1 && (
-        <div
-          className="absolute top-0 bottom-0 left-0 pointer-events-none"
-          style={{ width: fadeInPx, background: 'linear-gradient(to right, rgba(0,0,0,0.55), transparent)' }}
-        />
+        <div className="absolute top-0 bottom-0 left-0 pointer-events-none" style={{ width: fadeInPx, background: 'linear-gradient(to right, rgba(0,0,0,0.55), transparent)' }} />
       )}
       {fadeOutPx > 1 && (
-        <div
-          className="absolute top-0 bottom-0 right-0 pointer-events-none"
-          style={{ width: fadeOutPx, background: 'linear-gradient(to left, rgba(0,0,0,0.55), transparent)' }}
-        />
+        <div className="absolute top-0 bottom-0 right-0 pointer-events-none" style={{ width: fadeOutPx, background: 'linear-gradient(to left, rgba(0,0,0,0.55), transparent)' }} />
+      )}
+      {(fadeInPx > 1 || fadeOutPx > 1) && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox={`0 0 ${widthPx} 100`}>
+          {fadeInPx > 1 && <line x1={0} y1={100} x2={fadeInPx} y2={0} stroke="rgba(255,255,255,0.6)" strokeWidth={1} />}
+          {fadeOutPx > 1 && <line x1={widthPx - fadeOutPx} y1={0} x2={widthPx} y2={100} stroke="rgba(255,255,255,0.6)" strokeWidth={1} />}
+        </svg>
       )}
 
+      {/* Gain-Linie (vertikal ziehen) */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize bg-black/30 hover:bg-[var(--primary)]"
-        onPointerDown={onTrimLeftDown}
-      />
-      <div className="px-2 py-1 h-full flex flex-col justify-between pointer-events-none">
-        <span className="text-[10px] font-semibold truncate drop-shadow">{label}</span>
+        onPointerDown={(e) => onStart(e, 'gain')}
+        title={`Pegel ziehen · ${clip.gain.toFixed(2)}×`}
+        className="absolute left-0 right-0 h-2 -translate-y-1/2 cursor-ns-resize group/gain"
+        style={{ top: `${gainTopPct}%` }}
+      >
+        <div className="absolute left-1 right-1 top-1/2 h-px bg-amber-300/80 group-hover/gain:bg-amber-300" />
       </div>
+
+      {/* Trim-Kanten */}
+      <div className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize bg-black/30 hover:bg-[var(--primary)]" onPointerDown={(e) => onStart(e, 'trim-l')} />
+      <div className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize bg-black/30 hover:bg-[var(--primary)]" onPointerDown={(e) => onStart(e, 'trim-r')} />
+
+      {/* Fade-Griffe (obere Ecken, über den Trim-Kanten) */}
       <div
-        className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize bg-black/30 hover:bg-[var(--primary)]"
-        onPointerDown={onTrimRightDown}
+        onPointerDown={(e) => onStart(e, 'fade-l')}
+        title="Einblende ziehen"
+        className="absolute top-0 left-0 w-3 h-3 cursor-pointer bg-amber-300/70 hover:bg-amber-300 rounded-br-md"
+        style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}
       />
+      <div
+        onPointerDown={(e) => onStart(e, 'fade-r')}
+        title="Ausblende ziehen"
+        className="absolute top-0 right-0 w-3 h-3 cursor-pointer bg-amber-300/70 hover:bg-amber-300 rounded-bl-md"
+        style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }}
+      />
+
+      <div className="px-2 pt-1 h-full pointer-events-none">
+        <span className="text-[10px] font-semibold truncate drop-shadow block ml-3">{label}</span>
+      </div>
     </div>
   );
 }
@@ -448,7 +588,7 @@ function ClipWave({ asset, clip, widthPx }: { asset: MediaAsset | undefined; cli
     const inSec = usToSec(clip.inUs);
     const durSec = usToSec(clipDurationUs(clip));
     const mid = h / 2;
-    ctx.fillStyle = 'rgba(110, 231, 183, 0.85)'; // emerald-300
+    ctx.fillStyle = 'rgba(110, 231, 183, 0.85)';
     for (let x = 0; x < w; x++) {
       const srcSec = inSec + (x / w) * durSec;
       const idx = Math.floor(srcSec * PEAKS_PER_SEC);
@@ -471,6 +611,24 @@ function TlButton({ label, onClick, disabled }: { label: string; onClick: () => 
         'h-7 px-2.5 rounded-[var(--radius)] text-[11px] font-bold transition-colors whitespace-nowrap',
         'border border-[var(--border)] text-[var(--foreground)]/85 hover:bg-[var(--highlight)]',
         'disabled:opacity-30 disabled:cursor-not-allowed',
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function TlToggle({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Schnitte/Trims auf den nächsten Nulldurchgang rasten"
+      className={cn(
+        'h-7 px-2.5 rounded-[var(--radius)] text-[11px] font-bold transition-colors whitespace-nowrap border',
+        active
+          ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+          : 'border-[var(--border)] text-[var(--foreground)]/85 hover:bg-[var(--highlight)]',
       )}
     >
       {label}

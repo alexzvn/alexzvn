@@ -14,6 +14,7 @@ import {
   type Track,
 } from '@shared/project';
 import type { RecorderState, RecorderStatus } from '@shared/ipc-types';
+import { snapSourceUsToZero } from '@/lib/zerocross';
 
 const HISTORY_CAP = 50;
 
@@ -55,6 +56,8 @@ interface State {
   pxPerSec: number;
   /** Aktive Ziel-Spur (Import/Aufnahme landet hier). null = erste Spur. */
   activeTrackId: string | null;
+  /** Schnitte/Trims auf den nächsten Nulldurchgang einrasten. */
+  zeroCrossEnabled: boolean;
 
   exportStatus: ExportStatus;
   rec: RecUiState;
@@ -78,6 +81,7 @@ interface State {
   setPlayhead: (us: number) => void;
   setPlaying: (playing: boolean) => void;
   setZoom: (pxPerSec: number) => void;
+  setZeroCross: (on: boolean) => void;
 
   // ── Spuren ────────────────────────────────────────────────────────────────
   setActiveTrack: (trackId: string) => void;
@@ -92,6 +96,7 @@ interface State {
   addAssetToTimeline: (assetId: string, atUs?: number, trackId?: string) => void;
   splitAtPlayhead: () => void;
   deleteSelected: () => void;
+  duplicateSelected: () => void;
   updateClip: (clipId: string, patch: Partial<Clip>, label?: string) => void;
   setClipFade: (clipId: string, fade: ClipFade) => void;
 
@@ -159,6 +164,7 @@ export const useProject = create<State>((set, get) => ({
   playing: false,
   pxPerSec: 90,
   activeTrackId: null,
+  zeroCrossEnabled: true,
   exportStatus: { running: false, percent: 0 },
   rec: initialRec(),
   _dragBefore: null,
@@ -240,6 +246,7 @@ export const useProject = create<State>((set, get) => ({
     set((state) => ({ playheadUs: Math.max(0, Math.min(us, Math.max(0, projectDurationUs(state.present)))) })),
   setPlaying: (playing) => set({ playing }),
   setZoom: (pxPerSec) => set({ pxPerSec: Math.max(8, Math.min(600, pxPerSec)) }),
+  setZeroCross: (on) => set({ zeroCrossEnabled: on }),
 
   // ── Spuren ────────────────────────────────────────────────────────────────
   setActiveTrack: (trackId) => set({ activeTrackId: trackId }),
@@ -324,16 +331,21 @@ export const useProject = create<State>((set, get) => ({
     if (!target) return;
     const { track: t, clip: c } = target;
     const offset = playheadUs - c.startUs;
+    const zeroCross = get().zeroCrossEnabled;
     get().commit('Clip teilen', (draft) => {
       const track = draft.tracks.find((tt) => tt.id === t.id);
       const clip = track?.clips.find((cc) => cc.id === c.id);
       if (!track || !clip) return;
-      const cutSource = clip.inUs + offset;
+      // Quell-Schnittpunkt (optional auf Nulldurchgang gerastet, in Clipgrenzen).
+      const rawCut = clip.inUs + offset;
+      const snapped = zeroCross ? snapSourceUsToZero(clip.assetId, rawCut) : rawCut;
+      const cutSource = Math.min(Math.max(snapped, clip.inUs + 1), clip.outUs - 1);
+      const cutOffset = cutSource - clip.inUs; // Timeline-Offset ab Clipanfang
       const right: Clip = {
         ...structuredClone(clip),
         id: newId('clip'),
         inUs: cutSource,
-        startUs: clip.startUs + offset,
+        startUs: clip.startUs + cutOffset,
         fade: clip.fade ? { inUs: 0, outUs: clip.fade.outUs } : undefined,
       };
       clip.outUs = cutSource;
@@ -355,6 +367,25 @@ export const useProject = create<State>((set, get) => ({
       }
     });
     set({ selectedClipId: null });
+  },
+
+  duplicateSelected: () => {
+    const id = get().selectedClipId;
+    if (!id) return;
+    let copyId: string | null = null;
+    get().commit('Clip duplizieren', (draft) => {
+      for (const track of draft.tracks) {
+        const idx = track.clips.findIndex((c) => c.id === id);
+        if (idx >= 0) {
+          const src = track.clips[idx];
+          const copy: Clip = { ...structuredClone(src), id: newId('clip'), startUs: clipEndUs(src) };
+          copyId = copy.id;
+          track.clips.push(copy);
+          break;
+        }
+      }
+    });
+    if (copyId) set({ selectedClipId: copyId });
   },
 
   updateClip: (clipId, patch, label = 'Clip ändern') =>

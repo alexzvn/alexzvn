@@ -62,6 +62,9 @@ export function App() {
       } else if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
         st.redo();
+      } else if (mod && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        st.duplicateSelected();
       } else if (e.key === ' ') {
         e.preventDefault();
         st.setPlaying(!st.playing);

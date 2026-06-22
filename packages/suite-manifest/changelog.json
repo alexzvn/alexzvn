@@ -486,6 +486,16 @@
     "name": "JM DAW",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-22",
+        "notes": [
+          "Ein-/Ausblenden direkt am Clip: an den oberen Ecken ziehen (mit sichtbarer Fade-Rampe).",
+          "Clips lassen sich jetzt zwischen Spuren ziehen (vertikal über die Spurgrenze).",
+          "Pegel pro Clip per Gain-Linie im Clip ziehen; Clip duplizieren mit Strg+D.",
+          "Schneiden und Trimmen rasten optional auf den nächsten Nulldurchgang ein (Schalter in der Werkzeugleiste) — klickfreie Schnitte."
+        ]
+      },
+      {
         "version": "0.1.0",
         "date": "2026-06-22",
         "notes": [
