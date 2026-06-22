@@ -8,6 +8,12 @@ copyright: "© Jakobs Medien GmbH"
 # electron-builder sie nicht ermitteln. Muss zur installierten Version passen.
 electronVersion: 33.4.11
 
+# Kein nativer Rebuild durch electron-builder: das Audio-Addon (@jm/audio) wird
+# zur Laufzeit aus resources/bin/win geladen (vom prepackage gestaged), nicht aus
+# dem asar. Der von electron-builder angestossene `npm rebuild` scheitert zudem an
+# den npm-Env-Configs (target-platform/update-binary) unter `npm run`.
+npmRebuild: false
+
 directories:
   output: release
   buildResources: build
