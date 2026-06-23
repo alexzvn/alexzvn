@@ -7,9 +7,12 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/audio ist ein natives Addon → extern halten (Laufzeit-require), NICHT
 // bündeln. @jm/ui wird nur im Renderer genutzt und dort von Vite gebündelt.
+// @jm/app-runtime ist reines TS und wird in den Main-Bundle gebündelt.
+const internalPackages = ['@jm/app-runtime'];
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: internalPackages })],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/app-runtime": "*",
     "@jm/ui": "*",
     "hash-wasm": "^4.11.0",
     "react": "^18.3.1",

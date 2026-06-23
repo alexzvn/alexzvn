@@ -1,10 +1,14 @@
 import { app, BrowserWindow, protocol, shell } from 'electron';
 import path, { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import { MEDIA_SCHEME } from '@shared/media-url';
 import { registerIpc } from './ipc';
 import { registerMediaProtocol } from './media-protocol';
 
 declare const __dirname: string;
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-player', appName: 'JM Player' });
 
 let mainWindow: BrowserWindow | null = null;
 

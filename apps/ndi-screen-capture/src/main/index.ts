@@ -1,10 +1,14 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } from '@jm/electron-kit';
 import { registerIpc } from './ipc';
 import { installDisplayMediaHandler } from './capture-handler';
 
 declare const __dirname: string;
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-ndi-screen-capture', appName: 'JM NDI Screen Capture' });
 
 // Windows: Das neue Windows-Graphics-Capture-Backend (WGC) scheitert auf manchen
 // Systemen (Hybrid-GPU/Treiber/Sitzung) mit E_FAIL/E_INVALIDARG → die Aufnahme

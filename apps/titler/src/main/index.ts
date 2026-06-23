@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import type { PartialTitlerConfig, TitlerState, TitlerStatus } from '@shared/types';
 import { getConfig, patchConfig } from './config';
 import { startSender, stopSender, senderActive } from './ndi/sender-process';
@@ -97,6 +98,9 @@ function registerIpc(): void {
     return status;
   });
 }
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-titler', appName: 'JM Titler' });
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {

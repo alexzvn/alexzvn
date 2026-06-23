@@ -5,9 +5,13 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
+// Workspace-Pakete (reines TS) bündeln statt externalisieren — gepackte Apps
+// liefern kein node_modules, also darf nichts zur Laufzeit `require`d werden.
+const internalPackages = ['@jm/app-runtime'];
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: internalPackages })],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {

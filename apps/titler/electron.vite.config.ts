@@ -6,8 +6,8 @@ import { resolve } from 'node:path';
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/ndi ist nativ → bleibt externalisiert (Laufzeit-require), wird NICHT
-// gebündelt. Kein Source-Workspace-Paket im Main/Preload zu inlinen.
-const internalPackages: string[] = [];
+// gebündelt. @jm/app-runtime als Source-Workspace-Paket inline bündeln.
+const internalPackages: string[] = ['@jm/app-runtime'];
 
 export default defineConfig({
   main: {

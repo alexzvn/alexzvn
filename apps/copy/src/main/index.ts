@@ -1,9 +1,13 @@
 import { app, BrowserWindow, shell } from 'electron';
 import path, { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import { registerIpc } from './ipc';
 import { rescheduleAll, stopAllRunners } from './sync/scheduler';
 
 declare const __dirname: string;
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-copy', appName: 'JM Copy' });
 
 let mainWindow: BrowserWindow | null = null;
 

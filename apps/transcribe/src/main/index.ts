@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import type { PartialTranscribeConfig, TranscribeState, WhisperModelId } from '@shared/types';
 import { getConfig, patchConfig } from './config';
 import { whisperAvailable } from './locate';
@@ -138,6 +139,9 @@ function registerIpc(): void {
     broadcast();
   });
 }
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-transcribe', appName: 'JM Transcribe' });
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {

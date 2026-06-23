@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/app-runtime": "*",
     "@jm/ui": "*",
     "ag-psd": "^30.1.1",
     "fflate": "^0.8.3",

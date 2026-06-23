@@ -7,7 +7,7 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/media + @jm/media-library als Quelle bündeln (kein Laufzeit-require);
 // better-sqlite3 bleibt extern (nativ → asarUnpack + electron-rebuild).
-const internalPackages = ['@jm/media', '@jm/media-library'];
+const internalPackages = ['@jm/app-runtime', '@jm/media', '@jm/media-library'];
 
 export default defineConfig({
   main: {

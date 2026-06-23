@@ -7,7 +7,7 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/media als Quelle inline bündeln (locate/probe für ffmpeg). whisper wird
 // per spawn aus resources/bin geladen, kein Laufzeit-require.
-const internalPackages = ['@jm/media'];
+const internalPackages = ['@jm/app-runtime', '@jm/media'];
 
 export default defineConfig({
   main: {

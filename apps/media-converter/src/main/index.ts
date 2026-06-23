@@ -1,9 +1,13 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } from '@jm/electron-kit';
 import { registerIpc } from './ipc';
 
 declare const __dirname: string;
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-media-converter', appName: 'JM Media Converter' });
 
 const preloadPath = join(__dirname, '../preload/index.mjs');
 

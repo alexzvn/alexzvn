@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/app-runtime": "*",
     "@jm/ui": "*",
     "better-sqlite3": "^11.3.0",
     "bonjour-service": "^1.2.1",

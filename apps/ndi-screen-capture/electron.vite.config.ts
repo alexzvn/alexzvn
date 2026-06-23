@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // Workspace-Pakete als Quelle bündeln statt zur Laufzeit `require`n.
-const internalPackages = ['@jm/electron-kit'];
+const internalPackages = ['@jm/app-runtime', '@jm/electron-kit'];
 
 export default defineConfig({
   main: {

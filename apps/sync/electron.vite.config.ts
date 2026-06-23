@@ -5,9 +5,12 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
+// @jm/app-runtime ist reines TS und wird in den Main-Bundle gebündelt.
+const internalPackages = ['@jm/app-runtime'];
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: internalPackages })],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {

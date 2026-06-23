@@ -9,6 +9,7 @@ import {
 } from 'electron';
 import path, { join } from 'node:path';
 
+import { initAppRuntime } from '@jm/app-runtime';
 import { migrate } from './db/migrate';
 import { ensureInitialAdmin } from './auth/bootstrap';
 import { loadDevices } from './config/devices';
@@ -22,6 +23,9 @@ import {
 } from './server';
 
 declare const __dirname: string;
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-studio-control', appName: 'JM Studio Control' });
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/app-runtime": "*",
     "@jm/electron-kit": "*",
     "@jm/ndi": "*",
     "@jm/ui": "*",
