@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Badge, Button, Card, cn } from '@jm/ui';
 import { useRec } from '@/store/recorder';
 import { basename, dbfsLabel, formatClock, meterColor, meterPct } from '@/lib/format';
@@ -203,6 +204,9 @@ export function RecorderView() {
         )}
       </Card>
 
+      {/* Geplante Aufnahme */}
+      <ScheduleCard />
+
       {/* Pegelmeter */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
@@ -234,6 +238,108 @@ export function RecorderView() {
         </div>
       </Card>
     </div>
+  );
+}
+
+/** Zeitgesteuerte Aufnahme: Startzeit planen + Auto-Stopp nach Dauer. */
+function ScheduleCard() {
+  const status = useRec((s) => s.state.status);
+  const scheduledStartAt = useRec((s) => s.state.scheduledStartAt);
+  const scheduledStopAt = useRec((s) => s.state.scheduledStopAt);
+  const scheduleStart = useRec((s) => s.scheduleStart);
+  const scheduleDurationMin = useRec((s) => s.scheduleDurationMin);
+  const setScheduleStart = useRec((s) => s.setScheduleStart);
+  const setScheduleDurationMin = useRec((s) => s.setScheduleDurationMin);
+  const schedule = useRec((s) => s.schedule);
+  const cancelSchedule = useRec((s) => s.cancelSchedule);
+
+  const open = status !== 'idle';
+  const recording = status === 'recording';
+  const pendingStart = scheduledStartAt != null;
+  const pendingStop = scheduledStopAt != null;
+
+  // 1×/s ticken, damit die Countdowns laufen.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!pendingStart && !pendingStop) return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [pendingStart, pendingStop]);
+
+  const startIn = pendingStart ? Math.max(0, Math.round((scheduledStartAt! - now) / 1000)) : 0;
+  const stopIn = pendingStop ? Math.max(0, Math.round((scheduledStopAt! - now) / 1000)) : 0;
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+          Geplante Aufnahme
+        </h2>
+        {pendingStart && (
+          <Badge tone="warning">Start in {formatClock(startIn)}</Badge>
+        )}
+        {!pendingStart && recording && pendingStop && (
+          <Badge tone="warning">Auto-Stopp in {formatClock(stopIn)}</Badge>
+        )}
+      </div>
+
+      {!open ? (
+        <p className="text-sm text-[var(--muted-foreground)]">
+          Erst den Eingang öffnen — dann lässt sich Start- und Stoppzeit planen.
+        </p>
+      ) : pendingStart ? (
+        <div className="flex items-center gap-4">
+          <span className="text-sm">
+            Geplant für{' '}
+            <span className="font-semibold tabular">
+              {new Date(scheduledStartAt!).toLocaleString()}
+            </span>
+            {pendingStop && (
+              <>
+                {' '}· Stopp{' '}
+                <span className="font-semibold tabular">
+                  {new Date(scheduledStopAt!).toLocaleTimeString()}
+                </span>
+              </>
+            )}
+          </span>
+          <Button size="sm" variant="outline" className="ml-auto" onClick={() => void cancelSchedule()}>
+            Abbrechen
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-end">
+          <Field label="Startzeit (leer = sofort)">
+            <input
+              type="datetime-local"
+              value={scheduleStart}
+              disabled={recording}
+              onChange={(e) => setScheduleStart(e.target.value)}
+              className="h-10 w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm disabled:opacity-50"
+            />
+          </Field>
+          <Field label="Dauer (Min, 0 = manuell)">
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={scheduleDurationMin}
+              disabled={recording}
+              onChange={(e) => setScheduleDurationMin(Number(e.target.value))}
+              className="h-10 w-28 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm tabular disabled:opacity-50"
+            />
+          </Field>
+          <Button variant="primary" disabled={recording} onClick={() => void schedule()}>
+            Planen
+          </Button>
+        </div>
+      )}
+
+      <p className="text-[11px] text-[var(--muted-foreground)] mt-3">
+        Start/Stopp laufen zuverlässig im Hintergrund (auch unbeaufsichtigt). Zielordner, Dateiname
+        und „Spuren einzeln" gelten wie oben eingestellt. Ein manueller Stopp hebt den Auto-Stopp auf.
+      </p>
+    </Card>
   );
 }
 

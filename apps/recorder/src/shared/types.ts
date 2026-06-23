@@ -15,6 +15,10 @@ export interface RecorderState {
   sampleRate: number;
   filePath: string | null;
   recordedSec: number;
+  /** Geplanter Start (epoch ms) — gesetzt, solange eine Aufnahme wartet. */
+  scheduledStartAt?: number | null;
+  /** Geplanter Stopp (epoch ms) — gesetzt, solange ein Auto-Stopp aussteht. */
+  scheduledStopAt?: number | null;
 }
 
 export interface ArmInput {
@@ -29,6 +33,14 @@ export interface RecordInput {
   fileName?: string;
   /** Zusätzlich jede Spur als eigene Mono-WAV in einen Unterordner (Issue #20). */
   separateTracks?: boolean;
+}
+
+/** Zeitgesteuerte Aufnahme: Start-/Stoppzeit zusätzlich zum RecordInput. */
+export interface ScheduleInput extends RecordInput {
+  /** Absolute Startzeit (epoch ms). null/0 = sofort starten. */
+  startAt: number | null;
+  /** Absolute Stoppzeit (epoch ms). null/0 = manuell stoppen. */
+  stopAt: number | null;
 }
 
 export interface OpResult {
@@ -61,9 +73,15 @@ export interface JmrecApi {
   startRecording: (input: RecordInput) => Promise<OpResult>;
   /** Aufnahme beenden + WAV finalisieren. */
   stopRecording: () => Promise<RecordResult>;
+  /** Zeitgesteuerte Aufnahme planen (muss armed sein). */
+  schedule: (input: ScheduleInput) => Promise<OpResult>;
+  /** Geplante Aufnahme abbrechen (stoppt keine laufende Aufnahme). */
+  cancelSchedule: () => Promise<void>;
   getState: () => Promise<RecorderState>;
   dialog: { pickDir: () => Promise<string | null> };
   shell: { reveal: (path: string) => Promise<void> };
   onLevels: (cb: (l: Levels) => void) => () => void;
   onState: (cb: (s: RecorderState) => void) => () => void;
+  /** Hinweistexte aus dem Main (z. B. „Geplante Aufnahme gestartet/beendet"). */
+  onNotice: (cb: (msg: string) => void) => () => void;
 }

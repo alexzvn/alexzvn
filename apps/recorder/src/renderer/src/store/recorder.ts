@@ -18,6 +18,10 @@ interface RecStore {
   dir: string | null;
   fileName: string;
   separateTracks: boolean;
+  /** Geplante Startzeit als datetime-local-Wert; '' = sofort starten. */
+  scheduleStart: string;
+  /** Auto-Stopp nach N Minuten; 0 = bis zum manuellen Stopp. */
+  scheduleDurationMin: number;
   state: RecorderState;
   peaks: number[];
   notice: string | null;
@@ -30,11 +34,15 @@ interface RecStore {
   setSampleRate: (n: number) => void;
   setFileName: (s: string) => void;
   setSeparateTracks: (v: boolean) => void;
+  setScheduleStart: (s: string) => void;
+  setScheduleDurationMin: (n: number) => void;
   pickDir: () => Promise<void>;
   arm: () => Promise<void>;
   disarm: () => Promise<void>;
   record: () => Promise<void>;
   stop: () => Promise<void>;
+  schedule: () => Promise<void>;
+  cancelSchedule: () => Promise<void>;
   setNotice: (s: string | null) => void;
 }
 
@@ -48,6 +56,8 @@ export const useRec = create<RecStore>((set, get) => ({
   dir: null,
   fileName: '',
   separateTracks: false,
+  scheduleStart: '',
+  scheduleDurationMin: 0,
   state: IDLE,
   peaks: [],
   notice: null,
@@ -60,6 +70,7 @@ export const useRec = create<RecStore>((set, get) => ({
       subscribed = true;
       window.jmrec.onLevels((l) => set({ peaks: l.peaks }));
       window.jmrec.onState((s) => set({ state: s }));
+      window.jmrec.onNotice((msg) => set({ notice: msg }));
     }
     await get().refreshDevices();
     set({ loading: false });
@@ -95,6 +106,9 @@ export const useRec = create<RecStore>((set, get) => ({
   setSampleRate: (n) => set({ sampleRate: Math.max(8000, Math.floor(n) || 48000) }),
   setFileName: (fileName) => set({ fileName }),
   setSeparateTracks: (separateTracks) => set({ separateTracks }),
+  setScheduleStart: (scheduleStart) => set({ scheduleStart }),
+  setScheduleDurationMin: (scheduleDurationMin) =>
+    set({ scheduleDurationMin: Math.max(0, Math.floor(scheduleDurationMin) || 0) }),
 
   pickDir: async () => {
     const dir = await window.jmrec.dialog.pickDir();
@@ -138,5 +152,35 @@ export const useRec = create<RecStore>((set, get) => ({
     } else if (!res.ok) {
       set({ notice: res.error ?? 'Stopp fehlgeschlagen.' });
     }
+  },
+
+  schedule: async () => {
+    let dir = get().dir;
+    if (!dir) {
+      await get().pickDir();
+      dir = get().dir;
+      if (!dir) return;
+    }
+    const { scheduleStart, scheduleDurationMin } = get();
+    // datetime-local liefert lokale Zeit ohne Zone — new Date(...) interpretiert sie lokal.
+    const startMs = scheduleStart ? new Date(scheduleStart).getTime() : null;
+    if (scheduleStart && (startMs == null || Number.isNaN(startMs))) {
+      set({ notice: 'Ungültige Startzeit.' });
+      return;
+    }
+    const base = startMs ?? Date.now();
+    const stopMs = scheduleDurationMin > 0 ? base + scheduleDurationMin * 60_000 : null;
+    const res = await window.jmrec.schedule({
+      dir,
+      fileName: get().fileName,
+      separateTracks: get().separateTracks,
+      startAt: startMs,
+      stopAt: stopMs,
+    });
+    if (!res.ok) set({ notice: res.error ?? 'Planung fehlgeschlagen.' });
+  },
+
+  cancelSchedule: async () => {
+    await window.jmrec.cancelSchedule();
   },
 }));

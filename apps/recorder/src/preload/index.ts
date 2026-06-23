@@ -8,6 +8,7 @@ import type {
   RecordInput,
   RecordResult,
   RecorderState,
+  ScheduleInput,
 } from '@shared/types';
 
 const api: JmrecApi = {
@@ -17,6 +18,8 @@ const api: JmrecApi = {
   disarm: () => ipcRenderer.invoke('rec:disarm') as Promise<void>,
   startRecording: (input: RecordInput) => ipcRenderer.invoke('rec:start', input) as Promise<OpResult>,
   stopRecording: () => ipcRenderer.invoke('rec:stop') as Promise<RecordResult>,
+  schedule: (input: ScheduleInput) => ipcRenderer.invoke('rec:schedule', input) as Promise<OpResult>,
+  cancelSchedule: () => ipcRenderer.invoke('rec:cancelSchedule') as Promise<void>,
   getState: () => ipcRenderer.invoke('rec:state') as Promise<RecorderState>,
   dialog: {
     pickDir: () => ipcRenderer.invoke('dialog:pickDir') as Promise<string | null>,
@@ -33,6 +36,11 @@ const api: JmrecApi = {
     const listener = (_e: unknown, s: RecorderState): void => cb(s);
     ipcRenderer.on('recorder:state', listener);
     return () => ipcRenderer.off('recorder:state', listener);
+  },
+  onNotice: (cb) => {
+    const listener = (_e: unknown, msg: string): void => cb(msg);
+    ipcRenderer.on('recorder:notice', listener);
+    return () => ipcRenderer.off('recorder:notice', listener);
   },
 };
 

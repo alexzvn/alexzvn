@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import path, { join } from 'node:path';
 import { initAppRuntime } from '@jm/app-runtime';
 import { registerIpc } from './ipc';
+import { shutdown } from './recorder';
 
 declare const __dirname: string;
 
@@ -61,6 +62,7 @@ function createMainWindow(): BrowserWindow {
   });
 
   win.on('closed', () => {
+    shutdown(); // geplante Aufnahme-Timer lösen + Eingang schließen
     mainWindow = null;
   });
 

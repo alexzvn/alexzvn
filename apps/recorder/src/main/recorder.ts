@@ -9,6 +9,7 @@ import type {
   RecordInput,
   RecordResult,
   RecorderState,
+  ScheduleInput,
 } from '@shared/types';
 import { MultiWavWriter, WavWriter } from './wav';
 
@@ -39,17 +40,30 @@ const state: RecorderState = {
   sampleRate: 0,
   filePath: null,
   recordedSec: 0,
+  scheduledStartAt: null,
+  scheduledStopAt: null,
 };
 let writer: WavWriter | null = null;
 let multiWriter: MultiWavWriter | null = null;
 let peaks: number[] = [];
 let lastEmit = 0;
 
+// Zeitgesteuerte Aufnahme (Slice C3): Timer + gemerkter Aufnahme-Input.
+let startTimer: ReturnType<typeof setTimeout> | null = null;
+let stopTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingInput: RecordInput | null = null;
+
 function send(channel: string, payload: unknown): void {
-  getWin()?.webContents.send(channel, payload);
+  const win = getWin();
+  if (!win || win.isDestroyed()) return;
+  const wc = win.webContents;
+  if (!wc.isDestroyed()) wc.send(channel, payload);
 }
 function emitState(): void {
   send('recorder:state', { ...state });
+}
+function notice(msg: string): void {
+  send('recorder:notice', msg);
 }
 
 export function getState(): RecorderState {
@@ -122,6 +136,10 @@ export function arm(input: ArmInput): OpResult {
 }
 
 export function disarm(): void {
+  clearTimers(); // geplante Aufnahmen verfallen mit dem Eingang
+  state.scheduledStartAt = null;
+  state.scheduledStopAt = null;
+  pendingInput = null;
   if (writer) {
     try {
       writer.finalize();
@@ -157,6 +175,12 @@ function sanitize(name: string): string {
 export function startRecording(input: RecordInput): OpResult {
   if (state.status !== 'armed') return { ok: false, error: 'Erst den Eingang öffnen (Arm).' };
   try {
+    // Ein laufender Start erfüllt eine evtl. geplante Startzeit.
+    if (startTimer) {
+      clearTimeout(startTimer);
+      startTimer = null;
+    }
+    state.scheduledStartAt = null;
     mkdirSync(input.dir, { recursive: true });
     const base = input.fileName?.trim() ? sanitize(input.fileName) : defaultName();
     const filePath = path.join(input.dir, `${base}.wav`);
@@ -180,6 +204,12 @@ export function startRecording(input: RecordInput): OpResult {
 
 export function stopRecording(): RecordResult {
   if (state.status !== 'recording' || !writer) return { ok: false, error: 'Keine laufende Aufnahme.' };
+  // Manueller Stopp hebt einen ausstehenden Auto-Stopp auf.
+  if (stopTimer) {
+    clearTimeout(stopTimer);
+    stopTimer = null;
+  }
+  state.scheduledStopAt = null;
   const filePath = state.filePath ?? '';
   try {
     const res = writer.finalize();
@@ -207,5 +237,101 @@ export function stopRecording(): RecordResult {
     state.status = 'armed';
     emitState();
     return { ok: false, error: (e as Error).message };
+  }
+}
+
+// ---- Zeitgesteuerte Aufnahme (C3) ----
+
+function clearTimers(): void {
+  if (startTimer) {
+    clearTimeout(startTimer);
+    startTimer = null;
+  }
+  if (stopTimer) {
+    clearTimeout(stopTimer);
+    stopTimer = null;
+  }
+}
+
+/**
+ * Plant eine Aufnahme: optional Startzeit (sonst sofort) und optional Stoppzeit
+ * (sonst manuell). Erfordert einen geöffneten Eingang (armed). Die Timer laufen
+ * im Main, damit Start/Stopp unabhängig vom Renderer-Zustand zuverlässig feuern.
+ */
+export function schedule(input: ScheduleInput): OpResult {
+  if (state.status === 'idle') return { ok: false, error: 'Erst den Eingang öffnen (Arm).' };
+  if (state.status === 'recording') return { ok: false, error: 'Es läuft bereits eine Aufnahme.' };
+
+  const now = Date.now();
+  const startAt = input.startAt && input.startAt > now ? input.startAt : null;
+  const stopAt = input.stopAt && input.stopAt > now ? input.stopAt : null;
+  if (stopAt && startAt && stopAt <= startAt) {
+    return { ok: false, error: 'Stoppzeit muss nach der Startzeit liegen.' };
+  }
+  if (input.stopAt && !stopAt) {
+    return { ok: false, error: 'Stoppzeit liegt in der Vergangenheit.' };
+  }
+
+  clearTimers();
+  pendingInput = { dir: input.dir, fileName: input.fileName, separateTracks: input.separateTracks };
+  state.scheduledStartAt = startAt;
+  state.scheduledStopAt = stopAt;
+
+  if (startAt) {
+    startTimer = setTimeout(doScheduledStart, startAt - now);
+    emitState();
+    notice(`Aufnahme geplant für ${new Date(startAt).toLocaleTimeString()}.`);
+  } else {
+    // Sofort starten; ein evtl. gesetzter Stopp wird in doScheduledStart bewaffnet.
+    doScheduledStart();
+  }
+  return { ok: true };
+}
+
+function doScheduledStart(): void {
+  startTimer = null;
+  state.scheduledStartAt = null;
+  const input = pendingInput;
+  if (!input) return;
+  const res = startRecording(input);
+  if (!res.ok) {
+    state.scheduledStopAt = null;
+    notice(res.error ?? 'Geplante Aufnahme konnte nicht starten.');
+    return;
+  }
+  notice('Geplante Aufnahme gestartet.');
+  // Auto-Stopp bewaffnen (startRecording räumt scheduledStartAt; Stopp bleibt).
+  if (state.scheduledStopAt) {
+    const delay = Math.max(0, state.scheduledStopAt - Date.now());
+    stopTimer = setTimeout(doScheduledStop, delay);
+  }
+  emitState();
+}
+
+function doScheduledStop(): void {
+  stopTimer = null;
+  state.scheduledStopAt = null;
+  const res = stopRecording();
+  if (res.ok) notice(`Geplante Aufnahme beendet${res.filePath ? `: ${res.filePath}` : ''}.`);
+}
+
+/** Geplante Aufnahme abbrechen. Eine bereits LAUFENDE Aufnahme bleibt unberührt. */
+export function cancelSchedule(): void {
+  const had = state.scheduledStartAt != null || state.scheduledStopAt != null;
+  clearTimers();
+  state.scheduledStartAt = null;
+  state.scheduledStopAt = null;
+  pendingInput = null;
+  emitState();
+  if (had) notice('Planung abgebrochen.');
+}
+
+/** Beim Fenster-Schließen/Beenden: Timer lösen + Eingang schließen. */
+export function shutdown(): void {
+  clearTimers();
+  try {
+    if (audioMod && inited) audioMod.stopInput();
+  } catch {
+    // ignore
   }
 }
