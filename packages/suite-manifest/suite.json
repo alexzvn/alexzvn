@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T19:17:55.833Z",
+  "updatedAt": "2026-06-23T19:21:22.634Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -52,7 +52,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.studio-control",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.4.1",
+      "latestVersion": "0.5.0",
       "platforms": {
         "mac": {
           "artifact": "JM Studio Control-${version}-mac-${arch}.dmg",
@@ -338,7 +338,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.daw",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.7.0",
+      "latestVersion": "0.7.1",
       "platforms": {
         "mac": {
           "artifact": "JM DAW-${version}-mac-${arch}.dmg",
