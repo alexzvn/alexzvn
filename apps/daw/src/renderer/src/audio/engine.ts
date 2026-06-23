@@ -7,6 +7,7 @@ import {
   anySolo,
   automationValueAt,
   clipDurationUs,
+  clipEndUs,
   dbToGain,
   projectDurationUs,
   usToSec,
@@ -301,9 +302,23 @@ class WebAudioEngine implements AudioEngine {
         }
       }
 
-      for (const clip of track.clips) {
-        if (!clip.enabled) continue;
-        this.scheduleClip(ctx, clip, chain.input, opts);
+      // Auto-Crossfade: überlappen zwei aufeinanderfolgende Clips, blendet der
+      // auslaufende aus und der einlaufende über die Überlappungslänge ein. Daraus
+      // leiten wir pro Clip eine effektive Ein-/Ausblende ab — kein eigenes
+      // Datenmodell nötig, und es greift in Echtzeit wie im Offline-Render.
+      const playClips = track.clips.filter((c) => c.enabled).sort((a, b) => a.startUs - b.startUs);
+      for (let i = 0; i < playClips.length; i++) {
+        const clip = playClips[i];
+        const prev = playClips[i - 1];
+        const next = playClips[i + 1];
+        const xfadeInUs = prev ? Math.max(0, clipEndUs(prev) - clip.startUs) : 0;
+        const xfadeOutUs = next ? Math.max(0, clipEndUs(clip) - next.startUs) : 0;
+        this.scheduleClip(ctx, clip, chain.input, {
+          when: opts.when,
+          fromUs: opts.fromUs,
+          xfadeInUs,
+          xfadeOutUs,
+        });
       }
     }
   }
@@ -329,7 +344,7 @@ class WebAudioEngine implements AudioEngine {
     ctx: BaseAudioContext,
     clip: Clip,
     trackGain: GainNode,
-    opts: { when: number; fromUs: number },
+    opts: { when: number; fromUs: number; xfadeInUs?: number; xfadeOutUs?: number },
   ): void {
     const buffer = cachedBuffer(clip.assetId);
     if (!buffer) return;
@@ -351,18 +366,37 @@ class WebAudioEngine implements AudioEngine {
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     const cg = ctx.createGain();
-    this.applyFades(cg, clip, when, skip, durSec);
+    this.applyFades(cg, clip, when, skip, durSec, opts.xfadeInUs ?? 0, opts.xfadeOutUs ?? 0);
     src.connect(cg);
     cg.connect(trackGain);
     src.start(when, playOffset, playDur);
     this.sources.push(src);
   }
 
-  /** Clip-Gain + lineare Ein-/Ausblende ab dem (evtl. mittendrin gestarteten) Punkt. */
-  private applyFades(cg: GainNode, clip: Clip, when: number, skip: number, durSec: number): void {
+  /**
+   * Clip-Gain + lineare Ein-/Ausblende ab dem (evtl. mittendrin gestarteten)
+   * Punkt. Die effektive Blende ist die längere aus expliziter Clip-Blende und
+   * Auto-Crossfade (Überlappungslänge `xfade…Us`) — so überblenden überlappende
+   * Clips auch ohne gesetzte Blende. Überlappen sich beide Kanten auf einem sehr
+   * kurzen Clip, werden sie proportional auf die Cliplänge gestaucht.
+   */
+  private applyFades(
+    cg: GainNode,
+    clip: Clip,
+    when: number,
+    skip: number,
+    durSec: number,
+    xfadeInUs = 0,
+    xfadeOutUs = 0,
+  ): void {
     const base = clip.gain ?? 1;
-    const fadeIn = usToSec(clip.fade?.inUs ?? 0);
-    const fadeOut = usToSec(clip.fade?.outUs ?? 0);
+    let fadeIn = Math.max(usToSec(clip.fade?.inUs ?? 0), usToSec(xfadeInUs));
+    let fadeOut = Math.max(usToSec(clip.fade?.outUs ?? 0), usToSec(xfadeOutUs));
+    if (fadeIn + fadeOut > durSec && fadeIn + fadeOut > 0) {
+      const scale = durSec / (fadeIn + fadeOut);
+      fadeIn *= scale;
+      fadeOut *= scale;
+    }
     const g = cg.gain;
 
     const gainAt = (u: number): number => {

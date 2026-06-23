@@ -672,6 +672,21 @@ function MiniToggle({
   );
 }
 
+/** Überlappung (µs) eines Clips mit dem vorigen/nächsten aktivierten Clip seiner Spur. */
+function overlapUs(project: Project, clip: Clip): [inUs: number, outUs: number] {
+  if (!clip.enabled) return [0, 0];
+  const track = project.tracks.find((t) => t.clips.some((c) => c.id === clip.id));
+  if (!track) return [0, 0];
+  const sorted = track.clips.filter((c) => c.enabled).sort((a, b) => a.startUs - b.startUs);
+  const idx = sorted.findIndex((c) => c.id === clip.id);
+  if (idx < 0) return [0, 0];
+  const prev = sorted[idx - 1];
+  const next = sorted[idx + 1];
+  const inUs = prev ? Math.max(0, clipEndUs(prev) - clip.startUs) : 0;
+  const outUs = next ? Math.max(0, clipEndUs(clip) - next.startUs) : 0;
+  return [inUs, outUs];
+}
+
 function ClipBlock({
   clip,
   project,
@@ -691,8 +706,14 @@ function ClipBlock({
   const label = asset?.fileName ?? 'Clip';
   const durUs = Math.max(1, clipDurationUs(clip));
   const pxPerUs = widthPx / durUs;
-  const fadeInPx = Math.min(widthPx, (clip.fade?.inUs ?? 0) * pxPerUs);
-  const fadeOutPx = Math.min(widthPx, (clip.fade?.outUs ?? 0) * pxPerUs);
+  // Effektive Blende = längere aus expliziter Clip-Blende und Auto-Crossfade
+  // (Überlappung mit dem Nachbar-Clip) — spiegelt, was die Engine hörbar macht,
+  // damit Überlappungen sichtbar als Überblendung erscheinen.
+  const [xfadeInUs, xfadeOutUs] = overlapUs(project, clip);
+  const effFadeInUs = Math.max(clip.fade?.inUs ?? 0, xfadeInUs);
+  const effFadeOutUs = Math.max(clip.fade?.outUs ?? 0, xfadeOutUs);
+  const fadeInPx = Math.min(widthPx, effFadeInUs * pxPerUs);
+  const fadeOutPx = Math.min(widthPx, effFadeOutUs * pxPerUs);
   const gainTopPct = (1 - Math.min(1, clip.gain / GAIN_MAX)) * 100;
 
   return (

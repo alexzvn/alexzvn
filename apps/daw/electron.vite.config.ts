@@ -7,7 +7,7 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/electron-kit + @jm/media als Quelle bündeln. @jm/audio ist ein natives
 // Addon → extern halten (Laufzeit-require), NICHT bündeln. @jm/ui nur im Renderer.
-const internalPackages = ['@jm/electron-kit', '@jm/media'];
+const internalPackages = ['@jm/app-runtime', '@jm/electron-kit', '@jm/media'];
 
 export default defineConfig({
   main: {

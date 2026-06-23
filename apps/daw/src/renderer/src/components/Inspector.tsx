@@ -253,6 +253,18 @@ function ClipInspector({ clip, assetName }: { clip: Clip; assetName?: string }) 
   const dragUpdate = useProject((s) => s.dragUpdate);
   const endDrag = useProject((s) => s.endDrag);
   const setClipFade = useProject((s) => s.setClipFade);
+  const normalizeClip = useProject((s) => s.normalizeClip);
+  const [normTarget, setNormTarget] = useState(-1);
+  const [normalizing, setNormalizing] = useState(false);
+
+  const runNormalize = async (): Promise<void> => {
+    setNormalizing(true);
+    try {
+      await normalizeClip(clip.id, normTarget, 'peak');
+    } finally {
+      setNormalizing(false);
+    }
+  };
 
   const durUs = clipDurationUs(clip);
   const durSec = usToSec(durUs);
@@ -329,6 +341,29 @@ function ClipInspector({ clip, assetName }: { clip: Clip; assetName?: string }) 
           />
         </Field>
       </div>
+
+      <Field label="Normalisieren (Peak)">
+        <div className="flex gap-2">
+          <select
+            value={normTarget}
+            onChange={(e) => setNormTarget(Number(e.target.value))}
+            className={cn(inputCls, 'flex-1')}
+          >
+            <option value={0}>0 dBFS</option>
+            <option value={-1}>−1 dBFS</option>
+            <option value={-3}>−3 dBFS</option>
+            <option value={-6}>−6 dBFS</option>
+          </select>
+          <button
+            type="button"
+            disabled={normalizing}
+            onClick={() => void runNormalize()}
+            className="h-8 px-3 shrink-0 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] text-sm hover:bg-[var(--card)] disabled:opacity-50"
+          >
+            {normalizing ? '…' : 'Anwenden'}
+          </button>
+        </div>
+      </Field>
     </div>
   );
 }

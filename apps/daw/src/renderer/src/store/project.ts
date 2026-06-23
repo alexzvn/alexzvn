@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import {
   clipDurationUs,
   clipEndUs,
+  dbToGain,
   makeAudioTrack,
   makeBusTrack,
   makeEmptyProject,
   newId,
   projectDurationUs,
   trackEndUs,
+  usToSec,
   type Clip,
   type ClipFade,
   type EffectInstance,
@@ -18,6 +20,8 @@ import {
 import type { RecorderState, RecorderStatus } from '@shared/ipc-types';
 import { snapSourceUsToZero } from '@/lib/zerocross';
 import { defaultEffect, type EffectKind } from '@/audio/effects';
+import { decodeAsset } from '@/audio/decode';
+import { analyzePeakRms } from '@/audio/waveform';
 
 /** Ziel einer Effekt-Kette: eine Spur oder der Master. */
 export type FxTarget = { scope: 'track'; trackId: string } | { scope: 'master' };
@@ -121,6 +125,8 @@ interface State {
   duplicateSelected: () => void;
   updateClip: (clipId: string, patch: Partial<Clip>, label?: string) => void;
   setClipFade: (clipId: string, fade: ClipFade) => void;
+  /** Clip-Pegel so setzen, dass Peak/RMS das Ziel (dBFS) erreicht. */
+  normalizeClip: (clipId: string, targetDb: number, mode: 'peak' | 'rms') => Promise<void>;
 
   // ── Effekte ───────────────────────────────────────────────────────────────
   addEffect: (target: FxTarget, kind: EffectKind) => void;
@@ -453,6 +459,30 @@ export const useProject = create<State>((set, get) => ({
     }),
 
   setClipFade: (clipId, fade) => get().updateClip(clipId, { fade }, 'Blende ändern'),
+
+  normalizeClip: async (clipId, targetDb, mode) => {
+    const loc = locateClip(get().present, clipId);
+    if (!loc) return;
+    const asset = get().present.assets.find((a) => a.id === loc.clip.assetId);
+    if (!asset) return;
+    let buffer: AudioBuffer;
+    try {
+      buffer = await decodeAsset(asset); // gecacht; dekodiert nur beim ersten Mal
+    } catch {
+      return; // nicht dekodierbar → still überspringen
+    }
+    const sr = buffer.sampleRate;
+    const { peak, rms } = analyzePeakRms(
+      buffer,
+      usToSec(loc.clip.inUs) * sr,
+      usToSec(loc.clip.outUs) * sr,
+    );
+    const measured = mode === 'rms' ? rms : peak;
+    if (measured <= 0) return; // Stille — nichts zu normalisieren
+    // Zielpegel / gemessener Pegel, auf +36 dB (≈64×) begrenzt gegen Extrem-Boost.
+    const gain = Math.min(64, dbToGain(targetDb) / measured);
+    get().updateClip(clipId, { gain }, 'Normalisieren');
+  },
 
   addEffect: (target, kind) =>
     get().commit('Effekt hinzufügen', (draft) => {

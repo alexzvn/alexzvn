@@ -29,6 +29,34 @@ export function computePeaks(buffer: AudioBuffer, peaksPerSec = PEAKS_PER_SEC): 
   return out;
 }
 
+/**
+ * Spitzen- und RMS-Amplitude (linear) über einen Sample-Bereich, gemittelt über
+ * alle Kanäle. Grundlage für „Normalisieren" (Peak/RMS-Ziel). Bereich wird auf
+ * gültige Sample-Indizes geklemmt.
+ */
+export function analyzePeakRms(
+  buffer: AudioBuffer,
+  startSample: number,
+  endSample: number,
+): { peak: number; rms: number } {
+  const s = Math.max(0, Math.floor(startSample));
+  const e = Math.min(buffer.length, Math.ceil(endSample));
+  let peak = 0;
+  let sumSq = 0;
+  let count = 0;
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = s; i < e; i++) {
+      const v = data[i];
+      const a = v < 0 ? -v : v;
+      if (a > peak) peak = a;
+      sumSq += v * v;
+      count++;
+    }
+  }
+  return { peak, rms: count > 0 ? Math.sqrt(sumSq / count) : 0 };
+}
+
 const peakCache = new Map<string, Float32Array>();
 const pending = new Map<string, Promise<Float32Array>>();
 

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, protocol } from 'electron';
 import { join } from 'node:path';
 import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } from '@jm/electron-kit';
+import { initAppRuntime } from '@jm/app-runtime';
 import { MEDIA_SCHEME } from '@shared/media-url';
 import { registerIpc } from './ipc';
 import { registerMediaProtocol } from './media-protocol';
@@ -8,6 +9,13 @@ import { registerMediaProtocol } from './media-protocol';
 declare const __dirname: string;
 
 const preloadPath = join(__dirname, '../preload/index.mjs');
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+const runtime = initAppRuntime({
+  appId: 'jm-daw',
+  appName: 'JM DAW',
+  onDeepLink: (url) => runtime.log.info(`deep-link empfangen: ${url}`),
+});
 
 // Schema vor app.whenReady() freischalten (Pflicht für protocol.handle).
 protocol.registerSchemesAsPrivileged([
