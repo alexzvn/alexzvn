@@ -146,12 +146,20 @@ Rec-Flows im Renderer → Befehl an Renderer, State zurück).
 Damit deckt die Steuerebene **8 Tools** ab (Switcher, Timer, Player, Titler,
 Presenter, Prompter, Recorder, DAW) auf Ports 8723–8730.
 
-**Als Nächstes (Welle 1.6–1.7):**
+**Erledigt (Welle 1.6, Stufe 1 — Companion-Modul):** `packages/companion-jm-suite`
+— EIN Companion-Modul für alle Tools. Je Verbindung wählt man die Rolle; Actions/
+Feedbacks/Variablen/Presets werden aus der Capabilities-Tabelle generiert (manuell
+host:port:role). Keine Protokoll-Duplizierung: `scripts/sync-companion-protocol.mjs`
+bündelt `index.ts`+`capabilities.ts` per esbuild in `generated/protocol.mjs`
+(eingecheckt, Modul aus workspaces excludiert). Pure Logik in `lib.mjs`. Selftest
+mit Round-Trip: alle 44 Actions über 8 Tools bauen parsebare Protokollzeilen.
+
+**Als Nächstes (Welle 1.6 Stufe 2 + 1.7):**
 
 | Schritt | Inhalt | Datei(en) |
 |---|---|---|
-| 1.6 | **`companion-jm-suite`-Modul** (manuell → mDNS) + Sync-Skript | packages/companion-jm-suite, scripts/sync-companion-protocol.mjs |
-| 1.7 | Versions-Bumps + Manifest/Changelog | packages/suite-manifest/ |
+| 1.6-2 | **mDNS-Auto-Discovery** im Modul — Steuer-Endpunkte mit `ctl=1`-TXT annoncieren (@jm/discovery-Erweiterung) + Stage-Display-Filter, dann Modul findet Tools automatisch | packages/discovery, apps/*/control-server.ts, apps/stage-display, packages/companion-jm-suite |
+| 1.7 | Companion-Modul paketieren/verteilen; Versions-Bumps + Manifest/Changelog | packages/companion-jm-suite, packages/suite-manifest/ |
 
 **Bewusst (noch) nicht gemacht:**
 
