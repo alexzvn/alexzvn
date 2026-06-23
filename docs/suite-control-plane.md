@@ -118,13 +118,22 @@ später als deprecated markiert.
   für Switcher und Stage Display, electron-vite-**Build** beider Apps (Subpfade
   `…/server` bzw. `…/client` werden korrekt gebündelt).
 
-**Als Nächstes (Welle 1.2–1.7):**
+**Erledigt (Welle 1.2 — Timer):** TCP-Steuerserver auf Port 8724 neben Socket.IO
+(7777); Befehle TIMER START/STOP/RESET/ADD/SET/GOTO/NEXT/PREV; STATE-Push
+remaining/remaining_s/running/overrun/warning/block_label
+([apps/timer/src/main/control-server.ts](../apps/timer/src/main/control-server.ts)).
+
+**Erledigt (Welle 1.3 — Player):** TCP-Steuerserver auf Port 8725; da Wiedergabe
+im Renderer (WebAudio) lebt, gehen Befehle per IPC an den Renderer, der seinen
+Zustand zurückmeldet. Befehle PLAYER GO/STOP/PAUSE/PANIC/CUE/STANDBY/NEXT/PREV/PAD
+(Cue-Show + Soundboard); STATE-Push playing/paused/standby/standby_label/cues/
+playing_count ([apps/player/src/main/control-server.ts](../apps/player/src/main/control-server.ts)).
+
+**Als Nächstes (Welle 1.4–1.7):**
 
 | Schritt | Inhalt | Datei(en) |
 |---|---|---|
-| 1.2 | **Timer** als Steuerserver (P1) | [apps/timer/src/main/server.ts](../apps/timer/src/main/server.ts) |
-| 1.3 | **Player** Soundboard/Cues (P2) | apps/player/src/main/ (neu: control-server) |
-| 1.4 | **Titler** Take/Clear (P3) | apps/titler/src/main/index.ts (+ Renderer-IPC) |
+| 1.4 | **Titler** Take/Clear (P3, Renderer-IPC wie Player) | apps/titler/src/main/index.ts (+ Renderer-IPC) |
 | 1.5 | **Prompter, Presenter, Recorder, DAW** (P4–P7) | jeweils src/main |
 | 1.6 | **`companion-jm-suite`-Modul** (manuell → mDNS) + Sync-Skript | packages/companion-jm-suite, scripts/sync-companion-protocol.mjs |
 | 1.7 | Versions-Bumps + Manifest/Changelog | packages/suite-manifest/ |
@@ -134,10 +143,11 @@ später als deprecated markiert.
 - Studio-Control-**Gateway** (Option B: Companion über Studio Control mit
   Auth/Audit) — optionaler Zusatzpfad, später (Roadmap Welle 5).
 - Echte Steuerports der Tools: die Default-Ports in der Capabilities-Tabelle
-  (8723 ff.) sind Platzhalter für die manuelle Companion-Config; im Betrieb
-  liefert mDNS den realen Port. Der finale Port je Tool wird beim Nachrüsten
-  (1.2–1.5) festgelegt (eigener TCP-Port, getrennt von bestehenden Socket.IO-/
-  SSE-Servern).
+  (8723 ff.) dienen der manuellen Companion-Config; sobald das Companion-Modul
+  (1.6) mDNS-Auto-Discovery hat, liefert der Fund den realen Port. Nachgerüstete
+  Tools annoncieren ihren Steuer-Endpunkt vorerst NICHT (`advertiseService:false`),
+  damit Aggregatoren wie das Stage Display (die per `role` discovern) nicht
+  gestört werden — die Disambiguierung Steuer- vs. Socket.IO/SSE-Endpunkt löst 1.6.
 
 Gesamt-Roadmap: siehe den freigegebenen Plan
 (`.claude/plans/moin-analysiere-bitte-die-streamed-kite.md`).
