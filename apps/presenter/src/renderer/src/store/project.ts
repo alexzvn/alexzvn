@@ -51,6 +51,8 @@ interface ProjectState {
   importOffice: () => Promise<void>;
   newProject: () => void;
   openProject: () => Promise<void>;
+  /** Projekt aus rohen .jmpres-Bytes laden (manuell oder via Show-Deep-Link). */
+  openProjectFromBytes: (bytes: Uint8Array) => void;
   saveProject: () => Promise<void>;
   exportPdf: () => Promise<void>;
   setError: (msg: string | null) => void;
@@ -186,12 +188,10 @@ export const useProject = create<ProjectState>((set, get) => ({
     set({ doc: emptyDoc(), selectedId: null, selectedOverlayId: null, dirty: false });
   },
 
-  openProject: async () => {
+  openProjectFromBytes: (bytes) => {
     set({ busy: { active: true, label: 'Öffne Projekt…' }, error: null });
     try {
-      const opened = await window.jmpr.files.openProject();
-      if (!opened) return;
-      const doc = deserializeProject(opened.bytes);
+      const doc = deserializeProject(bytes);
       set({
         doc,
         selectedId: doc.slides[0]?.id ?? null,
@@ -203,6 +203,12 @@ export const useProject = create<ProjectState>((set, get) => ({
     } finally {
       set({ busy: { active: false, label: '' } });
     }
+  },
+
+  openProject: async () => {
+    const opened = await window.jmpr.files.openProject();
+    if (!opened) return;
+    get().openProjectFromBytes(opened.bytes);
   },
 
   saveProject: async () => {

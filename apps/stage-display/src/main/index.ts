@@ -1,5 +1,9 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { parseShow, parseShowDeepLink, type ShowNetworkBinding } from '@jm/show';
+import { discover, type Discovery, type DiscoveredService } from '@jm/discovery';
 import { OutputWindow, listDisplays } from '@jm/output-window';
 import type { PartialStageConfig, StageState } from '@shared/types';
 import { getConfig, patchConfig } from './config';
@@ -16,6 +20,7 @@ const output = new OutputWindow('stage:state');
 let lastTimer = { ...TIMER_OFFLINE };
 let lastSwitcher = { ...SWITCHER_OFFLINE };
 let lastPresenter = { ...PRESENTER_OFFLINE };
+let discovery: Discovery | null = null;
 
 const timerClient = new TimerClient((s) => {
   lastTimer = s;
@@ -72,6 +77,49 @@ function applyConnections(): void {
     if (pKey) presenterClient.connect(cfg.presenter.host, cfg.presenter.port, cfg.presenter.pin);
     else presenterClient.disconnect();
   }
+}
+
+/**
+ * mDNS-Fund auswerten: Findet sich eine Quelle im LAN und die konfigurierte
+ * Verbindung steht (noch) nicht, übernehmen wir den entdeckten Host/Port — so
+ * verbindet sich Stage Display ohne manuelle IP-Eingabe. Eine bereits stehende
+ * Verbindung (z. B. lokal über 127.0.0.1) bleibt unangetastet, ebenso eine
+ * deaktivierte Quelle. Auth (Presenter-PIN) bleibt manuell — Discovery liefert
+ * nur die Adresse, nicht das Geheimnis.
+ */
+function onDiscovered(services: DiscoveredService[]): void {
+  const cfg = getConfig();
+  const patch: PartialStageConfig = {};
+
+  const timer = services.find((s) => s.role === 'timer');
+  if (timer && cfg.timer.enabled && !lastTimer.connected && cfg.timer.host !== timer.host) {
+    patch.timer = { host: timer.host, port: timer.port };
+  }
+
+  const switcher = services.find((s) => s.role === 'switcher');
+  if (
+    switcher &&
+    cfg.switcher.enabled &&
+    !lastSwitcher.connected &&
+    cfg.switcher.host !== switcher.host
+  ) {
+    patch.switcher = { host: switcher.host, port: switcher.port };
+  }
+
+  const presenter = services.find((s) => s.role === 'presenter');
+  if (
+    presenter &&
+    cfg.presenter.enabled &&
+    !lastPresenter.connected &&
+    cfg.presenter.host !== presenter.host
+  ) {
+    patch.presenter = { host: presenter.host, port: presenter.port };
+  }
+
+  if (Object.keys(patch).length === 0) return;
+  patchConfig(patch);
+  applyConnections();
+  broadcast();
 }
 
 function resourcePath(filename: string): string {
@@ -153,6 +201,62 @@ function registerIpc(): void {
   ipcMain.handle('output:isOpen', () => output.isOpen());
 }
 
+function hostPort(n: ShowNetworkBinding | undefined): { host?: string; port?: number } {
+  if (!n) return {};
+  const out: { host?: string; port?: number } = {};
+  if (n.host) out.host = n.host;
+  if (typeof n.port === 'number') out.port = n.port;
+  return out;
+}
+
+/**
+ * Show-Integration (B4): Wird Stage Display über einen Show-Deep-Link gestartet,
+ * verbindet es sich automatisch mit den Quellen, die in derselben Show stehen.
+ * Schon die Präsenz von jm-timer/jm-switcher/jm-presenter aktiviert die Quelle
+ * (Host/Port aus deren `network`-Binding, sonst Defaults/localhost) — so läuft
+ * der häufige Single-Machine-Fall ohne Eingaben, Multi-Machine via network.
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const byId = new Map(show.tools.map((t) => [t.appId, t]));
+    const patch: PartialStageConfig = {};
+
+    const timer = byId.get('jm-timer');
+    if (timer) patch.timer = { enabled: true, ...hostPort(timer.network) };
+
+    const switcher = byId.get('jm-switcher');
+    if (switcher) patch.switcher = { enabled: true, ...hostPort(switcher.network) };
+
+    const presenter = byId.get('jm-presenter');
+    if (presenter) {
+      const pin =
+        typeof presenter.settings?.pin === 'string' ? presenter.settings.pin : undefined;
+      patch.presenter = {
+        enabled: true,
+        ...hostPort(presenter.network),
+        ...(pin !== undefined ? { pin } : {}),
+      };
+    }
+
+    if (Object.keys(patch).length === 0) return;
+    patchConfig(patch);
+    applyConnections();
+    broadcast();
+  } catch (err) {
+    getLog().error(`Show-Verbindungen konnten nicht gesetzt werden: ${(err as Error).message}`);
+  }
+}
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+const runtime = initAppRuntime({
+  appId: 'jm-stage-display',
+  appName: 'JM Stage Display',
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
@@ -170,8 +274,20 @@ if (!gotLock) {
   app.whenReady().then(() => {
     registerIpc();
     createMainWindow();
+    // Per Show gestartet? Quellen aus der Show verbinden (überschreibt die
+    // persistierte Config), sonst normal nach persistierter Config verbinden.
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
     applyConnections();
+    // LAN nach Quellen absuchen und nicht stehende Verbindungen automatisch
+    // auf den entdeckten Host umstellen (mDNS). Best-effort.
+    try {
+      discovery = discover(onDiscovered);
+    } catch (err) {
+      getLog().warn(`mDNS-Discovery fehlgeschlagen: ${(err as Error).message}`);
+    }
   });
+
+  app.on('before-quit', () => discovery?.stop());
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

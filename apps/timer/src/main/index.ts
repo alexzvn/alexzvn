@@ -9,7 +9,12 @@ import {
   Tray,
 } from 'electron';
 import path, { join } from 'node:path';
-import { loadState } from './state';
+import { readFileSync } from 'node:fs';
+import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { advertise, type Advertiser } from '@jm/discovery';
+import { parseShow, parseShowDeepLink } from '@jm/show';
+import type { TimetableItem } from '@shared/timer-state';
+import { loadState, dispatch } from './state';
 import {
   startServer,
   SERVER_HOST,
@@ -32,6 +37,7 @@ let operatorWindow: BrowserWindow | null = null;
 let speakerWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
+let advertiser: Advertiser | null = null;
 
 const preloadPath = join(__dirname, '../preload/index.mjs');
 
@@ -282,6 +288,52 @@ function registerIpc(): void {
   ipcMain.handle('auth:regenerate', () => regenerateToken());
 }
 
+/** Liest einen Ablaufplan aus den (untrusted) Show-Settings — defensiv. */
+function parseTimetable(raw: unknown): Array<Omit<TimetableItem, 'id'>> | null {
+  if (!Array.isArray(raw)) return null;
+  const items = raw
+    .filter((it): it is Record<string, unknown> => Boolean(it) && typeof it === 'object')
+    .map((it) => ({
+      label: typeof it.label === 'string' ? it.label : '',
+      durationMs:
+        typeof it.durationMs === 'number' && it.durationMs >= 0 ? it.durationMs : 0,
+      ...(typeof it.note === 'string' ? { note: it.note } : {}),
+    }));
+  return items.length ? items : null;
+}
+
+/**
+ * Show-Integration (B4): Wird der Timer über einen Show-Deep-Link gestartet,
+ * übernimmt er seinen Teil aus der Show. Der Timer hat kein Dokumentformat,
+ * daher trägt die Show die Daten inline in `settings`:
+ *   { timetable?: [{label, durationMs, note?}], durationMs?: number }
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const settings = show.tools.find((t) => t.appId === 'jm-timer')?.settings;
+    if (!settings) return;
+    const items = parseTimetable(settings.timetable);
+    if (items) dispatch({ type: 'tt:setAll', items });
+    if (typeof settings.durationMs === 'number' && settings.durationMs >= 0) {
+      dispatch({ type: 'setDuration', ms: settings.durationMs });
+    }
+  } catch (err) {
+    getLog().error(`Show-Einstellungen konnten nicht geladen werden: ${(err as Error).message}`);
+  }
+}
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+// Früh aufrufen, damit Crash-Handler auch Fehler vor whenReady fangen.
+const runtime = initAppRuntime({
+  appId: 'jm-timer',
+  appName: 'JM Timer',
+  servicePort: SERVER_PORT,
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
+
 // Single-instance lock — second launch focuses the existing instance.
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -301,7 +353,17 @@ if (!gotLock) {
     loadState();
     loadAuth();
     await startServer();
+    // Im LAN annoncieren, damit Aggregatoren (Stage Display) den Timer ohne
+    // manuelle IP/Port-Eingabe finden (mDNS). Best-effort.
+    try {
+      advertiser = advertise({ appId: 'jm-timer', role: 'timer', port: SERVER_PORT });
+    } catch (err) {
+      getLog().warn(`mDNS-Annoncierung fehlgeschlagen: ${(err as Error).message}`);
+    }
     registerIpc();
+    // Per Show gestartet? Ablaufplan/Countdown aus der Show übernehmen (nach
+    // startServer, damit der Broadcast verbundene Clients sofort erreicht).
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
     setupTray();
     createOperatorWindow();
 
@@ -318,6 +380,7 @@ if (!gotLock) {
 
   app.on('before-quit', () => {
     isQuitting = true;
+    advertiser?.stop();
   });
 }
 

@@ -10,6 +10,7 @@
 // zurück, den wir cachen + an alle Clients broadcasten.
 import net from 'node:net';
 import type { BrowserWindow } from 'electron';
+import { advertise, type Advertiser } from '@jm/discovery';
 import {
   createLineBuffer,
   formatState,
@@ -30,6 +31,9 @@ let lastState: SwitcherStateMsg = {
 };
 let running = false;
 let boundPort = 0;
+// mDNS-Annoncierung an den Steuerserver gekoppelt: nur wenn er lauscht, ist der
+// Switcher im LAN auffindbar (Stage Display verbindet ohne IP-Eingabe). Best-effort.
+let advertiser: Advertiser | null = null;
 
 export interface ControlStatus {
   running: boolean;
@@ -88,6 +92,11 @@ export function startControlServer(port: number): Promise<{ ok: boolean; error?:
       server = srv;
       running = true;
       boundPort = port;
+      try {
+        advertiser = advertise({ appId: 'jm-switcher', role: 'switcher', port });
+      } catch {
+        /* mDNS optional */
+      }
       notifyStatus();
       resolve({ ok: true, port });
     });
@@ -103,6 +112,10 @@ function handleCommand(cmd: ControlCommand, socket: net.Socket): void {
 }
 
 export function stopControlServer(): void {
+  if (advertiser) {
+    advertiser.stop();
+    advertiser = null;
+  }
   for (const c of clients) {
     try {
       c.destroy();

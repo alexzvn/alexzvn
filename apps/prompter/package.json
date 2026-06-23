@@ -21,8 +21,11 @@
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/app-runtime": "*",
+    "@jm/discovery": "*",
     "@jm/output-window": "*",
     "@jm/remote": "*",
+    "@jm/show": "*",
     "@jm/ui": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

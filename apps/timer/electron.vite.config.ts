@@ -5,9 +5,15 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
+// Workspace-Pakete (reines TS) bündeln statt externalisieren — gepackte Apps
+// liefern kein node_modules, also darf nichts zur Laufzeit `require`d werden.
+// @jm/discovery + bonjour-service (dessen Transitiv-Dep) mit in den Main-Bundle
+// nehmen — die gepackte App liefert kein node_modules.
+const internalPackages = ['@jm/app-runtime', '@jm/show', '@jm/discovery', 'bonjour-service'];
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: internalPackages })],
     resolve: { alias: sharedAlias },
     build: {
       // Build the main process as CommonJS — Electron 33's ESM main has a

@@ -236,6 +236,8 @@ export interface JmprApi {
     saveProject: (suggestedName: string, bytes: Uint8Array) => Promise<string | null>;
     /** Save exported PDF bytes to disk (save dialog). */
     savePdf: (suggestedName: string, bytes: Uint8Array) => Promise<string | null>;
+    /** Push vom Hauptprozess: in einer Show referenziertes .jmpres öffnen. */
+    onOpenProject: (cb: (p: { name: string; bytes: Uint8Array }) => void) => () => void;
   };
 
   present: {

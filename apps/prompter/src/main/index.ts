@@ -1,5 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { advertise, type Advertiser } from '@jm/discovery';
+import { parseShow, parseShowDeepLink } from '@jm/show';
 import { OutputWindow, listDisplays } from '@jm/output-window';
 import { RemoteServer } from '@jm/remote';
 import { INITIAL_TRANSPORT, positionEm } from '@shared/types';
@@ -15,6 +19,10 @@ const REMOTE_PORT = 7781;
 let mainWindow: BrowserWindow | null = null;
 const preloadPath = join(__dirname, '../preload/index.mjs');
 const output = new OutputWindow('prompter:state');
+
+// mDNS-Annoncierung ist an die Fernbedienung gekoppelt: nur wenn die läuft, ist
+// der Prompter im LAN sichtbar (für Discovery durch andere Tools). Best-effort.
+let advertiser: Advertiser | null = null;
 
 // Transport gehört dem Main-Prozess; die Renderer interpolieren nur.
 let transport: PrompterTransport = {
@@ -88,7 +96,23 @@ async function setRemote(enabled: boolean): Promise<void> {
   } catch (err) {
     console.error('[prompter] Fernbedienung:', err);
   }
+  // mDNS an den Remote-Status koppeln (Annoncierung nur bei laufendem Server).
+  setAdvertised(enabled);
   broadcast();
+}
+
+/** mDNS-Annoncierung an/aus schalten (idempotent). Best-effort — Fehler egal. */
+function setAdvertised(on: boolean): void {
+  if (on && !advertiser) {
+    try {
+      advertiser = advertise({ appId: 'jm-prompter', role: 'prompter', port: REMOTE_PORT });
+    } catch {
+      /* mDNS optional */
+    }
+  } else if (!on && advertiser) {
+    advertiser.stop();
+    advertiser = null;
+  }
 }
 
 /** Anker auf die aktuelle Position neu setzen (z. B. nach Tempo-/Zeilenabstand-Änderung). */
@@ -214,6 +238,30 @@ function openOutput(displayId?: number): void {
   setTimeout(broadcast, 400);
 }
 
+/**
+ * Show-Integration (B4): Wird der Prompter über einen Show-Deep-Link gestartet
+ * (jmps://open?show=<pfad>), lädt er das in der Show referenzierte Skript-
+ * Dokument (.docx/.txt/.md) und springt an den Anfang — nutzt denselben Pfad
+ * wie „Skript laden".
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const ref = show.tools.find((t) => t.appId === 'jm-prompter');
+    if (!ref?.document) return;
+    const docPath = path.isAbsolute(ref.document)
+      ? ref.document
+      : path.join(path.dirname(showPath), ref.document);
+    const text = readScriptFile(docPath);
+    patchConfig({ script: text });
+    reset(); // an den Skript-Anfang springen (broadcastet den neuen Stand)
+  } catch (err) {
+    getLog().error(`Show-Skript konnte nicht geladen werden: ${(err as Error).message}`);
+  }
+}
+
 function registerIpc(): void {
   ipcMain.handle('prompter:getState', () => buildState());
   ipcMain.handle('prompter:setConfig', (_e, patch: PartialPrompterConfig) => {
@@ -260,6 +308,16 @@ function registerIpc(): void {
   ipcMain.handle('output:isOpen', () => output.isOpen());
 }
 
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+// onDeepLink fängt Show-Links bei laufender App ab; den Start-Link verarbeiten
+// wir unten über runtime.initialDeepLink.
+const runtime = initAppRuntime({
+  appId: 'jm-prompter',
+  appName: 'JM Prompter',
+  servicePort: REMOTE_PORT,
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
@@ -279,9 +337,12 @@ if (!gotLock) {
     createMainWindow();
     // Fernbedienung automatisch starten, wenn zuletzt aktiv.
     if (getConfig().remoteEnabled) void setRemote(true);
+    // Per Show gestartet? Referenziertes Skript laden.
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
   });
 
   app.on('before-quit', () => {
+    setAdvertised(false);
     void remote.stop();
   });
 

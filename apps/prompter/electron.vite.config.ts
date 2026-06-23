@@ -6,7 +6,16 @@ import { resolve } from 'node:path';
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // Source-Workspace-Pakete inline bündeln (kein Laufzeit-require).
-const internalPackages = ['@jm/output-window', '@jm/remote'];
+// @jm/discovery + bonjour-service (Transitiv-Dep) mit in den Main-Bundle nehmen
+// — die gepackte App liefert kein node_modules.
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/output-window',
+  '@jm/remote',
+  '@jm/show',
+  '@jm/discovery',
+  'bonjour-service',
+];
 
 export default defineConfig({
   main: {

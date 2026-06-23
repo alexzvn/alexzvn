@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { randomInt } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
+import { advertise, type Advertiser } from '@jm/discovery';
 import type { NetInterface, RemoteConfig, RemoteStatus } from '@shared/types';
 import { getRemoteView, goto, next, prev, setScreen, stopPresentation, subscribe } from './present';
 import { captureAudience } from './windows';
@@ -18,6 +19,10 @@ let pin: string | null = null;
 let lastError: string | null = null;
 let displayUrl: string | null = null;
 let unsubscribe: (() => void) | null = null;
+// mDNS-Annoncierung ist an die laufende Fernsteuerung gekoppelt: nur wenn der
+// Remote-Server lauscht, ist der Presenter im LAN auffindbar (Stage Display
+// verbindet sich dann ohne manuelle IP). Stop spiegelt stopServer().
+let advertiser: Advertiser | null = null;
 
 const sseClients = new Set<ServerResponse>();
 let onStatusChange: ((s: RemoteStatus) => void) | null = null;
@@ -204,6 +209,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 }
 
 function stopServer(): void {
+  if (advertiser) {
+    advertiser.stop();
+    advertiser = null;
+  }
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
@@ -268,6 +277,13 @@ export function applyRemoteConfig(cfg: RemoteConfig): Promise<RemoteStatus> {
       server = srv;
       // Push slide changes to connected phones.
       unsubscribe = subscribe(broadcastView);
+      // Im LAN annoncieren, damit Stage Display den Presenter ohne IP-Eingabe
+      // findet (mDNS). Best-effort — Fehler dürfen die Fernsteuerung nicht stören.
+      try {
+        advertiser = advertise({ appId: 'jm-presenter', role: 'presenter', port: cfg.port });
+      } catch {
+        /* mDNS optional */
+      }
       emitStatus();
       resolve(getRemoteStatus());
     });

@@ -7,7 +7,14 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/media + @jm/companion-protocol als Quelle bündeln (kein Laufzeit-require);
 // @jm/ndi bleibt EXTERN (natives Addon, zur Laufzeit geladen).
-const internalPackages = ['@jm/media', '@jm/companion-protocol'];
+// @jm/discovery + bonjour-service (Transitiv-Dep) ebenfalls bündeln (mDNS).
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/media',
+  '@jm/companion-protocol',
+  '@jm/discovery',
+  'bonjour-service',
+];
 
 export default defineConfig({
   main: {

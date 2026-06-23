@@ -1,5 +1,6 @@
 import { app, BrowserWindow, shell } from 'electron';
 import path, { join } from 'node:path';
+import { initAppRuntime } from '@jm/app-runtime';
 import { registerIpc } from './ipc';
 import { installDisplayMediaHandler } from './capture-handler';
 import { attachNdiWindow, stopNdi } from './ndi-receive';
@@ -7,6 +8,9 @@ import { attachOutputWindow, stopOutput } from './output';
 import { attachControlWindow, startControlServer, stopControlServer } from './control-server';
 
 declare const __dirname: string;
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+initAppRuntime({ appId: 'jm-switcher', appName: 'JM Switcher' });
 
 let mainWindow: BrowserWindow | null = null;
 

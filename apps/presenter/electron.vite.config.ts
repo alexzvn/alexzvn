@@ -10,8 +10,13 @@ export default defineConfig({
     // Bundle fflate INTO the main bundle instead of externalizing it: the main
     // process reads pptx animations with it, and the packaged app ships only
     // out/** + package.json (no node_modules), so an externalized require could
-    // fail at runtime. fflate is pure JS and bundles cleanly.
-    plugins: [externalizeDepsPlugin({ exclude: ['fflate'] })],
+    // fail at runtime. fflate is pure JS and bundles cleanly. Gleiches gilt für
+    // @jm/discovery + bonjour-service (mDNS-Annoncierung der Fernsteuerung).
+    plugins: [
+      externalizeDepsPlugin({
+        exclude: ['@jm/app-runtime', '@jm/show', 'fflate', '@jm/discovery', 'bonjour-service'],
+      }),
+    ],
     resolve: { alias: sharedAlias },
     build: {
       rollupOptions: {

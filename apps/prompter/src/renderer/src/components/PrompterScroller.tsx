@@ -68,7 +68,7 @@ export function PrompterScroller({ state, onEnd, onMarkers }: Props): React.JSX.
   // rAF: interpoliert die Position und setzt nur die transform-Eigenschaft.
   useEffect(() => {
     let raf = 0;
-    let last = -1;
+    let lastPx = NaN;
     const tick = (): void => {
       const s = stateRef.current;
       const maxEm = Math.max(0, contentEmRef.current);
@@ -86,9 +86,17 @@ export function PrompterScroller({ state, onEnd, onMarkers }: Props): React.JSX.
       } else {
         endedRef.current = false;
       }
-      if (pos !== last) {
-        last = pos;
-        if (moverRef.current) moverRef.current.style.transform = `translateY(${-pos}em)`;
+      // In PIXELN verschieben (pos·emPx), NICHT in `em`: der Mover hat keine
+      // eigene font-size, sein `em` wäre die geerbte Root-Größe (~16px) statt der
+      // `cqh`-basierten Schriftgröße des Inhalts. Auf großen Ausgaben (Talent-
+      // Monitor) lief der Text dadurch nur ~⅓ weit und stoppte „in der Mitte".
+      // emPx ist genau das px/em, mit dem auch maxEm/Marker gemessen sind. Wir
+      // vergleichen den PIXEL-Wert, damit auch ein Resize (emPx ändert sich bei
+      // gleicher Position) die Verschiebung korrekt nachzieht.
+      const px = -pos * emPxRef.current;
+      if (px !== lastPx) {
+        lastPx = px;
+        if (moverRef.current) moverRef.current.style.transform = `translateY(${px}px)`;
       }
       raf = requestAnimationFrame(tick);
     };

@@ -37,6 +37,11 @@ const api: JmprApi = {
       ipcRenderer.invoke('files:saveProject', suggestedName, bytes) as Promise<string | null>,
     savePdf: (suggestedName, bytes) =>
       ipcRenderer.invoke('files:savePdf', suggestedName, bytes) as Promise<string | null>,
+    onOpenProject: (cb) => {
+      const listener = (_event: unknown, p: { name: string; bytes: Uint8Array }) => cb(p);
+      ipcRenderer.on('project:open', listener);
+      return () => ipcRenderer.off('project:open', listener);
+    },
   },
 
   present: {
