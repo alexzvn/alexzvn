@@ -14,7 +14,14 @@ export default defineConfig({
     // @jm/discovery + bonjour-service (mDNS-Annoncierung der Fernsteuerung).
     plugins: [
       externalizeDepsPlugin({
-        exclude: ['@jm/app-runtime', '@jm/show', 'fflate', '@jm/discovery', 'bonjour-service'],
+        exclude: [
+          '@jm/app-runtime',
+          '@jm/show',
+          '@jm/suite-control-protocol',
+          'fflate',
+          '@jm/discovery',
+          'bonjour-service',
+        ],
       }),
     ],
     resolve: { alias: sharedAlias },

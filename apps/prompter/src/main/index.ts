@@ -8,9 +8,15 @@ import { OutputWindow, listDisplays } from '@jm/output-window';
 import { RemoteServer } from '@jm/remote';
 import { INITIAL_TRANSPORT, positionEm } from '@shared/types';
 import type { PartialPrompterConfig, PrompterState, PrompterTransport, RemoteInfo } from '@shared/types';
+import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
 import { getConfig, patchConfig } from './config';
 import { readScriptFile } from './docx';
 import { REMOTE_PAGE } from './remote-page';
+import {
+  startControlServer,
+  stopControlServer,
+  pushState as pushControlState,
+} from './control-server';
 
 declare const __dirname: string;
 
@@ -57,6 +63,43 @@ function broadcast(): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('prompter:state', state);
   output.send(state);
   remote.broadcast({ playing: transport.playing, speed: getConfig().speed });
+  pushControlState(buildSuiteState());
+}
+
+/** Prompter-Zustand → STATE ns=prompter (für Companion). */
+function buildSuiteState(): SuiteState {
+  return { ns: 'prompter', kv: { scrolling: transport.playing, speed: getConfig().speed } };
+}
+
+/** SuiteCommand (ns=prompter) auf die Transport-Funktionen abbilden. */
+function handleSuiteCommand(cmd: SuiteCommand): void {
+  switch (cmd.verb) {
+    case 'scroll': {
+      const m = (cmd.args[0] ?? 'toggle').toLowerCase();
+      if (m === 'on' || m === '1' || m === 'start') play();
+      else if (m === 'off' || m === '0' || m === 'stop') pause();
+      else transport.playing ? pause() : play();
+      break;
+    }
+    case 'speed': {
+      const v = Number(cmd.args[0]);
+      if (Number.isFinite(v)) {
+        patchConfig({ speed: Math.max(0.2, Math.min(6, Math.round(v * 10) / 10)) });
+        reanchor();
+        broadcast();
+      }
+      break;
+    }
+    case 'faster':
+      handleRemoteCommand({ type: 'speed', value: 0.2 });
+      break;
+    case 'slower':
+      handleRemoteCommand({ type: 'speed', value: -0.2 });
+      break;
+    case 'top':
+      reset();
+      break;
+  }
 }
 
 function handleRemoteCommand(cmd: unknown): void {
@@ -337,12 +380,15 @@ if (!gotLock) {
     createMainWindow();
     // Fernbedienung automatisch starten, wenn zuletzt aktiv.
     if (getConfig().remoteEnabled) void setRemote(true);
+    // TCP-Steuerserver (suite-weites Protokoll) für Companion u. a. — immer an.
+    void startControlServer({ getState: buildSuiteState, onCommand: handleSuiteCommand });
     // Per Show gestartet? Referenziertes Skript laden.
     if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
   });
 
   app.on('before-quit', () => {
     setAdvertised(false);
+    stopControlServer();
     void remote.stop();
   });
 

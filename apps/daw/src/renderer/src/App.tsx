@@ -10,6 +10,7 @@ import { Mixer } from './components/Mixer';
 import { ExportDialog } from './components/ExportDialog';
 import { useProject } from './store/project';
 import { useLiveMix, useTransport } from './lib/transport';
+import { useRemoteControl } from './lib/remote-control';
 import { saveProjectFlow } from './lib/actions';
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
 
   useTransport();
   useLiveMix();
+  useRemoteControl();
 
   // IPC-Events abonnieren.
   useEffect(() => {

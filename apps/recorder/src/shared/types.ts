@@ -61,6 +61,16 @@ export interface Levels {
   peaks: number[];
 }
 
+/**
+ * Befehl der TCP-Fernsteuerung (Bitfocus Companion), vom Main an den Renderer
+ * gepusht. Aufnahme-Start braucht die Renderer-Settings (Ordner/Gerät), daher
+ * der Push statt direktem Main-Aufruf.
+ */
+export type RecorderRemoteCommand =
+  | { t: 'record'; mode: 'on' | 'off' | 'toggle' }
+  | { t: 'arm' }
+  | { t: 'disarm' };
+
 /** Shape, die der Preload auf `window.jmrec` legt. */
 export interface JmrecApi {
   platform: NodeJS.Platform;
@@ -84,4 +94,6 @@ export interface JmrecApi {
   onState: (cb: (s: RecorderState) => void) => () => void;
   /** Hinweistexte aus dem Main (z. B. „Geplante Aufnahme gestartet/beendet"). */
   onNotice: (cb: (msg: string) => void) => () => void;
+  /** TCP-Fernsteuerung (Bitfocus Companion): auf Befehle hören. Liefert Unsubscribe. */
+  onRemoteCommand: (cb: (cmd: RecorderRemoteCommand) => void) => () => void;
 }

@@ -3,6 +3,7 @@ import { initAppRuntime } from '@jm/app-runtime';
 import { registerIpc } from './ipc';
 import { createEditorWindow } from './windows';
 import { handleShowDeepLink, flushPendingShowProject } from './show-open';
+import { startControlServer, stopControlServer } from './control-server';
 
 // Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
 // onDeepLink fängt Show-Links bei laufender App (second-instance/open-url) ab;
@@ -36,11 +37,15 @@ if (!gotLock) {
     // verarbeiten — lädt das in der .jmshow referenzierte .jmpres.
     flushPendingShowProject();
     if (runtime.initialDeepLink) void handleShowDeepLink(runtime.initialDeepLink);
+    // TCP-Steuerserver (suite-weites Protokoll) für Companion u. a.
+    void startControlServer();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createEditorWindow();
     });
   });
+
+  app.on('before-quit', () => stopControlServer());
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

@@ -3,6 +3,7 @@ import path, { join } from 'node:path';
 import { initAppRuntime } from '@jm/app-runtime';
 import { registerIpc } from './ipc';
 import { shutdown } from './recorder';
+import { startControlServer, stopControlServer } from './control-server';
 
 declare const __dirname: string;
 
@@ -88,11 +89,16 @@ if (!gotLock) {
   app.whenReady().then(() => {
     registerIpc(() => mainWindow);
     createMainWindow();
+    // TCP-Steuerserver (suite-weites Protokoll) für Companion u. a. — Befehle
+    // gehen per IPC an den Renderer, STATE wird direkt aus dem Main gepusht.
+    void startControlServer(() => mainWindow);
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
   });
+
+  app.on('before-quit', () => stopControlServer());
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

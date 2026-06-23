@@ -228,16 +228,14 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
     port: 8727,
     actions: [
       { id: 'scroll', label: 'Scrollen', verb: 'scroll', args: [modeArg], toggleKey: 'scrolling' },
-      { id: 'speed', label: 'Tempo setzen', verb: 'speed', args: [{ id: 'value', label: 'Tempo', type: 'number', default: 10, min: 0, max: 100 }] },
+      { id: 'speed', label: 'Tempo setzen (Zeilen/s)', verb: 'speed', args: [{ id: 'value', label: 'Tempo', type: 'number', default: 2, min: 0.2, max: 6 }] },
       { id: 'faster', label: 'Schneller', verb: 'faster' },
       { id: 'slower', label: 'Langsamer', verb: 'slower' },
       { id: 'top', label: 'An den Anfang', verb: 'top' },
-      { id: 'goto', label: 'Zu Marke springen', verb: 'goto', args: [{ id: 'marker', label: 'Marke', type: 'string', default: '1' }] },
     ],
     variables: [
-      { id: 'speed', label: 'Tempo' },
+      { id: 'speed', label: 'Tempo (Zeilen/s)' },
       { id: 'scrolling', label: 'Scrollt (1/0)' },
-      { id: 'position_pct', label: 'Position (%)' },
     ],
     feedbacks: [{ id: 'scrolling', label: 'Prompter scrollt', stateKey: 'scrolling', match: 'truthy', bgcolor: GREEN, color: WHITE }],
   },
@@ -254,13 +252,16 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
       { id: 'black', label: 'Schwarz', verb: 'black' },
       { id: 'white', label: 'Weiß', verb: 'white' },
       { id: 'live', label: 'Live', verb: 'live' },
+      { id: 'stop', label: 'Präsentation beenden', verb: 'stop' },
     ],
     variables: [
       { id: 'slide', label: 'Aktuelle Folie' },
       { id: 'total', label: 'Folien gesamt' },
+      { id: 'active', label: 'Präsentation läuft (1/0)' },
     ],
     feedbacks: [
       { id: 'black', label: 'Schwarzbild aktiv', stateKey: 'black', match: 'truthy', bgcolor: BLACK, color: WHITE },
+      { id: 'white', label: 'Weißbild aktiv', stateKey: 'white', match: 'truthy', bgcolor: WHITE, color: BLACK },
       { id: 'live', label: 'Live aktiv', stateKey: 'live', match: 'truthy', bgcolor: GREEN, color: WHITE },
     ],
   },
@@ -272,14 +273,19 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
     port: 8729,
     actions: [
       { id: 'record', label: 'Aufnahme', verb: 'record', args: [modeArg], toggleKey: 'recording' },
-      { id: 'mark', label: 'Marker setzen', verb: 'mark' },
+      { id: 'arm', label: 'Eingang öffnen (Arm)', verb: 'arm' },
+      { id: 'disarm', label: 'Eingang schließen', verb: 'disarm' },
     ],
     variables: [
       { id: 'recording', label: 'Aufnahme (1/0)' },
-      { id: 'duration', label: 'Dauer' },
-      { id: 'file', label: 'Datei' },
+      { id: 'armed', label: 'Bereit/Armed (1/0)' },
+      { id: 'status', label: 'Status (idle/armed/recording)' },
+      { id: 'duration', label: 'Dauer (Sek.)' },
     ],
-    feedbacks: [{ id: 'recording', label: 'Aufnahme läuft', stateKey: 'recording', match: 'truthy', bgcolor: RED, color: WHITE }],
+    feedbacks: [
+      { id: 'recording', label: 'Aufnahme läuft', stateKey: 'recording', match: 'truthy', bgcolor: RED, color: WHITE },
+      { id: 'armed', label: 'Eingang bereit', stateKey: 'armed', match: 'truthy', bgcolor: YELLOW, color: BLACK },
+    ],
   },
 
   // ── DAW (Transport, minimal) ────────────────────────────────────────────────
@@ -290,14 +296,17 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
     actions: [
       { id: 'play', label: 'Play', verb: 'play' },
       { id: 'stop', label: 'Stopp', verb: 'stop' },
+      { id: 'toggle', label: 'Play/Stop umschalten', verb: 'toggle' },
       { id: 'rec', label: 'Aufnahme', verb: 'rec', args: [modeArg], toggleKey: 'recording' },
-      { id: 'mark', label: 'Marker setzen', verb: 'mark' },
     ],
     variables: [
-      { id: 'state', label: 'Status' },
+      { id: 'playing', label: 'Spielt (1/0)' },
       { id: 'recording', label: 'Aufnahme (1/0)' },
     ],
-    feedbacks: [{ id: 'recording', label: 'Aufnahme läuft', stateKey: 'recording', match: 'truthy', bgcolor: RED, color: WHITE }],
+    feedbacks: [
+      { id: 'playing', label: 'Wiedergabe läuft', stateKey: 'playing', match: 'truthy', bgcolor: GREEN, color: WHITE },
+      { id: 'recording', label: 'Aufnahme läuft', stateKey: 'recording', match: 'truthy', bgcolor: RED, color: WHITE },
+    ],
   },
 };
 

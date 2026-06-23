@@ -71,6 +71,23 @@ export const useRec = create<RecStore>((set, get) => ({
       window.jmrec.onLevels((l) => set({ peaks: l.peaks }));
       window.jmrec.onState((s) => set({ state: s }));
       window.jmrec.onNotice((msg) => set({ notice: msg }));
+      // TCP-Fernsteuerung (Companion): Befehle auf die Store-Aktionen abbilden.
+      window.jmrec.onRemoteCommand((cmd) => {
+        const s = get();
+        switch (cmd.t) {
+          case 'record':
+            if (cmd.mode === 'off') void s.stop();
+            else if (cmd.mode === 'on') void s.record();
+            else s.state.status === 'recording' ? void s.stop() : void s.record();
+            break;
+          case 'arm':
+            void s.arm();
+            break;
+          case 'disarm':
+            void s.disarm();
+            break;
+        }
+      });
     }
     await get().refreshDevices();
     set({ loading: false });

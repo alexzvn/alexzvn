@@ -25,6 +25,7 @@
     "@jm/app-runtime": "*",
     "@jm/discovery": "*",
     "@jm/show": "*",
+    "@jm/suite-control-protocol": "*",
     "@jm/ui": "*",
     "fflate": "^0.8.3",
     "pdf-lib": "^1.17.1",
