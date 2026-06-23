@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T19:15:48.598Z",
+  "updatedAt": "2026-06-23T19:16:00.438Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -73,7 +73,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.media-converter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM Media Converter-${version}-mac-${arch}.dmg",
