@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T19:16:00.438Z",
+  "updatedAt": "2026-06-23T19:16:11.719Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -31,7 +31,7 @@
       "category": "Grafik",
       "appId": "gmbh.jakobs.grafiktool",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.2.0",
       "platforms": {
         "mac": {
           "artifact": "JM Grafiktool-${version}-mac-${arch}.dmg",
