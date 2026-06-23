@@ -4,6 +4,13 @@
     "name": "JM Production Suite",
     "entries": [
       {
+        "version": "0.4.1",
+        "date": "2026-06-23",
+        "notes": [
+          "Ladescreen beim Start: der Launcher zeigt jetzt wie die Tools einen Ladescreen, bis das Fenster bereit ist — kein leerer Wartemoment mehr beim Öffnen."
+        ]
+      },
+      {
         "version": "0.4.0",
         "date": "2026-06-23",
         "notes": [
