@@ -486,6 +486,14 @@
     "name": "JM DAW",
     "entries": [
       {
+        "version": "0.7.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Crossfades: Überlappen sich zwei Clips auf einer Spur, blendet die DAW automatisch über — der auslaufende Clip aus, der einlaufende ein. Wirkt in Wiedergabe und Export.",
+          "Normalisieren pro Clip: im Eigenschaften-Panel den Pegel auf einen Ziel-Wert (Peak, z. B. −1 dBFS) anheben oder absenken; mit Strg+Z widerrufbar."
+        ]
+      },
+      {
         "version": "0.6.0",
         "date": "2026-06-22",
         "notes": [
