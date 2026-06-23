@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, BrowserWindow } from 'electron';
 import {
   appendFileSync,
   existsSync,
@@ -56,6 +56,13 @@ export interface AppRuntimeOptions {
   registerProtocol?: boolean;
   /** Presence-Heartbeat an den Launcher-Hub senden (Default true). */
   presence?: boolean;
+  /**
+   * Ladescreen anzeigen, bis das erste Fenster bereit ist (Default true).
+   * Fängt den Electron-Kaltstart + Erststart-Scan ab, damit der Nutzer nicht
+   * „in der Luft hängt". Schließt automatisch beim ready-to-show des ersten
+   * echten Fensters (oder nach einer Sicherheits-Frist).
+   */
+  splash?: boolean;
   /** Untere Log-Schwelle (Default: 'debug' im Dev, sonst 'info'). */
   level?: LogLevel;
 }
@@ -313,6 +320,86 @@ function startPresence(info: {
   });
 }
 
+// ── Ladescreen (Splash) ──────────────────────────────────────────────────────
+
+const SPLASH_SAFETY_MS = 15_000;
+
+function splashHtml(appName: string): string {
+  const name = appName.replace(
+    /[&<>]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c,
+  );
+  return (
+    '<!doctype html><meta charset="utf-8"><style>' +
+    'html,body{margin:0;height:100%;background:#121212;color:#eee;overflow:hidden;user-select:none;' +
+    'font-family:Segoe UI,system-ui,-apple-system,sans-serif}' +
+    '.w{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}' +
+    '.n{font-size:20px;font-weight:600;letter-spacing:.02em}.s{font-size:12px;color:#8a8a8a}' +
+    '.r{width:34px;height:34px;border:3px solid #2c2c2c;border-top-color:#4f8cff;border-radius:50%;' +
+    'animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}</style>' +
+    `<div class="w"><div class="r"></div><div class="n">${name}</div><div class="s">wird geladen…</div></div>`
+  );
+}
+
+/**
+ * Zeigt beim Start einen Ladescreen und schließt ihn, sobald das erste echte
+ * Fenster bereit ist (ready-to-show/show) — fängt den spürbaren Electron-
+ * Kaltstart + Erststart-Scan ab. Komplett best-effort: ein Splash-Fehler darf
+ * den App-Start nie verhindern.
+ */
+function startSplash(appName: string): void {
+  app.whenReady().then(() => {
+    let splash: BrowserWindow | null = null;
+    try {
+      splash = new BrowserWindow({
+        width: 440,
+        height: 260,
+        frame: false,
+        resizable: false,
+        movable: false,
+        minimizable: false,
+        maximizable: false,
+        skipTaskbar: true,
+        center: true,
+        show: false,
+        backgroundColor: '#121212',
+        alwaysOnTop: true,
+        webPreferences: { contextIsolation: true, nodeIntegration: false },
+      });
+      splash.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(splashHtml(appName)));
+      splash.once('ready-to-show', () => splash?.show());
+    } catch {
+      return; // Splash ist optional
+    }
+
+    const splashId = splash.id;
+    let closed = false;
+    const close = (): void => {
+      if (closed) return;
+      closed = true;
+      try {
+        splash?.close();
+      } catch {
+        /* egal */
+      }
+      splash = null;
+    };
+
+    // Erstes echtes Fenster (nicht der Splash) → beim Anzeigen den Splash schließen.
+    const onCreated = (_e: unknown, win: BrowserWindow): void => {
+      if (win.id === splashId) return;
+      app.removeListener('browser-window-created', onCreated);
+      win.once('ready-to-show', close);
+      win.once('show', close);
+    };
+    app.on('browser-window-created', onCreated);
+
+    // Sicherheits-Frist, falls nie ein Fenster bereit wird.
+    const t = setTimeout(close, SPLASH_SAFETY_MS);
+    t.unref?.();
+  });
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -382,6 +469,9 @@ export function initAppRuntime(opts: AppRuntimeOptions): AppRuntime {
       lastCrash: readLastCrash(logDir),
     });
   }
+
+  // Ladescreen, bis das erste Fenster bereit ist (best-effort, abschaltbar).
+  if (opts.splash !== false) startSplash(opts.appName ?? opts.appId);
 
   log.info(
     `runtime gestartet (v${version}, dev=${isDev})` +
