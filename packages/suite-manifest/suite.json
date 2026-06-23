@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T19:16:37.279Z",
+  "updatedAt": "2026-06-23T19:17:11.769Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -157,7 +157,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.sync",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.2",
+      "latestVersion": "0.2.0",
       "platforms": {
         "mac": {
           "artifact": "JM Sync-${version}-mac-${arch}.dmg",
