@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T19:21:22.634Z",
+  "updatedAt": "2026-06-23T19:35:05.554Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -115,7 +115,7 @@
       "category": "Ingest",
       "appId": "gmbh.jakobs.recorder",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM Audio Recorder-${version}-mac-${arch}.dmg",
@@ -136,7 +136,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.switcher",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.2",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM Switcher-${version}-mac-${arch}.dmg",
@@ -220,7 +220,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.ndi-screen-capture",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.1",
+      "latestVersion": "0.2.0",
       "platforms": {
         "mac": {
           "artifact": "JM NDI Screen Capture-${version}-mac-${arch}.dmg",
@@ -283,7 +283,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.titler",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.2.0",
       "platforms": {
         "win": {
           "artifact": "JM Titler-${version}-win-x64.exe",
