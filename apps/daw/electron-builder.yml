@@ -53,6 +53,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM DAW
+  createDesktopShortcut: false
 
 publish:
   provider: github

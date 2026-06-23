@@ -50,6 +50,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM NDI Screen Capture
+  createDesktopShortcut: false
 
 publish:
   provider: github

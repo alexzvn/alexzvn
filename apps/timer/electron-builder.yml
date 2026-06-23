@@ -57,6 +57,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM Timer
+  createDesktopShortcut: false
 
 publish:
   provider: github

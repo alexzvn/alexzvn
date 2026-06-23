@@ -49,6 +49,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM Switcher
+  createDesktopShortcut: false
 
 publish:
   provider: github

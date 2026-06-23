@@ -39,6 +39,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM Titler
+  createDesktopShortcut: false
 
 publish:
   provider: github

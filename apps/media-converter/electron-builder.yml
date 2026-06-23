@@ -42,6 +42,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM Media Converter
+  createDesktopShortcut: false
 
 publish:
   provider: github

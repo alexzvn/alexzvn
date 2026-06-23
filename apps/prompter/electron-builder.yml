@@ -50,6 +50,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM Prompter
+  createDesktopShortcut: false
 
 publish:
   provider: github

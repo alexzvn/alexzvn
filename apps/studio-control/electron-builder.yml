@@ -58,6 +58,7 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   shortcutName: JM Studio Control
+  createDesktopShortcut: false
 
 publish:
   provider: github
