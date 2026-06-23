@@ -1,4 +1,5 @@
 import { app, shell } from 'electron';
+import { getLog } from '@jm/app-runtime';
 import { createWriteStream, existsSync, statSync } from 'node:fs';
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -240,15 +241,22 @@ export async function installTool(tool: ToolManifest, emit: Emit): Promise<Actio
   if (process.platform === 'win32') outcome = await runWindowsSilent(dest);
   else if (process.platform === 'darwin') outcome = await runMacSilent(dest, tool);
   else outcome = 'failed';
+  getLog().info(`Update ${tool.id} → ${asset.version}: Silent-Installer-Ergebnis = ${outcome}`);
 
   if (outcome === 'installed' && isInstalled(tool, pre)) {
+    getLog().info(`Update ${tool.id}: still installiert + Binary verifiziert`);
     recordInstalled(tool.id, asset.version);
     const message = `${tool.name} ${asset.version} installiert.`;
     emit({ id: tool.id, phase: 'done', message });
     return { ok: true, message };
   }
 
+  if (outcome === 'installed') {
+    getLog().warn(`Update ${tool.id}: Silent meldete Erfolg, aber Binary unverändert → Fallback`);
+  }
+
   if (outcome === 'timeout') {
+    getLog().info(`Update ${tool.id}: Silent-Timeout → Hintergrund-Verifikation, kein zweiter Installer`);
     // Der stille Installer läuft evtl. noch — im Hintergrund auf Abschluss
     // warten und KEINEN zweiten Installer öffnen (Doppelinstallation vermeiden).
     void verifyInBackground(tool, asset.version, pre, emit);
@@ -260,6 +268,10 @@ export async function installTool(tool: ToolManifest, emit: Emit): Promise<Actio
   // Fallback (outcome === 'failed'): interaktiv öffnen. Auf unsignierten Builds
   // blockt Windows SmartScreen den stillen Start — openPath zeigt dann den
   // „Trotzdem ausführen"-Dialog (macOS mountet das DMG zum manuellen Ziehen).
+  getLog().warn(
+    `Update ${tool.id}: Silent nicht möglich (${outcome}) → interaktiver Installer-Fallback ` +
+      `(meist unsignierter Build/SmartScreen; echtes Silent-Update erfordert Code-Signing)`,
+  );
   emit({
     id: tool.id,
     phase: 'install',
