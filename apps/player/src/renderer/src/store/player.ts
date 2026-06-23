@@ -7,11 +7,14 @@ import type {
   Playlist,
   PlaylistItem,
   PlaylistKind,
+  RemoteCommand,
+  RemotePlayerState,
   Show,
   ShowCue,
   ShowCuePatch,
 } from '@shared/types';
 import { showAudio } from '@/lib/show-audio';
+import { cueEngine } from '@/lib/cues';
 
 // Laufende Pre-Wait-Timer der Cue-Show (modulglobal, damit Panik/Stop sie killt).
 const showTimers = new Set<ReturnType<typeof setTimeout>>();
@@ -22,6 +25,74 @@ function clearShowTimers(): void {
 
 // Einmalige Anmeldung des „Video zu Ende"-Listeners (nur im Hauptfenster).
 let outputEndedSubscribed = false;
+
+// ── TCP-Fernsteuerung (Bitfocus Companion) ───────────────────────────────────
+// Einmalige Verdrahtung: Befehle vom Main ausführen + Wiedergabe-Zustand melden.
+let remoteSubscribed = false;
+
+function computeRemoteState(s: PlayerStore): RemotePlayerState {
+  const label = s.showCues[s.standbyIndex]?.media?.title ?? '';
+  return {
+    playing: s.playingCueIds.length > 0 || s.videoCue !== null,
+    paused: s.showPaused,
+    standby: s.showCues.length ? s.standbyIndex + 1 : 0,
+    standbyLabel: label.trim().replace(/\s+/g, '_') || '-',
+    cues: s.showCues.length,
+    playingCount: s.playingCueIds.length,
+  };
+}
+
+function handleRemoteCommand(get: () => PlayerStore, cmd: RemoteCommand): void {
+  const p = get();
+  switch (cmd.t) {
+    case 'go':
+      p.showGo();
+      break;
+    case 'stop':
+      p.showStop();
+      break;
+    case 'pause':
+      p.showTogglePause();
+      break;
+    case 'panic':
+      p.showPanic();
+      break;
+    case 'cue':
+      p.fireCue(Math.trunc(cmd.n) - 1);
+      break;
+    case 'standby':
+      p.setStandby(Math.max(0, Math.min(Math.trunc(cmd.n) - 1, p.showCues.length)));
+      break;
+    case 'next':
+      p.setStandby(Math.min(p.standbyIndex + 1, p.showCues.length));
+      break;
+    case 'prev':
+      p.setStandby(Math.max(p.standbyIndex - 1, 0));
+      break;
+    case 'pad':
+      p.firePad(cmd.slot);
+      break;
+  }
+}
+
+function setupRemote(get: () => PlayerStore): void {
+  if (remoteSubscribed) return;
+  remoteSubscribed = true;
+  window.jmplay.remote.onCommand((cmd) => handleRemoteCommand(get, cmd));
+  // Zustand bei jeder relevanten Änderung melden (über JSON dedupliziert, damit
+  // häufige Video-Positions-Updates keinen Push auslösen).
+  let last = '';
+  const report = (): void => {
+    const snap = computeRemoteState(get());
+    const json = JSON.stringify(snap);
+    if (json !== last) {
+      last = json;
+      void window.jmplay.remote.reportState(snap);
+    }
+  };
+  usePlayer.subscribe(report);
+  report();
+}
 
 interface PlayerStore {
   items: MediaItem[];
@@ -87,6 +158,8 @@ interface PlayerStore {
   refreshCues: () => Promise<void>;
   assignCue: (input: CueInput) => Promise<void>;
   clearCue: (slot: number) => Promise<void>;
+  /** Soundboard-Pad an `slot` triggern (für die TCP-Fernsteuerung). */
+  firePad: (slot: number) => void;
 
   // Cue-Show
   refreshShows: () => Promise<void>;
@@ -153,6 +226,7 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
       window.jmplay.output.onEnded(() => get().onOutputEnded());
       window.jmplay.output.onTime((t) => get().onOutputTime(t));
     }
+    setupRemote(get);
   },
 
   refreshLibrary: async () => set({ items: await window.jmplay.library.list() }),
@@ -283,6 +357,10 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
     if (id == null) return;
     await window.jmplay.cues.clear(id, slot);
     await get().refreshCues();
+  },
+  firePad: (slot) => {
+    const cue = get().cues.find((c) => c.slot === slot);
+    if (cue && cue.media) cueEngine.play(cue, window.jmplay.mediaUrl(cue.media.path));
   },
 
   // ---- Cue-Show ----
