@@ -56,9 +56,22 @@ baubar/verteilbar bleibt.
 ## Bauen / Testen
 
 ```
-npm run selftest  # Zeilenbau + Round-Trip gegen den Protokoll-Parser
-npm run build     # companion-module-build (Paket für Companion)
+npm install       # einmalig: @companion-module/base + tools + bonjour-service
+npm run selftest  # Zeilenbau + Round-Trip + Discovery-Auswahl (ohne Companion-Runtime)
+npm run build     # companion-module-build → Verteilpaket (pkg/)
 ```
+
+**In Companion testen (Developer-Mode):** In Companion unter *Settings →
+Developer modules path* auf diesen Ordner zeigen — das Modul „JM Suite"
+erscheint, ohne ein Paket zu bauen. Schnellster Weg, um Actions/Feedbacks/
+mDNS-Auto-Discovery live zu prüfen.
+
+> **Packaging-Hinweis:** `npm run build` (`companion-module-build`) ruft intern
+> `yarn`/`webpack` auf und erwartet das Modul **standalone** (außerhalb eines
+> npm-/yarn-Workspaces). Im Monorepo-Checkout wählt yarn classic sonst die
+> Repo-Wurzel und bricht mit „Command webpack not found" ab. Fürs Verteilpaket
+> das Modulverzeichnis isoliert auschecken/kopieren und dort bauen (so läuft es
+> auch in der Companion-CI). Für Funktionstests genügt der Developer-Mode oben.
 
 > Das ältere `jm-switcher`-Modul bleibt vorerst als Bestandsschutz; `jm-suite`
 > deckt den Switcher (Rolle „switcher") rückwärtskompatibel mit ab.
