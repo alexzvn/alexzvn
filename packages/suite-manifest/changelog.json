@@ -134,6 +134,15 @@
     "name": "JM Audio Recorder",
     "entries": [
       {
+        "version": "0.3.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.2.0",
         "date": "2026-06-20",
         "notes": [
@@ -153,6 +162,15 @@
     "app": "switcher",
     "name": "JM Switcher",
     "entries": [
+      {
+        "version": "0.3.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Wird im Netzwerk automatisch annonciert — das JM Stage Display findet den Switcher ohne IP-Eingabe (bei laufendem Steuerserver).",
+          "Stabilität: zentrales Logging und Absturzerfassung; erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere."
+        ]
+      },
       {
         "version": "0.2.2",
         "date": "2026-06-12",
@@ -438,6 +456,15 @@
     "name": "JM NDI Screen Capture",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.1.1",
         "notes": ["Bildschirm/Fenster + Audio als NDI-Quelle senden (für TriCaster, vMix, OBS)."]
       }
@@ -541,6 +568,15 @@
     "name": "JM Titler",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.1.0",
         "notes": [
           "Live-CG als transparente NDI-Quelle: Bauchbinde (Name/Funktion), Banner und Ticker.",
@@ -553,6 +589,15 @@
     "app": "transcribe",
     "name": "JM Transcribe",
     "entries": [
+      {
+        "version": "0.2.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
       {
         "version": "0.1.1",
         "date": "2026-06-20",
