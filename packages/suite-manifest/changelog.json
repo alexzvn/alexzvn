@@ -91,6 +91,15 @@
     "name": "JM Player",
     "entries": [
       {
+        "version": "0.5.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.4.0",
         "date": "2026-06-20",
         "notes": [
@@ -176,6 +185,13 @@
     "name": "JM Presenter",
     "entries": [
       {
+        "version": "0.7.1",
+        "date": "2026-06-23",
+        "notes": [
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere."
+        ]
+      },
+      {
         "version": "0.7.0",
         "date": "2026-06-23",
         "notes": [
@@ -241,6 +257,15 @@
     "name": "JM Copy",
     "entries": [
       {
+        "version": "0.3.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.2.1",
         "date": "2026-06-12",
         "notes": [
@@ -269,6 +294,13 @@
     "name": "JM Timer",
     "entries": [
       {
+        "version": "0.2.1",
+        "date": "2026-06-23",
+        "notes": [
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere."
+        ]
+      },
+      {
         "version": "0.2.0",
         "date": "2026-06-23",
         "notes": [
@@ -292,6 +324,15 @@
     "name": "JM Sync",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.1.2",
         "date": "2026-06-20",
         "notes": [
@@ -310,6 +351,15 @@
     "app": "studio-control",
     "name": "JM Studio Control",
     "entries": [
+      {
+        "version": "0.5.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
       {
         "version": "0.4.1",
         "date": "2026-06-20",
@@ -343,6 +393,15 @@
     "name": "JM Grafiktool",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.1.0",
         "notes": ["Ebenenbasierter Grafik-Editor: Bauchbinden, Freistellen, PSD-Import/-Export."]
       }
@@ -352,6 +411,15 @@
     "app": "media-converter",
     "name": "JM Media Converter",
     "entries": [
+      {
+        "version": "0.3.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
       {
         "version": "0.2.0",
         "notes": [
@@ -379,6 +447,13 @@
     "app": "stage-display",
     "name": "JM Stage Display",
     "entries": [
+      {
+        "version": "0.4.1",
+        "date": "2026-06-23",
+        "notes": [
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere."
+        ]
+      },
       {
         "version": "0.4.0",
         "date": "2026-06-23",
@@ -421,6 +496,13 @@
     "app": "prompter",
     "name": "JM Prompter",
     "entries": [
+      {
+        "version": "0.4.1",
+        "date": "2026-06-23",
+        "notes": [
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere."
+        ]
+      },
       {
         "version": "0.4.0",
         "date": "2026-06-23",
@@ -492,6 +574,15 @@
     "name": "JM Editor",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Stabilität: zentrales Logging und Absturzerfassung; das Tool erscheint jetzt im Launcher unter System-Zustand.",
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere.",
+          "Deep-Link-fähig (jmps://) für die Suite-Integration."
+        ]
+      },
+      {
         "version": "0.3.0",
         "date": "2026-06-20",
         "notes": [
@@ -531,6 +622,13 @@
     "app": "daw",
     "name": "JM DAW",
     "entries": [
+      {
+        "version": "0.7.1",
+        "date": "2026-06-23",
+        "notes": [
+          "Ladescreen beim Start — sofortige Rückmeldung statt Warten ins Leere."
+        ]
+      },
       {
         "version": "0.7.0",
         "date": "2026-06-23",

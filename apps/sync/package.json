@@ -1,6 +1,6 @@
 {
   "name": "@jm/sync",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "description": "JM Sync — A/V-Versatz-Messung (Lipsync) für Live-Streaming, Softwareersatz für das Sync-It-Plus",
   "author": "Jakobs Medien GmbH",
