@@ -4,6 +4,7 @@ import { initAppRuntime } from '@jm/app-runtime';
 import { registerIpc } from './ipc';
 import { installDisplayMediaHandler } from './capture-handler';
 import { attachNdiWindow, stopNdi } from './ndi-receive';
+import { attachNdiSendWindow, stopNdiOutput } from './ndi-send';
 import { attachOutputWindow, stopOutput } from './output';
 import { attachControlWindow, startControlServer, stopControlServer } from './control-server';
 
@@ -66,6 +67,7 @@ function createMainWindow(): BrowserWindow {
 
   win.on('closed', () => {
     stopNdi();
+    stopNdiOutput();
     stopOutput();
     stopControlServer();
     mainWindow = null;
@@ -73,6 +75,7 @@ function createMainWindow(): BrowserWindow {
 
   loadMain(win);
   attachNdiWindow(win);
+  attachNdiSendWindow(win);
   attachOutputWindow(win);
   attachControlWindow(win);
 

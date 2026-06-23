@@ -17,12 +17,18 @@ export interface SettingsState {
   controlPort: number;
   /** Programm-Audioquelle (deviceId aus enumerateDevices) — '' = kein Ton. */
   audioInputId: string;
+  /** Sichtbarer Name der NDI-Ausgabe (Program/Multiview als NDI-Quelle). */
+  ndiOutputName: string;
+  /** Was als NDI-Quelle ausgegeben wird: 'program' oder 'multiview'. */
+  ndiOutputSource: 'program' | 'multiview';
   setRtmpUrl: (v: string) => void;
   setStreamBitrateKbps: (v: number) => void;
   setRecordBitrateKbps: (v: number) => void;
   setControlEnabled: (v: boolean) => void;
   setControlPort: (v: number) => void;
   setAudioInputId: (v: string) => void;
+  setNdiOutputName: (v: string) => void;
+  setNdiOutputSource: (v: 'program' | 'multiview') => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -34,6 +40,8 @@ export const useSettings = create<SettingsState>()(
       controlEnabled: false,
       controlPort: DEFAULT_CONTROL_PORT,
       audioInputId: '',
+      ndiOutputName: 'JM Switcher',
+      ndiOutputSource: 'program',
       setRtmpUrl: (rtmpUrl) => set({ rtmpUrl }),
       setStreamBitrateKbps: (streamBitrateKbps) =>
         set({ streamBitrateKbps: Math.min(20000, Math.max(500, Math.round(streamBitrateKbps) || 0)) }),
@@ -43,6 +51,8 @@ export const useSettings = create<SettingsState>()(
       setControlPort: (controlPort) =>
         set({ controlPort: Math.min(65535, Math.max(1, Math.round(controlPort) || DEFAULT_CONTROL_PORT)) }),
       setAudioInputId: (audioInputId) => set({ audioInputId }),
+      setNdiOutputName: (ndiOutputName) => set({ ndiOutputName: ndiOutputName.slice(0, 64) }),
+      setNdiOutputSource: (ndiOutputSource) => set({ ndiOutputSource }),
     }),
     { name: 'jmswitch-settings' },
   ),

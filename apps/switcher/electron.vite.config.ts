@@ -27,6 +27,9 @@ export default defineConfig({
           // Entry des utilityProcess (nativer NDI-Empfänger). Landet als
           // out/main/ndi-recv.cjs und wird per utilityProcess.fork geladen.
           'ndi-recv': resolve(__dirname, 'src/utility/ndi-recv.ts'),
+          // Entry des utilityProcess (nativer NDI-Sender, Program/Multiview-
+          // Ausgabe) → out/main/ndi-send.cjs.
+          'ndi-send': resolve(__dirname, 'src/utility/ndi-send.ts'),
         },
         output: {
           format: 'cjs',

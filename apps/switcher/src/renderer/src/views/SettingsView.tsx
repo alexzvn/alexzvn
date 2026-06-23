@@ -10,12 +10,14 @@ export function SettingsView() {
     controlEnabled,
     controlPort,
     audioInputId,
+    ndiOutputName,
     setRtmpUrl,
     setStreamBitrateKbps,
     setRecordBitrateKbps,
     setControlEnabled,
     setControlPort,
     setAudioInputId,
+    setNdiOutputName,
   } = useSettings();
 
   const [ctrl, setCtrl] = useState<ControlStatus>({ running: false, port: controlPort, clients: 0 });
@@ -84,6 +86,31 @@ export function SettingsView() {
             Auflösung: <span className="font-semibold text-[var(--foreground)]">1280×720 @ 30 fps</span> ·
             Ton: stille AAC-Spur (Audio-Mix kommt in v0.2). Der Stream wird aus dem Program-Bild
             kodiert (libx264, zerolatency).
+          </p>
+        </section>
+
+        <section className="rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-5">
+          <h2 className="text-[11px] uppercase tracking-[0.14em] font-extrabold text-[var(--muted-foreground)]">
+            NDI-Ausgabe
+          </h2>
+          <label className="flex flex-col gap-1.5 max-w-md">
+            <span className="text-sm font-bold">NDI-Quellname</span>
+            <input
+              type="text"
+              value={ndiOutputName}
+              onChange={(e) => setNdiOutputName(e.target.value)}
+              placeholder="JM Switcher"
+              className="h-10 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-3 text-sm text-[var(--foreground)]"
+            />
+            <span className="text-[11px] text-[var(--muted-foreground)]">
+              So erscheint die Ausgabe im Netz (z. B. als Eingang in TriCaster, vMix, OBS oder einem
+              NDI-Monitor). In der Mischer-Leiste wählst du, ob das Program-Bild oder das Multiview
+              gesendet wird, und schaltest die Ausgabe live an/aus.
+            </span>
+          </label>
+          <p className="text-[11px] text-[var(--muted-foreground)] leading-relaxed border-t border-[var(--border)]/60 pt-4">
+            Ausgabe: <span className="font-semibold text-[var(--foreground)]">1280×720 @ 25 fps</span> (BGRA).
+            Das Multiview zeigt Program + Preview groß plus alle Szenen als Kacheln mit Tally.
           </p>
         </section>
 

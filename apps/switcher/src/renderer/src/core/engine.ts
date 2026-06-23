@@ -86,6 +86,10 @@ interface InternalSource {
 
 const RENDER_W = 1280;
 const RENDER_H = 720;
+// Multiview-Ausgabeauflösung (16:9). Eigene Konstante, falls der Haupt-Render
+// später unabhängig skaliert.
+const MULTIVIEW_W = 1280;
+const MULTIVIEW_H = 720;
 
 export class SwitcherEngine {
   private sources: InternalSource[] = [];
@@ -99,6 +103,13 @@ export class SwitcherEngine {
   private keyCtx: CanvasRenderingContext2D | null = null;
   private previewCanvas: HTMLCanvasElement | null = null;
   private programCanvas: HTMLCanvasElement | null = null;
+  // Multiview: internes Offscreen-Canvas, das alle Szenen + PGM/PVW zeigt. Wird
+  // nur gerendert, wenn aktiv (Panel offen oder NDI-Multiview-Ausgabe) — sonst
+  // kostenlos. Konsumenten (Vorschau-Panel, NDI-Ausgabe) lesen es per
+  // getMultiviewCanvas() und blitten/kodieren daraus (eine Quelle der Wahrheit).
+  private multiviewCanvas: HTMLCanvasElement | null = null;
+  private multiviewActive = false;
+  private multiviewTally = { recording: false, streaming: false };
   private raf = 0;
   private listeners = new Set<() => void>();
   private seq = 0;
@@ -126,6 +137,34 @@ export class SwitcherEngine {
     this.previewSceneId = null;
     this.programSceneId = null;
     this.transition = null;
+    this.multiviewActive = false;
+    this.multiviewCanvas = null;
+  }
+
+  // ---- Multiview ----
+
+  /**
+   * Multiview-Rendering an-/abschalten. Nur wenn aktiv wird das Offscreen-Canvas
+   * pro Frame gefüllt (sonst kostenlos). Konsumenten lesen getMultiviewCanvas().
+   */
+  setMultiviewActive(on: boolean): void {
+    this.multiviewActive = on;
+    if (on && !this.multiviewCanvas) {
+      const cv = document.createElement('canvas');
+      cv.width = MULTIVIEW_W;
+      cv.height = MULTIVIEW_H;
+      this.multiviewCanvas = cv;
+    }
+  }
+
+  /** Tally-Marker (REC/LIVE) für die Multiview-PGM-Box setzen. */
+  setMultiviewTally(tally: { recording: boolean; streaming: boolean }): void {
+    this.multiviewTally = tally;
+  }
+
+  /** Das Multiview-Offscreen-Canvas (oder null, falls nie aktiviert). */
+  getMultiviewCanvas(): HTMLCanvasElement | null {
+    return this.multiviewCanvas;
   }
 
   subscribe(cb: () => void): () => void {
@@ -401,6 +440,7 @@ export class SwitcherEngine {
 
   private loop = (): void => {
     this.render();
+    if (this.multiviewActive) this.renderMultiview();
     this.raf = requestAnimationFrame(this.loop);
   };
 
@@ -444,14 +484,32 @@ export class SwitcherEngine {
     }
     const scene = sceneId ? this.scenes.find((s) => s.id === sceneId) : null;
     if (!scene) return;
+    this.drawSceneLayers(ctx, scene, 0, 0, w, h, alpha);
+  }
+
+  /**
+   * Zeichnet die (sichtbaren) Ebenen einer Szene in ein Rechteck (rx,ry,rw,rh)
+   * des Ziel-Contexts — Ebenenrechtecke sind relativ zur Szene (0..1) und werden
+   * in die Region skaliert. Genutzt vom Haupt-Output (Vollbild) und vom
+   * Multiview (PGM/PVW-Boxen + Szenen-Kacheln).
+   */
+  private drawSceneLayers(
+    ctx: CanvasRenderingContext2D,
+    scene: SceneInfo,
+    rx: number,
+    ry: number,
+    rw: number,
+    rh: number,
+    alpha: number,
+  ): void {
     for (const layer of scene.layers) {
       if (!layer.visible) continue;
       const src = this.sources.find((x) => x.info.id === layer.sourceId);
       if (!src) continue;
-      const dx = layer.x * w;
-      const dy = layer.y * h;
-      const dw = layer.w * w;
-      const dh = layer.h * h;
+      const dx = rx + layer.x * rw;
+      const dy = ry + layer.y * rh;
+      const dw = layer.w * rw;
+      const dh = layer.h * rh;
       ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
       if (src.info.kind === 'color' && src.info.color) {
         ctx.fillStyle = src.info.color;
@@ -515,6 +573,148 @@ export class SwitcherEngine {
     wctx.putImageData(image, 0, 0);
     ctx.drawImage(this.keyCanvas, dx, dy, w, h);
   }
+
+  // ---- Multiview-Rendering ----
+
+  /**
+   * Zeichnet das Multiview-Bild: oben PGM + PVW groß (rote/grüne Umrandung,
+   * Tally), darunter ein Raster aller Szenen-Kacheln (Tally-Rand für PGM/PVW).
+   * Liest die fertigen PGM/PVW-Canvases (inkl. laufender Blende) direkt; die
+   * Kacheln werden frisch aus dem Szenenzustand gezeichnet.
+   */
+  private renderMultiview(): void {
+    const cv = this.multiviewCanvas;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+    const W = cv.width;
+    const H = cv.height;
+    const PAD = 12;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Oben: PGM + PVW nebeneinander (jeweils halbe Breite).
+    const topH = Math.round(H * 0.56);
+    const boxW = (W - PAD * 3) / 2;
+    const boxH = topH - PAD * 2;
+    const recTxt = this.multiviewTally.recording ? '● REC' : '';
+    const liveTxt = this.multiviewTally.streaming ? '● LIVE' : '';
+    const pgmTally = [recTxt, liveTxt].filter(Boolean).join('  ');
+    this.drawMvMonitor(ctx, this.programCanvas, PAD, PAD, boxW, boxH, 'PROGRAM', '#dc2626', pgmTally);
+    this.drawMvMonitor(ctx, this.previewCanvas, PAD * 2 + boxW, PAD, boxW, boxH, 'PREVIEW', '#16a34a');
+
+    // Unten: Szenen-Kacheln im Raster.
+    const stripY = topH;
+    const stripH = H - topH;
+    const n = this.scenes.length;
+    if (n === 0) return;
+    const maxCols = 5;
+    const cols = Math.min(n, maxCols);
+    const rows = Math.ceil(n / cols);
+    const cellW = (W - PAD * (cols + 1)) / cols;
+    const cellH = (stripH - PAD * (rows + 1)) / rows;
+    for (let i = 0; i < n; i++) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const x = PAD + c * (cellW + PAD);
+      const y = stripY + PAD + r * (cellH + PAD);
+      const scene = this.scenes[i];
+      const accent =
+        scene.id === this.programSceneId
+          ? '#dc2626'
+          : scene.id === this.previewSceneId
+            ? '#16a34a'
+            : '#3a3a3a';
+      this.drawMvScene(ctx, scene, x, y, cellW, cellH, accent);
+    }
+  }
+
+  /** Eine große Multiview-Box: fertiges Canvas (PGM/PVW) + Label + Tally. */
+  private drawMvMonitor(
+    ctx: CanvasRenderingContext2D,
+    src: HTMLCanvasElement | null,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    label: string,
+    accent: string,
+    tally?: string,
+  ): void {
+    const labelH = Math.max(18, Math.round(h * 0.09));
+    const vy = y + labelH;
+    const vh = h - labelH;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x, vy, w, vh);
+    if (src && src.width > 0) drawContainInto(ctx, src, src.width, src.height, x, vy, w, vh);
+    // Label-Leiste
+    ctx.fillStyle = accent;
+    ctx.fillRect(x, y, w, labelH);
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 ${Math.round(labelH * 0.62)}px Segoe UI, system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, x + 8, y + labelH / 2 + 1);
+    if (tally) {
+      ctx.textAlign = 'right';
+      ctx.fillText(tally, x + w - 8, y + labelH / 2 + 1);
+    }
+    // Rahmen
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
+  }
+
+  /** Eine Szenen-Kachel: Szene gerendert + Name + Tally-Rand. */
+  private drawMvScene(
+    ctx: CanvasRenderingContext2D,
+    scene: SceneInfo,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    accent: string,
+  ): void {
+    const labelH = Math.max(14, Math.round(h * 0.16));
+    const vy = y;
+    const vh = h - labelH;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x, vy, w, vh);
+    // Szene in die (16:9-zentrierte) Videofläche zeichnen, hart auf die Box geclippt.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, vy, w, vh);
+    ctx.clip();
+    const inner = contain169(x, vy, w, vh);
+    this.drawSceneLayers(ctx, scene, inner.x, inner.y, inner.w, inner.h, 1);
+    ctx.restore();
+    // Namensleiste
+    ctx.fillStyle = '#161616';
+    ctx.fillRect(x, y + h - labelH, w, labelH);
+    ctx.fillStyle = '#e8e8e8';
+    ctx.font = `600 ${Math.round(labelH * 0.6)}px Segoe UI, system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    const name = scene.name.length > 22 ? scene.name.slice(0, 21) + '…' : scene.name;
+    ctx.fillText(name, x + 6, y + h - labelH / 2 + 1);
+    // Tally-Rahmen
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = accent === '#3a3a3a' ? 1.5 : 3;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  }
+}
+
+/** Zentriertes 16:9-Rechteck innerhalb (x,y,w,h). */
+function contain169(x: number, y: number, w: number, h: number): Rect {
+  const target = 16 / 9;
+  let cw = w;
+  let ch = w / target;
+  if (ch > h) {
+    ch = h;
+    cw = h * target;
+  }
+  return { x: x + (w - cw) / 2, y: y + (h - ch) / 2, w: cw, h: ch };
 }
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {

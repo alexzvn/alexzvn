@@ -10,6 +10,7 @@ import {
   type SourceInfo,
 } from '@/core/engine';
 import { OutputController, type OutputState } from '@/core/output';
+import { NdiOutputController, type NdiOutputState } from '@/core/ndiOutput';
 import { AudioController, type AudioState } from '@/core/audio';
 import { useSettings } from '@/store/settings';
 
@@ -54,12 +55,29 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
   }
   const output = outputRef.current;
   const [outputState, setOutputState] = useState<OutputState>(() => output.getState());
+
+  // NDI-Ausgabe (Program oder Multiview als NDI-Quelle). Die Quellwahl wird über
+  // einen Ref gelesen, weil der Controller nur einmal erzeugt wird.
+  const ndiSourceRef = useRef<'program' | 'multiview'>('program');
+  const ndiOutRef = useRef<NdiOutputController | null>(null);
+  if (!ndiOutRef.current) {
+    ndiOutRef.current = new NdiOutputController(() =>
+      ndiSourceRef.current === 'multiview' ? engine.getMultiviewCanvas() : programRef.current,
+    );
+  }
+  const ndiOut = ndiOutRef.current;
+  const [ndiOutState, setNdiOutState] = useState<NdiOutputState>(() => ndiOut.getState());
+  const [showMultiview, setShowMultiview] = useState(false);
+
   const rtmpUrl = useSettings((s) => s.rtmpUrl);
   const streamBitrateKbps = useSettings((s) => s.streamBitrateKbps);
   const recordBitrateKbps = useSettings((s) => s.recordBitrateKbps);
   const controlEnabled = useSettings((s) => s.controlEnabled);
   const controlPort = useSettings((s) => s.controlPort);
   const audioInputId = useSettings((s) => s.audioInputId);
+  const ndiOutputName = useSettings((s) => s.ndiOutputName);
+  const ndiOutputSource = useSettings((s) => s.ndiOutputSource);
+  const setNdiOutputSource = useSettings((s) => s.setNdiOutputSource);
   const firstControlRun = useRef(true);
   const [state, setState] = useState<EngineState>(() => engine.getState());
   const [picker, setPicker] = useState(false);
@@ -76,14 +94,34 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
     setState(engine.getState());
     const unsubOut = output.subscribe(() => setOutputState(output.getState()));
     setOutputState(output.getState());
+    const unsubNdi = ndiOut.subscribe(() => setNdiOutState(ndiOut.getState()));
+    setNdiOutState(ndiOut.getState());
     return () => {
       unsub();
       unsubOut();
+      unsubNdi();
+      ndiOut.destroy();
       output.destroy();
       audio.destroy();
       engine.destroy();
     };
-  }, [engine, output, audio]);
+  }, [engine, output, audio, ndiOut]);
+
+  // Quellwahl der NDI-Ausgabe in den Ref spiegeln (Controller liest ihn live).
+  useEffect(() => {
+    ndiSourceRef.current = ndiOutputSource;
+  }, [ndiOutputSource]);
+
+  // Multiview nur rendern, wenn gebraucht: Vorschau offen ODER NDI-Multiview aktiv.
+  useEffect(() => {
+    const need = showMultiview || (ndiOutState.active && ndiOutputSource === 'multiview');
+    engine.setMultiviewActive(need);
+  }, [engine, showMultiview, ndiOutState.active, ndiOutputSource]);
+
+  // Tally (REC/LIVE) ans Multiview weiterreichen.
+  useEffect(() => {
+    engine.setMultiviewTally({ recording: outputState.recording, streaming: outputState.streaming });
+  }, [engine, outputState.recording, outputState.streaming]);
 
   // Programm-Audioquelle gemäß Einstellungen setzen.
   useEffect(() => {
@@ -156,6 +194,10 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
   const toggleStreaming = (): void => {
     if (outputState.streaming) output.stopStreaming();
     else void output.startStreaming(rtmpUrl, streamBitrateKbps);
+  };
+  const toggleNdiOutput = (): void => {
+    if (ndiOutState.active) void ndiOut.stop();
+    else void ndiOut.start(ndiOutputName.trim() || 'JM Switcher');
   };
 
   // Fernsteuer-Befehle (TCP/Companion) auf Engine/Output anwenden.
@@ -364,6 +406,11 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
         state={outputState}
         rtmpUrl={rtmpUrl}
         audio={audio}
+        ndiState={ndiOutState}
+        ndiSource={ndiOutputSource}
+        onSetNdiSource={setNdiOutputSource}
+        onToggleNdi={toggleNdiOutput}
+        onOpenMultiview={() => setShowMultiview(true)}
         onOpenSettings={onOpenSettings}
         onToggleRecording={toggleRecording}
         onToggleStreaming={toggleStreaming}
@@ -413,6 +460,8 @@ export function SwitcherView({ onOpenSettings }: { onOpenSettings: () => void })
         }}
       />
 
+      {showMultiview && <MultiviewOverlay engine={engine} onClose={() => setShowMultiview(false)} />}
+
       {picker && <ScreenPicker onPick={(s) => void pickScreen(s)} onClose={() => setPicker(false)} />}
       {ndiPicker && <NdiPicker onPick={(s) => void connectNdi(s)} onClose={() => setNdiPicker(false)} />}
       {capturePicker && (
@@ -434,6 +483,11 @@ function OutputBar({
   state,
   rtmpUrl,
   audio,
+  ndiState,
+  ndiSource,
+  onSetNdiSource,
+  onToggleNdi,
+  onOpenMultiview,
   onOpenSettings,
   onToggleRecording,
   onToggleStreaming,
@@ -441,6 +495,11 @@ function OutputBar({
   state: OutputState;
   rtmpUrl: string;
   audio: AudioController;
+  ndiState: NdiOutputState;
+  ndiSource: 'program' | 'multiview';
+  onSetNdiSource: (v: 'program' | 'multiview') => void;
+  onToggleNdi: () => void;
+  onOpenMultiview: () => void;
   onOpenSettings: () => void;
   onToggleRecording: () => void;
   onToggleStreaming: () => void;
@@ -477,6 +536,47 @@ function OutputBar({
       >
         <span className={cn('size-2.5 rounded-full', state.streaming ? 'bg-white animate-pulse' : 'bg-[var(--primary)]')} />
         {state.streaming ? 'Stream stoppen' : 'Stream starten'}
+      </button>
+
+      {/* NDI-Ausgabe: Program oder Multiview als NDI-Quelle ins Studio-LAN. */}
+      <div className="shrink-0 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onToggleNdi}
+          title="Program/Multiview als NDI-Quelle senden (TriCaster, vMix, OBS, NDI-Monitor)"
+          className={cn(
+            'h-9 px-3 rounded-[var(--radius)] text-sm font-extrabold uppercase tracking-wide inline-flex items-center gap-2 transition-colors border-2',
+            ndiState.active
+              ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+              : 'border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)]',
+          )}
+        >
+          <span className={cn('size-2.5 rounded-full', ndiState.active ? 'bg-white animate-pulse' : 'bg-[var(--primary)]')} />
+          NDI
+        </button>
+        <select
+          value={ndiSource}
+          onChange={(e) => onSetNdiSource(e.target.value as 'program' | 'multiview')}
+          title="Was als NDI-Quelle ausgegeben wird"
+          className="h-9 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--input)] px-1.5 text-xs font-semibold"
+        >
+          <option value="program">Program</option>
+          <option value="multiview">Multiview</option>
+        </select>
+        {ndiState.active && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted-foreground)] tabular">
+            {ndiState.connections} ▸
+          </span>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onOpenMultiview}
+        title="Multiview anzeigen (alle Szenen + Program/Preview)"
+        className="h-9 px-3 rounded-[var(--radius)] text-sm font-bold border-2 border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--highlight)] transition-colors shrink-0"
+      >
+        Multiview
       </button>
 
       <AudioStrip controller={audio} onOpenSettings={onOpenSettings} />
@@ -1169,6 +1269,69 @@ function SourcesPanel({
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Multiview-Vollbild-Overlay: spiegelt das Multiview-Offscreen-Canvas der Engine
+ * (alle Szenen + PGM/PVW). „Vollbild" wirft es per Fullscreen-API auf den Monitor,
+ * auf dem das Fenster gerade liegt — so landet die Übersicht auf dem 2. Schirm.
+ */
+function MultiviewOverlay({ engine, onClose }: { engine: SwitcherEngine; onClose: () => void }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    let raf = 0;
+    const loop = (): void => {
+      const dst = canvasRef.current;
+      const src = engine.getMultiviewCanvas();
+      if (dst && src && src.width > 0) {
+        if (dst.width !== src.width || dst.height !== src.height) {
+          dst.width = src.width;
+          dst.height = src.height;
+        }
+        const ctx = dst.getContext('2d');
+        if (ctx) ctx.drawImage(src, 0, 0);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const onFsChange = (): void => setFullscreen(document.fullscreenElement === wrapRef.current);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener('fullscreenchange', onFsChange);
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, [engine]);
+
+  const toggleFullscreen = (): void => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void wrapRef.current?.requestFullscreen().catch(() => {});
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 backdrop-blur-sm px-6" onClick={onClose}>
+      <div
+        ref={wrapRef}
+        className="relative w-full max-w-6xl bg-black rounded-[var(--radius-xl)] overflow-hidden border border-[var(--border)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <canvas ref={canvasRef} className="w-full h-full aspect-video object-contain bg-[#0a0a0a]" />
+        {!fullscreen && (
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={toggleFullscreen}>
+              Vollbild
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onClose}>
+              Schließen
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

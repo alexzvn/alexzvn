@@ -50,6 +50,18 @@ export interface OutputStatus {
   recPath: string | null;
 }
 
+/** Was als NDI-Quelle ausgegeben wird: das Program-Bild oder das Multiview. */
+export type NdiOutputSource = 'program' | 'multiview';
+
+/** Status der NDI-Ausgabe (eigener Sender-Prozess). */
+export interface NdiOutputStatus {
+  active: boolean;
+  /** Sichtbarer NDI-Quellname. */
+  name: string;
+  /** Anzahl verbundener NDI-Empfänger. */
+  connections: number;
+}
+
 /** Fehler aus dem Output-Pfad (Datei-Schreibfehler, ffmpeg-Exit …). */
 export interface OutputError {
   scope: 'record' | 'stream';
@@ -99,6 +111,14 @@ export interface JmswitchOutputApi {
   streamStop: () => void;
   onStatus: (cb: (s: OutputStatus) => void) => () => void;
   onError: (cb: (e: OutputError) => void) => () => void;
+  /** NDI-Ausgabe (Program oder Multiview) starten — liefert den Frame-Port-Hinweis. */
+  ndiStart: (name: string) => Promise<{ ok: boolean; error?: string }>;
+  /** NDI-Ausgabe stoppen. */
+  ndiStop: () => Promise<void>;
+  /** Status der NDI-Ausgabe abfragen. */
+  ndiStatus: () => Promise<NdiOutputStatus>;
+  /** Auf NDI-Ausgabe-Status (v. a. Empfängerzahl) hören. */
+  onNdiStatus: (cb: (s: NdiOutputStatus) => void) => () => void;
 }
 
 /** Shape, die der Preload auf `window.jmswitch` legt. */

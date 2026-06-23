@@ -170,6 +170,16 @@
     "name": "JM Switcher",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-23",
+        "notes": [
+          "NDI-Ausgabe: Program- oder Multiview-Bild als eigene NDI-Quelle ins Studio-LAN senden — nutzbar als Eingang in TriCaster, vMix, OBS oder auf einem NDI-Monitor.",
+          "Multiview: Program und Preview groß plus alle Szenen als Kacheln mit Tally; als Vollbild auf einen zweiten Schirm legbar.",
+          "NDI-Quellname in den Einstellungen wählbar; Umschalten Program/Multiview und An/Aus live in der Mischer-Leiste.",
+          "Hinweis: Bild-in-Bild und Chroma-Key (Greenscreen) je Ebene sind weiterhin live schaltbar."
+        ]
+      },
+      {
         "version": "0.3.0",
         "date": "2026-06-23",
         "notes": [

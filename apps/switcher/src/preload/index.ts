@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ControlStatus,
   JmswitchApi,
+  NdiOutputStatus,
   NdiStatus,
   OutputError,
   OutputStatus,
@@ -14,6 +15,11 @@ import type { ControlCommand, SwitcherStateMsg } from '@jm/companion-protocol';
 // der dokumentierte window.postMessage-Transfer (Empfang: window 'message').
 ipcRenderer.on('jmswitch:ndi-port', (e, payload: { recvId?: string } | undefined) => {
   window.postMessage({ kind: 'jmswitch:ndi-port', recvId: payload?.recvId }, '*', e.ports);
+});
+
+// Frame-Port der NDI-AUSGABE in den Renderer durchreichen (gleicher Mechanismus).
+ipcRenderer.on('jmswitch:ndi-out-port', (e) => {
+  window.postMessage({ kind: 'jmswitch:ndi-out-port' }, '*', e.ports);
 });
 
 const api: JmswitchApi = {
@@ -58,6 +64,15 @@ const api: JmswitchApi = {
       const listener = (_event: unknown, e: OutputError) => cb(e);
       ipcRenderer.on('output:error', listener);
       return () => ipcRenderer.off('output:error', listener);
+    },
+    ndiStart: (name) =>
+      ipcRenderer.invoke('output:ndiStart', name) as Promise<{ ok: boolean; error?: string }>,
+    ndiStop: () => ipcRenderer.invoke('output:ndiStop') as Promise<void>,
+    ndiStatus: () => ipcRenderer.invoke('output:ndiStatus') as Promise<NdiOutputStatus>,
+    onNdiStatus: (cb) => {
+      const listener = (_event: unknown, s: NdiOutputStatus) => cb(s);
+      ipcRenderer.on('output:ndi-status', listener);
+      return () => ipcRenderer.off('output:ndi-status', listener);
     },
   },
   control: {
