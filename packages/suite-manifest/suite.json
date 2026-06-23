@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T17:42:42.719Z",
+  "updatedAt": "2026-06-23T19:14:43.643Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -10,7 +10,7 @@
       "category": "Ingest",
       "appId": "gmbh.jakobs.copy",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.1",
+      "latestVersion": "0.3.0",
       "platforms": {
         "mac": {
           "artifact": "JM Copy-${version}-mac-${arch}.dmg",
