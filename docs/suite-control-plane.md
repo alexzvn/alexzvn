@@ -136,11 +136,20 @@ on_air/template/ndi/connections
 ([apps/titler/src/main/control-server.ts](../apps/titler/src/main/control-server.ts)).
 Der Titler zeigt EINE CG (keine nummerierten Bauchbinden) — Mapping entsprechend.
 
-**Als Nächstes (Welle 1.5–1.7):**
+**Erledigt (Welle 1.5 — Presenter/Prompter/Recorder/DAW):** vier weitere Tools am
+Steuerprotokoll. Presenter (8728, NEXT/PREV/GOTO/BLACK/WHITE/LIVE/STOP, nutzt
+present.ts + subscribe). Prompter (8727, SCROLL/SPEED/FASTER/SLOWER/TOP; GOTO
+zurückgestellt). Recorder (8729, RECORD/ARM/DISARM; State aus Main, Befehle an
+Renderer wegen Ordner-Settings). DAW (8730, PLAY/STOP/TOGGLE/REC; Transport +
+Rec-Flows im Renderer → Befehl an Renderer, State zurück).
+
+Damit deckt die Steuerebene **8 Tools** ab (Switcher, Timer, Player, Titler,
+Presenter, Prompter, Recorder, DAW) auf Ports 8723–8730.
+
+**Als Nächstes (Welle 1.6–1.7):**
 
 | Schritt | Inhalt | Datei(en) |
 |---|---|---|
-| 1.5 | **Prompter, Presenter, Recorder, DAW** (P4–P7) | jeweils src/main |
 | 1.6 | **`companion-jm-suite`-Modul** (manuell → mDNS) + Sync-Skript | packages/companion-jm-suite, scripts/sync-companion-protocol.mjs |
 | 1.7 | Versions-Bumps + Manifest/Changelog | packages/suite-manifest/ |
 
