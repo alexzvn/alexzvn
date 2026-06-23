@@ -7,6 +7,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "dependencies": {
+    "@jm/suite-control-protocol": "*"
+  },
   "scripts": {
     "selftest": "node --experimental-strip-types test/selftest.ts"
   }

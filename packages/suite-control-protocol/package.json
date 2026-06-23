@@ -1,0 +1,19 @@
+{
+  "name": "@jm/suite-control-protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Suite-weites TCP-Zeilenprotokoll + Server/Client/Capabilities für die Fernsteuerung aller JM-Tools (Bitfocus Companion)",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./client": "./src/client.ts",
+    "./capabilities": "./src/capabilities.ts"
+  },
+  "dependencies": {
+    "@jm/discovery": "*"
+  },
+  "scripts": {
+    "selftest": "node --experimental-strip-types test/selftest.ts"
+  }
+}

@@ -12,6 +12,7 @@ const internalPackages = [
   '@jm/app-runtime',
   '@jm/media',
   '@jm/companion-protocol',
+  '@jm/suite-control-protocol',
   '@jm/discovery',
   'bonjour-service',
 ];

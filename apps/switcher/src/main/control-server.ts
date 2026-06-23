@@ -1,26 +1,29 @@
-// TCP-Steuerserver (Slice 6): Fernsteuerung des Switchers über das geteilte
-// Zeilenprotokoll @jm/companion-protocol — getrieben z. B. vom Bitfocus-Companion-
-// Modul (packages/companion-jm-switcher).
+// TCP-Steuerserver (Slice 6): Fernsteuerung des Switchers über das suite-weite
+// Zeilenprotokoll @jm/suite-control-protocol — getrieben z. B. vom Bitfocus-
+// Companion-Modul.
 //
 //   Client → Switcher: PREVIEW/PROGRAM/CUT/AUTO/RECORD/STREAM/STATE?
-//   Switcher → Client: STATE … (auf Verbindung, bei jeder Zustandsänderung)
+//   Switcher → Client: STATE ns=switcher … (auf Verbindung, bei jeder Änderung)
 //
 // Der eigentliche Zustand lebt im Renderer (Engine/Output). Befehle werden per
 // IPC dorthin geschickt; der Renderer meldet seinen Zustand via pushState()
 // zurück, den wir cachen + an alle Clients broadcasten.
-import net from 'node:net';
+//
+// Implementiert als dünner Wrapper um SuiteControlServer (geteilte Server-Logik
+// für die ganze Suite). Die exportierten Funktionen bleiben unverändert, damit
+// ipc.ts und index.ts nicht angefasst werden müssen. Das gesendete STATE-Format
+// (`ns=switcher` + program/preview/…) ist rückwärtskompatibel zum alten
+// Companion-Modul (liest die Felder per Schlüssel, ignoriert ns).
 import type { BrowserWindow } from 'electron';
-import { advertise, type Advertiser } from '@jm/discovery';
+import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import {
-  createLineBuffer,
-  formatState,
   parseCommand,
+  switcherStateToSuite,
   type ControlCommand,
   type SwitcherStateMsg,
-} from '@jm/companion-protocol';
+} from '@jm/suite-control-protocol';
 
-let server: net.Server | null = null;
-const clients = new Set<net.Socket>();
+let server: SuiteControlServer | null = null;
 let targetWindow: BrowserWindow | null = null;
 let lastState: SwitcherStateMsg = {
   program: 0,
@@ -29,11 +32,6 @@ let lastState: SwitcherStateMsg = {
   streaming: false,
   scenes: 0,
 };
-let running = false;
-let boundPort = 0;
-// mDNS-Annoncierung an den Steuerserver gekoppelt: nur wenn er lauscht, ist der
-// Switcher im LAN auffindbar (Stage Display verbindet ohne IP-Eingabe). Best-effort.
-let advertiser: Advertiser | null = null;
 
 export interface ControlStatus {
   running: boolean;
@@ -46,7 +44,7 @@ export function attachControlWindow(win: BrowserWindow): void {
 }
 
 export function controlStatus(): ControlStatus {
-  return { running, port: boundPort, clients: clients.size };
+  return server?.status() ?? { running: false, port: 0, clients: 0 };
 }
 
 // Beim Beenden räumt stopControlServer() auf, während das Fenster schon zerstört
@@ -58,93 +56,32 @@ function send(channel: string, payload: unknown): void {
   if (!wc.isDestroyed()) wc.send(channel, payload);
 }
 
-function notifyStatus(): void {
-  send('control:status', controlStatus());
-}
-
 export function startControlServer(port: number): Promise<{ ok: boolean; error?: string; port?: number }> {
-  return new Promise((resolve) => {
-    stopControlServer();
-    const srv = net.createServer((socket) => {
-      clients.add(socket);
-      socket.setEncoding('utf8');
-      socket.write(formatState(lastState)); // Begrüßung mit aktuellem Zustand
-      const feed = createLineBuffer((line) => {
-        const cmd = parseCommand(line);
-        if (cmd) handleCommand(cmd, socket);
-      });
-      socket.on('data', (d) => feed(String(d)));
-      socket.on('error', () => {});
-      socket.on('close', () => {
-        clients.delete(socket);
-        notifyStatus();
-      });
-      notifyStatus();
-    });
-    srv.on('error', (e) => {
-      server = null;
-      running = false;
-      boundPort = 0;
-      notifyStatus();
-      resolve({ ok: false, error: e.message });
-    });
-    srv.listen(port, () => {
-      server = srv;
-      running = true;
-      boundPort = port;
-      try {
-        advertiser = advertise({ appId: 'jm-switcher', role: 'switcher', port });
-      } catch {
-        /* mDNS optional */
-      }
-      notifyStatus();
-      resolve({ ok: true, port });
-    });
+  stopControlServer();
+  server = new SuiteControlServer({
+    role: 'switcher',
+    appId: 'jm-switcher',
+    getState: () => switcherStateToSuite(lastState),
+    onCommand: (_cmd, ctx) => {
+      // Auf die bestehende, vom Renderer erwartete ControlCommand-Form mappen
+      // (Legacy-Parser auf der Rohzeile). STATE? beantwortet der Server selbst.
+      const legacy = parseCommand(ctx.raw);
+      if (legacy && legacy.type !== 'queryState') send('control:command', legacy as ControlCommand);
+    },
+    onStatus: () => send('control:status', controlStatus()),
   });
-}
-
-function handleCommand(cmd: ControlCommand, socket: net.Socket): void {
-  if (cmd.type === 'queryState') {
-    socket.write(formatState(lastState));
-    return;
-  }
-  send('control:command', cmd);
+  return server.start(port);
 }
 
 export function stopControlServer(): void {
-  if (advertiser) {
-    advertiser.stop();
-    advertiser = null;
-  }
-  for (const c of clients) {
-    try {
-      c.destroy();
-    } catch {
-      // egal
-    }
-  }
-  clients.clear();
   if (server) {
-    server.close();
+    server.stop();
     server = null;
-  }
-  if (running) {
-    running = false;
-    boundPort = 0;
-    notifyStatus();
   }
 }
 
 /** Renderer meldet neuen Zustand → cachen + an alle Clients broadcasten. */
 export function pushState(state: SwitcherStateMsg): void {
   lastState = state;
-  if (clients.size === 0) return;
-  const line = formatState(state);
-  for (const c of clients) {
-    try {
-      c.write(line);
-    } catch {
-      // egal
-    }
-  }
+  server?.pushState(switcherStateToSuite(state));
 }
