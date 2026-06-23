@@ -9,9 +9,9 @@
 // ('titler:remote-cmd') ins Hauptfenster gepusht; der Renderer meldet seinen
 // Zustand via IPC ('titler:report-state') zurück, den wir cachen + broadcasten.
 //
-// mDNS bewusst AUS (advertiseService:false): Auto-Discovery der Steuer-Endpunkte
-// wird gebündelt mit dem Companion-Modul (Roadmap 1.6) gelöst; bis dahin trägt
-// Companion 127.0.0.1:8726 manuell ein.
+// mDNS: als Steuer-Endpunkt annonciert (controlEndpoint:true → TXT ctl=1, Name
+// jm-titler-ctl). Das Companion-Modul findet den Steuerport so per Auto-Discovery
+// (manuelle Host:Port-Eingabe bleibt möglich).
 import type { BrowserWindow } from 'electron';
 import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
@@ -64,7 +64,7 @@ export function startControlServer(
   server = new SuiteControlServer({
     role: 'titler',
     appId: 'jm-titler',
-    advertiseService: false,
+    controlEndpoint: true,
     getState: () => toSuiteState(),
     onCommand: (cmd) => {
       if (cmd.ns !== 'titler') return;

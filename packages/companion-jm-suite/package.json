@@ -11,7 +11,8 @@
     "selftest": "node test/selftest.mjs"
   },
   "dependencies": {
-    "@companion-module/base": "~1.8.0"
+    "@companion-module/base": "~1.8.0",
+    "bonjour-service": "^1.2.1"
   },
   "devDependencies": {
     "@companion-module/tools": "~1.5.0"

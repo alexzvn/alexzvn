@@ -14,8 +14,10 @@ Erweiterung) — für Entwickler:innen und für die Betriebs-Diagnose.
 ## 1. Wie es funktioniert
 
 - **Diensttyp:** `_jmps._tcp` (Konstante `SERVICE_TYPE = 'jmps'`).
-- **TXT-Records:** jede Quelle annonciert `{ appId, role }`. Der Port steht im
-  SRV-Record des Dienstes.
+- **TXT-Records:** jede Quelle annonciert `{ appId, role }`, optional weitere
+  Felder via `txt`-Extra. Steuer-Endpunkte (suite-weites TCP-Zeilenprotokoll)
+  setzen **`ctl=1`** — siehe [§6](#6-steuer-endpunkte--ctl-marker). Der Port steht
+  im SRV-Record des Dienstes.
 - **Adresse:** der Konsument bevorzugt eine IPv4-Adresse aus dem Fund, sonst den
   Hostnamen.
 - **Paket:** [`packages/discovery`](../packages/discovery/src/index.ts)
@@ -32,9 +34,12 @@ const ad = advertise({ appId: 'jm-timer', role: 'timer', port: 7777 });
 // … beim Beenden / Abschalten:
 ad.stop();
 
+// Steuer-Endpunkt annoncieren (TXT ctl=1) — meist über SuiteControlServer
+const ctl = advertise({ appId: 'jm-timer', role: 'timer', port: 8724, txt: { ctl: '1' } });
+
 // Aggregator: andere finden
 const sub = discover((services) => {
-  // services: { appId, role, host, port, name }[]
+  // services: { appId, role, host, port, name, ctl }[]
 });
 sub.stop();
 ```
@@ -56,6 +61,14 @@ wird die Annoncierung wieder zurückgezogen.
 
 ¹ Standard-Steuerport (`DEFAULT_CONTROL_PORT`); annonciert wird der tatsächlich
 gebundene Port.
+
+**Zusätzlich** annonciert seit Welle 1.6.2 **jedes** Tool seinen suite-weiten
+**Steuer-Endpunkt** (TCP-Zeilenprotokoll, fürs Companion-Modul) — mit TXT `ctl=1`
+und Instanznamen `${appId}-ctl` (Ports 8723–8730, siehe
+[suite-control-plane.md](suite-control-plane.md)). Timer/Presenter/Prompter sind
+damit **zweifach** sichtbar (eigener Dienst **und** Steuer-Endpunkt); `ctl`
+unterscheidet sie. Der **Switcher** annonciert nur einen Dienst — sein Steuer-
+server ist zugleich sein Advert (ohne `ctl`-Marker, Bestandsschutz).
 
 **Lebenszyklus-Kopplung im Detail:**
 
@@ -82,6 +95,11 @@ Quelle ist in der Config aktiviert
   UND der entdeckte Host ist ein anderer als der konfigurierte
 → Host/Port aus dem Fund übernehmen, neu verbinden
 ```
+
+Für Timer und Presenter wählt Stage Display gezielt den **Nicht**-Steuer-Endpunkt
+(`!ctl`) — es spricht deren Socket.IO bzw. HTTP+SSE, nicht das Zeilenprotokoll.
+Der Switcher-Fund hat keinen `ctl`-Marker und wird unverändert übernommen (sein
+Advert IST der TCP-Steuerserver, den Stage Display via `SuiteControlClient` nutzt).
 
 Das bedeutet:
 
@@ -125,6 +143,13 @@ der mDNS-Port `5353` auftauchen und es darf **kein** `require('bonjour-service')
 - Typecheck/Build/Bundle aller vier Apps grün; `bonjour-service` nachweislich
   gebündelt.
 
+**Erledigt (Welle 1.6.2 — Steuer-Endpunkt-Discovery):**
+
+- `advertise({ txt })` + `DiscoveredService.ctl`; alle 8 Tools annoncieren ihren
+  Steuer-Endpunkt mit `ctl=1` (`SuiteControlServer({ controlEndpoint: true })`).
+- Companion-Modul findet die Steuer-Endpunkte automatisch (`ctl=1`); Stage Display
+  filtert für Timer/Presenter auf `!ctl`.
+
 **Noch offen / bewusst nicht gemacht:**
 
 - **Netz-Smoke-Test über zwei Rechner** steht aus (headless nicht testbar):
@@ -136,3 +161,35 @@ der mDNS-Port `5353` auftauchen und es darf **kein** `require('bonjour-service')
   Hintergrund, zeigt die Funde aber nicht in der Oberfläche an.
 - **Prompter-Konsument:** Stage Display hat kein Prompter-Widget; der Prompter
   annonciert sich, wird aber nicht ausgewertet.
+
+---
+
+## 6. Steuer-Endpunkte & `ctl`-Marker
+
+Ein Tool kann **mehrere** `_jmps._tcp`-Dienste mit derselben `role` annoncieren —
+seinen tool-eigenen (Socket.IO/SSE) und den suite-weiten **Steuer-Endpunkt**
+(TCP-Zeilenprotokoll, `@jm/suite-control-protocol`, fürs Companion-Modul). Damit
+Konsumenten den richtigen erwischen, trägt der Steuer-Endpunkt:
+
+- TXT **`ctl=1`** (`DiscoveredService.ctl === true`), und
+- einen eigenen mDNS-Instanznamen **`${appId}-ctl`** (sonst kollidierten zwei
+  gleichnamige Instanzen desselben Diensttyps im selben Prozess).
+
+**Wer wählt was:**
+
+| Konsument | Filter | Grund |
+|---|---|---|
+| Companion-Modul | `ctl=1` (oder `role==='switcher'`) | spricht das Zeilenprotokoll |
+| Stage Display — Timer/Presenter | `!ctl` | spricht Socket.IO bzw. HTTP+SSE |
+| Stage Display — Switcher | (kein Filter) | dessen einziger Advert IST der Steuerserver |
+
+**Erzeugt** wird der Marker zentral vom `SuiteControlServer`:
+`new SuiteControlServer({ controlEndpoint: true })` → `advertise({ …, name:
+'${appId}-ctl', txt: { ctl: '1' } })`. Tools rufen das statt des früheren
+`advertiseService: false` auf. Der **Switcher** nutzt `SuiteControlServer` ohne
+`controlEndpoint` (Bestandsschutz: sein historischer `role=switcher`-Advert ohne
+`ctl` bleibt byte-identisch).
+
+> **Hinweis fürs Companion-Modul:** Es liegt außerhalb der npm-workspaces und
+> spiegelt die Browse-Logik in `packages/companion-jm-suite/discovery.mjs`
+> (mit eigener `bonjour-service`-Dependency), statt `@jm/discovery` zu importieren.

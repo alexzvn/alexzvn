@@ -8,12 +8,11 @@
 //   Timer → Client:  STATE ns=timer remaining=mm:ss remaining_s=… running=0|1
 //                    overrun=0|1 warning=0|1 block_label=…
 //
-// mDNS ist hier bewusst AUS (advertiseService:false): der Timer annonciert sich
-// bereits als role=timer für seinen Socket.IO-Server (Port 7777, von Stage
-// Display konsumiert). Ein zweiter role=timer-Eintrag würde diese Auswahl
-// stören. Die Auto-Discovery des Steuer-Endpunkts wird mit dem Companion-Modul
-// (Roadmap 1.6) gebündelt gelöst; bis dahin trägt Companion Host:Port manuell
-// ein (Steuer-Port unten).
+// mDNS: als Steuer-Endpunkt annonciert (controlEndpoint:true → TXT ctl=1, Name
+// jm-timer-ctl). Der Timer hat DANEBEN einen eigenen role=timer-Advert für
+// seinen Socket.IO-Server (Port 7777, von Stage Display konsumiert). Der ctl=1-
+// Marker hält beide auseinander: Stage Display filtert auf !ctl (Socket.IO),
+// das Companion-Modul nimmt per Auto-Discovery den ctl=1-Endpunkt (dieser Port).
 import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
 import {
@@ -96,7 +95,7 @@ export function startControlServer(): Promise<{ ok: boolean; error?: string; por
   server = new SuiteControlServer({
     role: 'timer',
     appId: 'jm-timer',
-    advertiseService: false,
+    controlEndpoint: true,
     getState: () => toSuiteState(),
     onCommand: (cmd) => {
       if (cmd.ns !== 'timer') return;

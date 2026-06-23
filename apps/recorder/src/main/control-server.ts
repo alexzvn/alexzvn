@@ -11,8 +11,8 @@
 // daher gehen Befehle per IPC ('recorder:remote-cmd') an den Renderer, der seine
 // vorhandenen Store-Aktionen (record/stop/arm/disarm) aufruft.
 //
-// mDNS bewusst AUS (advertiseService:false) — Auto-Discovery der Steuer-Endpunkte
-// löst das Companion-Modul (Roadmap 1.6).
+// mDNS: als Steuer-Endpunkt annonciert (controlEndpoint:true → TXT ctl=1, Name
+// jm-recorder-ctl) → vom Companion-Modul per Auto-Discovery gefunden.
 import type { BrowserWindow } from 'electron';
 import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
@@ -75,7 +75,7 @@ export function startControlServer(
   server = new SuiteControlServer({
     role: 'recorder',
     appId: 'jm-recorder',
-    advertiseService: false,
+    controlEndpoint: true,
     getState: toSuiteState,
     onCommand: (cmd) => {
       if (cmd.ns !== 'recorder') return;

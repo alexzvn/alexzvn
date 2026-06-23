@@ -4,7 +4,7 @@
 // dass JEDE generierte Befehlszeile vom Suite-Protokoll-Parser wieder korrekt
 // (ns + verb) gelesen wird (Round-Trip Modul → Tool).
 import { CAPABILITIES, KNOWN_ROLES, parseSuiteCommand } from '../generated/protocol.mjs'
-import { buildCommandLine, matchesRole } from '../lib.mjs'
+import { buildCommandLine, matchesRole, isControlService, pickEndpoint } from '../lib.mjs'
 
 let failed = 0
 function eq(actual, expected, msg) {
@@ -37,6 +37,24 @@ eq(matchesRole('switcher', ''), true, 'switcher akzeptiert leeres ns (Legacy)')
 eq(matchesRole('switcher', 'switcher'), true, 'switcher akzeptiert ns=switcher')
 eq(matchesRole('timer', 'timer'), true, 'timer akzeptiert ns=timer')
 eq(matchesRole('timer', ''), false, 'timer lehnt leeres ns ab')
+
+// ── mDNS-Auto-Discovery: Endpunkt-Auswahl (Welle 1.6, Stufe 2) ───────────────
+// Timer/Presenter annoncieren ZWEI Dienste (eigener + ctl=1-Steuer-Endpunkt);
+// das Modul muss den Steuer-Endpunkt wählen. Switcher hat nur seinen ctl-losen
+// Alt-Advert (= Steuerserver) → gilt ebenfalls als Steuer-Endpunkt.
+const svcs = [
+  { role: 'timer', host: '10.0.0.5', port: 7777, name: 'jm-timer', ctl: false }, // Socket.IO
+  { role: 'timer', host: '10.0.0.5', port: 8724, name: 'jm-timer-ctl', ctl: true }, // Steuer
+  { role: 'switcher', host: '10.0.0.9', port: 8723, name: 'jm-switcher', ctl: false }, // Alt-Advert = Steuer
+  { role: 'presenter', host: '10.0.0.7', port: 7330, name: 'jm-presenter', ctl: false }, // nur SSE
+]
+eq(isControlService({ role: 'timer', ctl: true }), true, 'isControlService: ctl=1 → true')
+eq(isControlService({ role: 'timer', ctl: false }), false, 'isControlService: timer ohne ctl → false')
+eq(isControlService({ role: 'switcher', ctl: false }), true, 'isControlService: switcher ohne ctl → true (Alt-Advert)')
+eq(pickEndpoint('timer', svcs), { host: '10.0.0.5', port: 8724, name: 'jm-timer-ctl' }, 'pickEndpoint timer → ctl=1-Port 8724')
+eq(pickEndpoint('switcher', svcs), { host: '10.0.0.9', port: 8723, name: 'jm-switcher' }, 'pickEndpoint switcher → 8723')
+eq(pickEndpoint('presenter', svcs), null, 'pickEndpoint presenter → null (nur SSE-Advert, kein Steuer-Endpunkt)')
+eq(pickEndpoint('daw', svcs), null, 'pickEndpoint daw → null (nicht im LAN gefunden)')
 
 // ── Round-Trip: jede Action → parsebar mit korrektem ns + verb ───────────────
 let rtCount = 0

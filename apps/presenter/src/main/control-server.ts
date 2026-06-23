@@ -8,9 +8,10 @@
 //   Presenter → Client:  STATE ns=presenter slide=<n> total=<n> active=0|1
 //                        live=0|1 black=0|1 white=0|1
 //
-// mDNS bewusst AUS (advertiseService:false): Auto-Discovery der Steuer-Endpunkte
-// wird gebündelt mit dem Companion-Modul (Roadmap 1.6) gelöst; bis dahin trägt
-// Companion 127.0.0.1:8728 manuell ein.
+// mDNS: als Steuer-Endpunkt annonciert (controlEndpoint:true → TXT ctl=1, Name
+// jm-presenter-ctl). Presenter hat DANEBEN einen role=presenter-Advert für sein
+// HTTP+SSE-Remote (Port 7330, von Stage Display konsumiert); ctl=1 hält beide
+// auseinander (Stage Display filtert !ctl, Companion nimmt ctl=1).
 import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import type { SuiteState } from '@jm/suite-control-protocol';
 import { getState, goto, next, prev, setScreen, stopPresentation, subscribe } from './present';
@@ -41,7 +42,7 @@ export function startControlServer(): Promise<{ ok: boolean; error?: string; por
   server = new SuiteControlServer({
     role: 'presenter',
     appId: 'jm-presenter',
-    advertiseService: false,
+    controlEndpoint: true,
     getState: toSuiteState,
     onCommand: (cmd) => {
       if (cmd.ns !== 'presenter') return;

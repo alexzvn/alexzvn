@@ -9,8 +9,9 @@
 //
 // Die Transport-Funktionen (play/pause/reset, Tempo) leben modul-lokal in
 // index.ts; daher die Callback-Verdrahtung (getState/onCommand) statt direkter
-// Importe. mDNS bewusst AUS (advertiseService:false) — die Auto-Discovery der
-// Steuer-Endpunkte wird mit dem Companion-Modul (Roadmap 1.6) gelöst.
+// Importe. mDNS: als Steuer-Endpunkt annonciert (controlEndpoint:true → TXT ctl=1,
+// Name jm-prompter-ctl); daneben gibt es einen role=prompter-Advert für die
+// HTTP/SSE-Fernbedienung. ctl=1 hält beide auseinander (Companion nimmt ctl=1).
 import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
 
@@ -31,7 +32,7 @@ export function startControlServer(
   server = new SuiteControlServer({
     role: 'prompter',
     appId: 'jm-prompter',
-    advertiseService: false,
+    controlEndpoint: true,
     getState: handlers.getState,
     onCommand: (cmd) => {
       if (cmd.ns === 'prompter') handlers.onCommand(cmd);

@@ -9,7 +9,8 @@
 // — so bleibt das Modul standalone baubar und driftet nicht von der Suite ab.
 import { InstanceBase, runEntrypoint, InstanceStatus, TCPHelper, Regex, combineRgb } from '@companion-module/base'
 import { parseSuiteState, createLineBuffer, CAPABILITIES, KNOWN_ROLES } from './generated/protocol.mjs'
-import { buildCommandLine, toCompanionOption, matchesRole, isTruthy } from './lib.mjs'
+import { buildCommandLine, toCompanionOption, matchesRole, isTruthy, isControlService, pickEndpoint } from './lib.mjs'
+import { browseSuite } from './discovery.mjs'
 
 const rgb = (t) => combineRgb(t[0], t[1], t[2])
 
@@ -18,6 +19,7 @@ class JmSuiteInstance extends InstanceBase {
     this.config = config
     this.role = config?.role || 'switcher'
     this.state = {}
+    this.discovered = this.discovered || []
     const cap = CAPABILITIES[this.role]
     if (cap) {
       this.setActionDefinitions(this.buildActions(cap))
@@ -29,10 +31,12 @@ class JmSuiteInstance extends InstanceBase {
       this.setFeedbackDefinitions({})
       this.setVariableDefinitions([])
     }
+    this.startDiscovery()
     this.connect()
   }
 
   async destroy() {
+    this.stopDiscovery()
     this.disconnect()
   }
 
@@ -43,6 +47,11 @@ class JmSuiteInstance extends InstanceBase {
 
   getConfigFields() {
     const ports = KNOWN_ROLES.map((r) => `${CAPABILITIES[r].label}: ${CAPABILITIES[r].port}`).join(' · ')
+    // Momentaufnahme der per mDNS gefundenen Steuer-Endpunkte (Hilfe beim Setup).
+    const found = (this.discovered || []).filter(isControlService)
+    const foundText = found.length
+      ? found.map((s) => `${CAPABILITIES[s.role]?.label ?? s.role} → ${s.host}:${s.port}`).join(' · ')
+      : 'Noch nichts gefunden — Tools im selben LAN starten (mDNS/UDP 5353 offen).'
     return [
       {
         type: 'dropdown',
@@ -52,8 +61,20 @@ class JmSuiteInstance extends InstanceBase {
         default: 'switcher',
         choices: KNOWN_ROLES.map((r) => ({ id: r, label: CAPABILITIES[r].label })),
       },
-      { type: 'textinput', id: 'host', label: 'IP-Adresse', width: 6, default: '127.0.0.1', regex: Regex.IP },
-      { type: 'number', id: 'port', label: 'Port', width: 4, default: 8723, min: 1, max: 65535 },
+      {
+        type: 'dropdown',
+        id: 'mode',
+        label: 'Verbindung',
+        width: 6,
+        default: 'manual',
+        choices: [
+          { id: 'manual', label: 'Manuell (IP/Port)' },
+          { id: 'auto', label: 'Automatisch (mDNS)' },
+        ],
+      },
+      { type: 'textinput', id: 'host', label: 'IP-Adresse (manuell)', width: 6, default: '127.0.0.1', regex: Regex.IP },
+      { type: 'number', id: 'port', label: 'Port (manuell)', width: 4, default: 8723, min: 1, max: 65535 },
+      { type: 'static-text', id: 'discovered', label: 'Gefunden im LAN', width: 12, value: foundText },
       { type: 'static-text', id: 'ports', label: 'Standard-Ports', width: 12, value: ports },
     ]
   }
@@ -117,16 +138,70 @@ class JmSuiteInstance extends InstanceBase {
     return presets
   }
 
+  // ── mDNS-Auto-Discovery (Welle 1.6, Stufe 2) ────────────────────────────────
+
+  startDiscovery() {
+    this.stopDiscovery()
+    try {
+      this.browser = browseSuite((services) => {
+        this.discovered = services
+        this.onDiscovered()
+      })
+    } catch (e) {
+      // mDNS optional (z. B. headless/Firewall) — manueller Modus bleibt nutzbar.
+      this.log('warn', `mDNS-Discovery nicht verfügbar: ${String(e?.message ?? e)}`)
+    }
+  }
+
+  stopDiscovery() {
+    if (this.browser) {
+      try {
+        this.browser.stop()
+      } catch {
+        /* egal */
+      }
+      this.browser = undefined
+    }
+  }
+
+  /** Im Auto-Modus: passenden Steuer-Endpunkt wählen und (neu) verbinden. */
+  onDiscovered() {
+    if (this.config?.mode !== 'auto') return
+    const ep = pickEndpoint(this.role, this.discovered)
+    if (!ep) return
+    // Nur (neu) verbinden, wenn sich der Endpunkt geändert hat — sonst übernimmt
+    // der Auto-Reconnect von TCPHelper das Wiederverbinden bei kurzen Aussetzern.
+    if (this.socket && this.activeHost === ep.host && this.activePort === ep.port) return
+    this.connectTo(ep.host, ep.port)
+  }
+
   // ── TCP-Verbindung + STATE ──────────────────────────────────────────────────
 
   connect() {
-    this.disconnect()
+    if (this.config?.mode === 'auto') {
+      const ep = pickEndpoint(this.role, this.discovered)
+      if (!ep) {
+        this.disconnect()
+        this.updateStatus(InstanceStatus.Connecting, 'Suche Tool per mDNS …')
+        return // onDiscovered() verbindet, sobald das Tool auftaucht
+      }
+      this.connectTo(ep.host, ep.port)
+      return
+    }
+    // Manueller Modus: feste IP/Port aus der Config.
     const host = this.config?.host
     const port = Number(this.config?.port) || CAPABILITIES[this.role]?.port || 8723
     if (!host) {
       this.updateStatus(InstanceStatus.BadConfig, 'Keine IP gesetzt')
       return
     }
+    this.connectTo(host, port)
+  }
+
+  connectTo(host, port) {
+    this.disconnect()
+    this.activeHost = host
+    this.activePort = port
     this.updateStatus(InstanceStatus.Connecting)
     this.socket = new TCPHelper(host, port)
     const feed = createLineBuffer((line) => {
@@ -151,6 +226,8 @@ class JmSuiteInstance extends InstanceBase {
       this.socket.destroy()
       this.socket = undefined
     }
+    this.activeHost = undefined
+    this.activePort = undefined
   }
 
   send(line) {

@@ -31,6 +31,14 @@ export interface DiscoveredService {
   host: string;
   port: number;
   name: string;
+  /**
+   * Steuer-Endpunkt? `true`, wenn der TXT-Record `ctl=1` trägt — d. h. dieser
+   * Dienst spricht das suite-weite TCP-Zeilenprotokoll (@jm/suite-control-
+   * protocol), im Gegensatz zu einem tool-eigenen Endpunkt (Socket.IO/SSE).
+   * Aggregatoren wählen damit den richtigen von zwei Endpunkten derselben Rolle
+   * (z. B. Stage Display den Socket.IO-Timer, Companion den ctl=1-Timer).
+   */
+  ctl: boolean;
 }
 
 export interface Advertiser {
@@ -47,13 +55,18 @@ export function advertise(opts: {
   role: string;
   port: number;
   name?: string;
+  /**
+   * Zusätzliche TXT-Felder (z. B. `{ ctl: '1' }`, um einen Steuer-Endpunkt zu
+   * markieren). `appId`/`role` bleiben maßgeblich und überschreiben Extras.
+   */
+  txt?: Record<string, string>;
 }): Advertiser {
   const bonjour = new Bonjour();
   const service = bonjour.publish({
     name: opts.name ?? opts.appId,
     type: SERVICE_TYPE,
     port: opts.port,
-    txt: { appId: opts.appId, role: opts.role },
+    txt: { ...opts.txt, appId: opts.appId, role: opts.role },
   });
   return {
     stop: () => {
@@ -84,6 +97,9 @@ function toDiscovered(s: MdnsService): DiscoveredService | null {
     host,
     port: s.port,
     name: s.name,
+    // TXT-Werte können String oder (bei manchen Respondern) Buffer/true sein →
+    // tolerant auf '1' prüfen.
+    ctl: String(txt.ctl ?? '') === '1',
   };
 }
 

@@ -9,8 +9,8 @@
 // ('daw:remote-cmd') an den Renderer; der meldet seinen Zustand via
 // 'daw:report-state' zurück, den der Steuerserver cached + broadcastet.
 //
-// mDNS bewusst AUS (advertiseService:false) — Auto-Discovery der Steuer-Endpunkte
-// löst das Companion-Modul (Roadmap 1.6).
+// mDNS: als Steuer-Endpunkt annonciert (controlEndpoint:true → TXT ctl=1, Name
+// jm-daw-ctl) → vom Companion-Modul per Auto-Discovery gefunden.
 import type { BrowserWindow } from 'electron';
 import { SuiteControlServer } from '@jm/suite-control-protocol/server';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
@@ -54,7 +54,7 @@ export function startControlServer(
   server = new SuiteControlServer({
     role: 'daw',
     appId: 'jm-daw',
-    advertiseService: false,
+    controlEndpoint: true,
     getState: () => toSuiteState(),
     onCommand: (cmd) => {
       if (cmd.ns !== 'daw') return;

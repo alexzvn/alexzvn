@@ -12,21 +12,31 @@ Gesprochen wird das suite-weite TCP-Zeilenprotokoll
 ## Verwendung in Companion
 
 1. Verbindung „JM Suite" hinzufügen.
-2. **Tool (Rolle)** wählen, **IP-Adresse** des Tool-Rechners und **Port** setzen.
-   Standard-Ports: Switcher 8723, Prompter 8727, Timer 8724, Player 8725,
-   Titler 8726, Presenter 8728, Recorder 8729, DAW 8730.
+2. **Tool (Rolle)** wählen und die **Verbindung** festlegen:
+   - **Automatisch (mDNS):** das Modul findet den Steuer-Endpunkt des Tools im
+     LAN selbst und verbindet sich — Tool starten genügt (UDP 5353 offen).
+   - **Manuell (IP/Port):** **IP-Adresse** des Tool-Rechners und **Port** setzen.
+     Standard-Ports: Switcher 8723, Timer 8724, Player 8725, Titler 8726,
+     Prompter 8727, Presenter 8728, Recorder 8729, DAW 8730.
 3. Für mehrere Tools einfach mehrere „JM Suite"-Verbindungen anlegen (eine je
-   Tool).
+   Tool). Das Feld **Gefunden im LAN** zeigt die aktuell per mDNS entdeckten
+   Steuer-Endpunkte als Hilfe.
 
 Die Actions/Feedbacks/Variablen erscheinen passend zur gewählten Rolle. Presets
 liefern fertige Buttons je Tool.
+
+> **mDNS-Marker:** Steuer-Endpunkte annoncieren sich mit TXT `ctl=1` (Tools, die
+> daneben einen eigenen Socket.IO-/SSE-Dienst betreiben — Timer, Presenter,
+> Prompter — werden so eindeutig vom anderen Endpunkt unterschieden). Der
+> Switcher ist der Sonderfall ohne Marker; das Modul erkennt ihn an `role=switcher`.
 
 ## Aufbau
 
 | Datei | Inhalt |
 |---|---|
-| `main.js` | Companion-Modul (InstanceBase). Generiert Definitionen aus `CAPABILITIES`, verbindet per TCP, liest STATE → Variablen/Feedbacks. |
-| `lib.mjs` | Pure Hilfsfunktionen (Zeilenbau, Optionsfelder, Toggle-Auflösung) — ohne Companion-Runtime testbar. |
+| `main.js` | Companion-Modul (InstanceBase). Generiert Definitionen aus `CAPABILITIES`, verbindet per TCP (manuell oder mDNS-Auto), liest STATE → Variablen/Feedbacks. |
+| `lib.mjs` | Pure Hilfsfunktionen (Zeilenbau, Optionsfelder, Toggle-Auflösung, Endpunkt-Auswahl) — ohne Companion-Runtime testbar. |
+| `discovery.mjs` | mDNS-Browse (`bonjour-service`) der Suite-Steuer-Endpunkte (`_jmps._tcp`, TXT `ctl=1`). Spiegelt `@jm/discovery`, da das Modul standalone ist. |
 | `generated/protocol.mjs` | **Generiert** aus `packages/suite-control-protocol/src/{index,capabilities}.ts` — Parser + Capabilities. NICHT von Hand bearbeiten. |
 | `companion/manifest.json` | Companion-Modul-Manifest (node22, nodejs-ipc). |
 

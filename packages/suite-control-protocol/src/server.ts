@@ -36,8 +36,17 @@ export interface SuiteControlServerOptions {
   onStatus?: (status: SuiteControlStatus) => void;
   /** mDNS-Annoncierung (Default true). */
   advertiseService?: boolean;
-  /** Anzeigename für mDNS (Default appId). */
+  /** Anzeigename für mDNS (Default `${appId}-ctl` bei controlEndpoint, sonst appId). */
   name?: string;
+  /**
+   * Diesen Endpunkt als **Steuer-Endpunkt** annoncieren: TXT-Marker `ctl=1` +
+   * eigener mDNS-Instanzname (`${appId}-ctl`). Damit unterscheiden Aggregatoren
+   * ihn von einem tool-eigenen Advert derselben Rolle (Socket.IO/SSE): das
+   * Companion-Modul nimmt den `ctl=1`-Endpunkt, Stage Display den anderen.
+   * Tools mit eigenem Advert (Timer/Presenter/Prompter) brauchen den eigenen
+   * Namen, damit nicht zwei _jmps._tcp-Instanzen denselben Namen tragen.
+   */
+  controlEndpoint?: boolean;
 }
 
 function isQueryVerb(verb: string): boolean {
@@ -86,7 +95,14 @@ export class SuiteControlServer {
         this.boundPort = port;
         if (this.opts.advertiseService !== false) {
           try {
-            this.advertiser = advertise({ appId: this.opts.appId, role: this.opts.role, port, name: this.opts.name });
+            const ctl = this.opts.controlEndpoint === true;
+            this.advertiser = advertise({
+              appId: this.opts.appId,
+              role: this.opts.role,
+              port,
+              name: this.opts.name ?? (ctl ? `${this.opts.appId}-ctl` : undefined),
+              txt: ctl ? { ctl: '1' } : undefined,
+            });
           } catch {
             /* mDNS optional */
           }

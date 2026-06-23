@@ -91,8 +91,10 @@ baubar).
   Reconnects und gespeicherte Buttons).
 - **Stufe 1:** manuelle Instanz-Config (`host:port:role`) — beweist das
   generalisierte Protokoll mit minimalem Risiko.
-- **Stufe 2:** mDNS-Auto-Discovery (`bonjour-service`) — Tool starten → erscheint
-  automatisch in Companion.
+- **Stufe 2 (umgesetzt):** mDNS-Auto-Discovery (`bonjour-service`) — Verbindung
+  auf „Automatisch (mDNS)" stellen, Rolle wählen → das Modul findet den
+  Steuer-Endpunkt des Tools im LAN selbst und verbindet sich. Steuer-Endpunkte
+  tragen dazu den TXT-Marker **`ctl=1`** (siehe [Tally-Disambiguierung](#7-mdns-ctl-marker--disambiguierung)).
 - **Keine Protokoll-Duplizierung:** `scripts/sync-companion-protocol.mjs` kopiert
   die pure Schicht (`index.ts` + `capabilities.ts`) per `prebuild`-Hook in das
   Modul (DO-NOT-EDIT-Header). Eine Quelle der Wahrheit, Modul bleibt standalone.
@@ -154,23 +156,55 @@ bündelt `index.ts`+`capabilities.ts` per esbuild in `generated/protocol.mjs`
 (eingecheckt, Modul aus workspaces excludiert). Pure Logik in `lib.mjs`. Selftest
 mit Round-Trip: alle 44 Actions über 8 Tools bauen parsebare Protokollzeilen.
 
-**Als Nächstes (Welle 1.6 Stufe 2 + 1.7):**
+**Erledigt (Welle 1.6, Stufe 2 — mDNS-Auto-Discovery):** Die nachgerüsteten
+Tools annoncieren ihren Steuer-Endpunkt jetzt aktiv per mDNS — mit dem TXT-Marker
+**`ctl=1`** (`SuiteControlServer({ controlEndpoint: true })`, eigener Instanzname
+`${appId}-ctl`). Das Companion-Modul browst `_jmps._tcp`, filtert auf `ctl=1` und
+verbindet im Modus „Automatisch (mDNS)" selbsttätig mit dem zur Rolle passenden
+Tool. Stage Display wählt umgekehrt den **Nicht**-Steuer-Endpunkt (`!ctl`) für
+Timer/Presenter, deren Socket.IO-/SSE-Server es spricht. Details siehe
+[§7](#7-mdns-ctl-marker--disambiguierung). Der Switcher bleibt unverändert
+(sein einziger, ctl-loser Advert IST sein Steuerserver).
+
+**Als Nächstes (Welle 1.7):**
 
 | Schritt | Inhalt | Datei(en) |
 |---|---|---|
-| 1.6-2 | **mDNS-Auto-Discovery** im Modul — Steuer-Endpunkte mit `ctl=1`-TXT annoncieren (@jm/discovery-Erweiterung) + Stage-Display-Filter, dann Modul findet Tools automatisch | packages/discovery, apps/*/control-server.ts, apps/stage-display, packages/companion-jm-suite |
 | 1.7 | Companion-Modul paketieren/verteilen; Versions-Bumps + Manifest/Changelog | packages/companion-jm-suite, packages/suite-manifest/ |
 
 **Bewusst (noch) nicht gemacht:**
 
 - Studio-Control-**Gateway** (Option B: Companion über Studio Control mit
   Auth/Audit) — optionaler Zusatzpfad, später (Roadmap Welle 5).
-- Echte Steuerports der Tools: die Default-Ports in der Capabilities-Tabelle
-  (8723 ff.) dienen der manuellen Companion-Config; sobald das Companion-Modul
-  (1.6) mDNS-Auto-Discovery hat, liefert der Fund den realen Port. Nachgerüstete
-  Tools annoncieren ihren Steuer-Endpunkt vorerst NICHT (`advertiseService:false`),
-  damit Aggregatoren wie das Stage Display (die per `role` discovern) nicht
-  gestört werden — die Disambiguierung Steuer- vs. Socket.IO/SSE-Endpunkt löst 1.6.
+- **Stage-Display-Config-UI** zeigt die gefundenen Steuer-Endpunkte noch nicht an
+  (gehört zu Welle 2, Stage-Display-mDNS-UI) — die Auto-Verbindung funktioniert,
+  nur die Sichtbarkeit im UI fehlt.
 
 Gesamt-Roadmap: siehe den freigegebenen Plan
 (`.claude/plans/moin-analysiere-bitte-die-streamed-kite.md`).
+
+---
+
+## 7. mDNS, `ctl`-Marker & Disambiguierung
+
+Mehrere Tools annoncieren **zwei** `_jmps._tcp`-Dienste mit derselben `role`:
+ihren tool-eigenen Endpunkt (Timer → Socket.IO 7777, Presenter/Prompter →
+HTTP+SSE) **und** den suite-weiten Steuer-Endpunkt (TCP-Zeilenprotokoll). Damit
+Aggregatoren den richtigen erwischen, trägt der Steuer-Endpunkt den TXT-Marker
+**`ctl=1`** und einen eigenen Instanznamen (`${appId}-ctl`, sonst kollidierten
+zwei gleichnamige mDNS-Instanzen im selben Prozess).
+
+| Konsument | Wählt | Warum |
+|---|---|---|
+| **Companion-Modul** | `ctl=1` (bzw. Switcher ohne Marker) | spricht das TCP-Zeilenprotokoll |
+| **Stage Display** (Timer/Presenter) | `!ctl` | spricht Socket.IO bzw. HTTP+SSE |
+| **Stage Display** (Switcher) | der eine Switcher-Advert | dessen Steuerserver IST der Endpunkt |
+
+- `@jm/discovery`: `advertise({ …, txt })` nimmt Zusatz-TXT entgegen,
+  `DiscoveredService.ctl` liest `ctl=1` aus.
+- `SuiteControlServer`: `controlEndpoint: true` setzt `txt: { ctl: '1' }` + den
+  `-ctl`-Namen. Tools rufen das statt des früheren `advertiseService: false` auf.
+- Der **Switcher** ist der Sonderfall (Bestandsschutz): sein historischer Advert
+  `role=switcher` **ohne** `ctl` ist zugleich sein Steuerserver. Companion und
+  Stage Display behandeln `role==='switcher'` daher als Steuer-Endpunkt, ohne
+  `ctl` zu verlangen — der Switcher-Pfad bleibt byte-identisch zur Vor-1.6-Welt.

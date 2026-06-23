@@ -55,3 +55,29 @@ export function matchesRole(role, ns) {
 export function isTruthy(v) {
   return v === '1' || v === 'an' || v === 'true';
 }
+
+/**
+ * Ist dieser per mDNS entdeckte Dienst ein Suite-Steuer-Endpunkt (spricht das
+ * TCP-Zeilenprotokoll)? Steuer-Endpunkte tragen TXT `ctl=1`. Der Switcher ist
+ * der Sonderfall: sein einziger (Alt-)Advert IST der Steuerserver und trägt
+ * rückwärtskompatibel KEIN `ctl` — daher `role==='switcher'` ebenfalls gelten
+ * lassen. (Spiegelbild zu Stage Display, das für seine Rollen `!ctl` filtert.)
+ */
+export function isControlService(svc) {
+  return !!svc && (svc.ctl === true || svc.role === 'switcher');
+}
+
+/**
+ * Aus einer Liste entdeckter Dienste den Steuer-Endpunkt für eine Rolle wählen
+ * → `{ host, port, name }` oder `null`. Bevorzugt einen echten `ctl=1`-Treffer
+ * (eindeutiger Steuer-Endpunkt); fällt sonst (Switcher) auf den ctl-losen Advert
+ * zurück.
+ *
+ * @param {string} role
+ * @param {Array<{role:string,host:string,port:number,name?:string,ctl?:boolean}>} services
+ */
+export function pickEndpoint(role, services) {
+  const candidates = (services || []).filter((s) => s.role === role && isControlService(s));
+  const best = candidates.find((s) => s.ctl === true) || candidates[0];
+  return best ? { host: best.host, port: best.port, name: best.name } : null;
+}

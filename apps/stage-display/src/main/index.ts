@@ -91,11 +91,19 @@ function onDiscovered(services: DiscoveredService[]): void {
   const cfg = getConfig();
   const patch: PartialStageConfig = {};
 
-  const timer = services.find((s) => s.role === 'timer');
+  // Timer/Presenter annoncieren seit dem Companion-Modul (Welle 1.6.2) ZWEI
+  // _jmps._tcp-Dienste: ihren eigenen (Socket.IO/SSE, den Stage Display spricht)
+  // und einen Steuer-Endpunkt mit TXT ctl=1 (TCP-Zeilenprotokoll fürs Companion-
+  // Modul). Hier den NICHT-Steuer-Endpunkt wählen (!ctl), sonst verbände sich der
+  // Socket.IO-/SSE-Client mit dem falschen Port.
+  const timer = services.find((s) => s.role === 'timer' && !s.ctl);
   if (timer && cfg.timer.enabled && !lastTimer.connected && cfg.timer.host !== timer.host) {
     patch.timer = { host: timer.host, port: timer.port };
   }
 
+  // Switcher hat KEINEN ctl=1-Marker: sein einziger Advert IST der TCP-Steuer-
+  // server, mit dem sich Stage Display (via SuiteControlClient) verbindet — also
+  // hier bewusst NICHT auf !ctl filtern.
   const switcher = services.find((s) => s.role === 'switcher');
   if (
     switcher &&
@@ -106,7 +114,7 @@ function onDiscovered(services: DiscoveredService[]): void {
     patch.switcher = { host: switcher.host, port: switcher.port };
   }
 
-  const presenter = services.find((s) => s.role === 'presenter');
+  const presenter = services.find((s) => s.role === 'presenter' && !s.ctl);
   if (
     presenter &&
     cfg.presenter.enabled &&
