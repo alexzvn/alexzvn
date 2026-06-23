@@ -103,3 +103,58 @@ jobs:
           fi
           echo "Lade hoch: ${files[*]}"
           gh release upload "$tag" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  # latestVersion in suite.json automatisch nachziehen, sobald der CI-Build
+  # erfolgreich released wurde — ersetzt das manuelle Pflegen der Katalog-Version.
+  # Läuft nur bei vollständigem Erfolg der Matrix (kein Bump bei Teilausfall).
+  # Native Tools (ndi-screen-capture/switcher/recorder/titler/transcribe) bauen
+  # lokal und sind oben per `if` ausgenommen → deren Version bumpt man lokal mit
+  #   node scripts/bump-manifest.mjs <app> <version>
+  bump-manifest:
+    name: Bump suite.json
+    needs: release
+    if: ${{ needs.release.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Serialisiert gleichzeitige Bumps (mehrere Tags) auf denselben Branch.
+    concurrency:
+      group: manifest-bump
+      cancel-in-progress: false
+    steps:
+      - name: Resolve app + version + manifest branch
+        id: meta
+        shell: bash
+        env:
+          # Branch, aus dem der Proxy den Live-Katalog liest (wrangler.toml
+          # MANIFEST_REF). Als Repo-Variable MANIFEST_BRANCH setzen und mit
+          # MANIFEST_REF synchron halten; sonst Default-Branch.
+          MANIFEST_BRANCH: ${{ vars.MANIFEST_BRANCH }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          echo "app=${tag%-v*}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag##*-v}" >> "$GITHUB_OUTPUT"
+          echo "branch=${MANIFEST_BRANCH:-$DEFAULT_BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.meta.outputs.branch }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Bump latestVersion
+        id: bump
+        run: node scripts/bump-manifest.mjs "${{ steps.meta.outputs.app }}" "${{ steps.meta.outputs.version }}"
+
+      - name: Commit + push
+        if: ${{ steps.bump.outputs.changed == '1' }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/suite-manifest/suite.json
+          git commit -m "chore(manifest): ${{ steps.meta.outputs.app }} latestVersion → ${{ steps.meta.outputs.version }} [skip ci]"
+          git push origin "HEAD:${{ steps.meta.outputs.branch }}"
