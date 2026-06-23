@@ -1,0 +1,10 @@
+{
+  "name": "@jm/show",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gemeinsames Show-/Event-Format (.jmshow) der JM Production Suite — bündelt pro Tool Dokument-Referenzen, Netzwerk-Bindings und Einstellungen für die koordinierte Orchestrierung.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

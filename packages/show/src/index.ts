@@ -1,0 +1,115 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// @jm/show — gemeinsames Show-/Event-Format der JM Production Suite.
+//
+// Eine .jmshow-Datei bündelt eine ganze Produktion: pro beteiligtem Tool eine
+// Referenz auf dessen Dokument (z. B. .jmdaw, .jmpres), das Netzwerk-Binding der
+// Quelle (für Aggregatoren wie Stage Display) und freie tool-spezifische
+// Einstellungen. Der Launcher öffnet eine Show und startet die Tools koordiniert
+// (jmps://open?show=<pfad>); jedes Tool lädt daraus seinen eigenen Teil.
+//
+// Bewusst OHNE Abhängigkeiten und OHNE I/O — nur reine Daten + Funktionen, damit
+// das Paket in Main- wie Renderer-Prozessen jedes Tools nutzbar ist.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const SHOW_FILE_EXT = '.jmshow';
+export const SHOW_SCHEMA_VERSION = 1;
+export const SHOW_PROTOCOL = 'jmps';
+
+export interface ShowNetworkBinding {
+  host?: string;
+  port?: number;
+}
+
+export interface ShowToolRef {
+  /** Tool-ID — entspricht ToolManifest.id bzw. der app-runtime appId (z. B. "jm-timer"). */
+  appId: string;
+  /** Optionaler Pfad zu einem tool-eigenen Dokument (z. B. .jmdaw, .jmpres). */
+  document?: string;
+  /** Netzwerk-Binding der Quelle (für Aggregatoren wie Stage Display). */
+  network?: ShowNetworkBinding;
+  /** Frei interpretierbare, tool-spezifische Einstellungen. */
+  settings?: Record<string, unknown>;
+}
+
+export interface Show {
+  schemaVersion: number;
+  /** Anzeigename der Produktion. */
+  name: string;
+  /** Letzte Änderung (ISO-8601), vom Schreiber gesetzt. */
+  updatedAt?: string;
+  /** Beteiligte Tools und ihre Show-spezifischen Referenzen. */
+  tools: ShowToolRef[];
+}
+
+/** Leere Show mit aktuellem Schema. */
+export function createShow(name: string): Show {
+  return { schemaVersion: SHOW_SCHEMA_VERSION, name, tools: [] };
+}
+
+function normalizeToolRef(value: unknown): ShowToolRef | null {
+  if (!value || typeof value !== 'object') return null;
+  const o = value as Record<string, unknown>;
+  if (typeof o.appId !== 'string' || !o.appId) return null;
+
+  const ref: ShowToolRef = { appId: o.appId };
+  if (typeof o.document === 'string') ref.document = o.document;
+  if (o.network && typeof o.network === 'object') {
+    const n = o.network as Record<string, unknown>;
+    const network: ShowNetworkBinding = {};
+    if (typeof n.host === 'string') network.host = n.host;
+    if (typeof n.port === 'number') network.port = n.port;
+    if (network.host !== undefined || network.port !== undefined) ref.network = network;
+  }
+  if (o.settings && typeof o.settings === 'object') {
+    ref.settings = o.settings as Record<string, unknown>;
+  }
+  return ref;
+}
+
+/**
+ * Hebt ein (möglicherweise altes/fremdes) Objekt auf das aktuelle Show-Schema.
+ * Tolerant gegenüber fehlenden/ungültigen Feldern — spiegelt das Migrations-
+ * Muster von migrateProject in der DAW.
+ */
+export function migrateShow(raw: unknown): Show {
+  const obj = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const tools = Array.isArray(obj.tools)
+    ? (obj.tools as unknown[]).map(normalizeToolRef).filter((t): t is ShowToolRef => t !== null)
+    : [];
+  const name =
+    typeof obj.name === 'string' && obj.name.trim() ? (obj.name as string) : 'Unbenannte Show';
+  return {
+    schemaVersion: SHOW_SCHEMA_VERSION,
+    name,
+    updatedAt: typeof obj.updatedAt === 'string' ? (obj.updatedAt as string) : undefined,
+    tools,
+  };
+}
+
+/** Parst .jmshow-Dateiinhalt und migriert auf das aktuelle Schema. */
+export function parseShow(text: string): Show {
+  return migrateShow(JSON.parse(text));
+}
+
+/** Serialisiert eine Show als formatiertes JSON. `at` setzt updatedAt (ISO). */
+export function serializeShow(show: Show, at?: string): string {
+  const migrated = migrateShow(show);
+  const out: Show = { ...migrated, updatedAt: at ?? migrated.updatedAt };
+  return JSON.stringify(out, null, 2) + '\n';
+}
+
+/** Baut den Deep-Link, der eine Show öffnet: jmps://open?show=<encoded path>. */
+export function showOpenUrl(showPath: string): string {
+  return `${SHOW_PROTOCOL}://open?show=${encodeURIComponent(showPath)}`;
+}
+
+/** Liest den Show-Pfad aus einem jmps://open?show=… Deep-Link (oder null). */
+export function parseShowDeepLink(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.protocol.replace(/:$/, '') !== SHOW_PROTOCOL) return null;
+    return u.searchParams.get('show') || null;
+  } catch {
+    return null;
+  }
+}
