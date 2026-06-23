@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-22T12:00:00.000Z",
+  "updatedAt": "2026-06-23T17:14:54.771Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -338,7 +338,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.daw",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.6.0",
+      "latestVersion": "0.7.0",
       "platforms": {
         "mac": {
           "artifact": "JM DAW-${version}-mac-${arch}.dmg",
