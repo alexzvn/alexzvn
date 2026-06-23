@@ -6,8 +6,10 @@ import { resolve } from 'node:path';
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/ndi ist nativ → bleibt externalisiert (Laufzeit-require), wird NICHT
-// gebündelt. @jm/app-runtime als Source-Workspace-Paket inline bündeln.
-const internalPackages: string[] = ['@jm/app-runtime'];
+// gebündelt. @jm/app-runtime + @jm/suite-control-protocol (TCP-Fernsteuerung)
+// als Source-Workspace-Pakete inline bündeln; dessen Transitiv-Deps
+// (@jm/discovery + bonjour-service) werden automatisch mitgebündelt.
+const internalPackages: string[] = ['@jm/app-runtime', '@jm/suite-control-protocol'];
 
 export default defineConfig({
   main: {

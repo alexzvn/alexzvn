@@ -1,9 +1,10 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
 import { initAppRuntime } from '@jm/app-runtime';
-import type { PartialTitlerConfig, TitlerState, TitlerStatus } from '@shared/types';
+import type { PartialTitlerConfig, TitlerRemoteState, TitlerState, TitlerStatus } from '@shared/types';
 import { getConfig, patchConfig } from './config';
 import { startSender, stopSender, senderActive } from './ndi/sender-process';
+import { startControlServer, stopControlServer, updateTitlerState } from './control-server';
 
 declare const __dirname: string;
 
@@ -97,6 +98,8 @@ function registerIpc(): void {
     status.ndiActive = senderActive();
     return status;
   });
+  // TCP-Fernsteuerung: Renderer meldet seinen Live-Zustand → Steuerserver.
+  ipcMain.handle('titler:report-state', (_e, st: TitlerRemoteState) => updateTitlerState(st));
 }
 
 // Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
@@ -119,9 +122,15 @@ if (!gotLock) {
   app.whenReady().then(() => {
     registerIpc();
     createMainWindow();
+    // TCP-Steuerserver (suite-weites Protokoll) für Companion u. a. — Befehle
+    // gehen per IPC an den Renderer, der seinen Zustand zurückmeldet.
+    void startControlServer(() => mainWindow);
   });
 
-  app.on('before-quit', () => stopSender());
+  app.on('before-quit', () => {
+    stopSender();
+    stopControlServer();
+  });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

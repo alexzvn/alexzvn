@@ -187,20 +187,37 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
     label: 'JM Titler',
     port: 8726,
     actions: [
-      { id: 'take', label: 'Bauchbinde einblenden (Take)', verb: 'take', args: [{ id: 'n', label: 'Bauchbinde (Nr.)', type: 'number', default: 1, min: 1, max: 99 }] },
-      { id: 'clear', label: 'Ausblenden (Clear)', verb: 'clear' },
-      { id: 'next', label: 'Nächste', verb: 'next' },
-      { id: 'prev', label: 'Vorherige', verb: 'prev' },
-      { id: 'toggle', label: 'Umschalten On-Air', verb: 'toggle', args: [modeArg], toggleKey: 'on_air' },
+      { id: 'take', label: 'Take (On Air)', verb: 'take' },
+      { id: 'clear', label: 'Clear (ausblenden)', verb: 'clear' },
+      { id: 'toggle', label: 'On Air umschalten', verb: 'toggle' },
+      {
+        id: 'template',
+        label: 'Vorlage wählen',
+        verb: 'template',
+        args: [
+          {
+            id: 'kind',
+            label: 'Vorlage',
+            type: 'dropdown',
+            default: 'lowerthird',
+            choices: [
+              { id: 'lowerthird', label: 'Bauchbinde' },
+              { id: 'banner', label: 'Banner' },
+              { id: 'ticker', label: 'Ticker' },
+            ],
+          },
+        ],
+      },
     ],
     variables: [
-      { id: 'active', label: 'Aktive Bauchbinde (Nr.)' },
-      { id: 'active_label', label: 'Aktive Bauchbinde (Text)' },
-      { id: 'on_air', label: 'On-Air (1/0)' },
+      { id: 'on_air', label: 'On Air (1/0)' },
+      { id: 'template', label: 'Vorlage' },
+      { id: 'ndi', label: 'NDI aktiv (1/0)' },
+      { id: 'connections', label: 'NDI-Empfänger' },
     ],
     feedbacks: [
-      { id: 'on_air', label: 'Bauchbinde On-Air', stateKey: 'on_air', match: 'truthy', bgcolor: RED, color: WHITE },
-      { id: 'active', label: 'Bauchbinde ist aktiv', stateKey: 'active', match: 'equalsArg', arg: { id: 'n', label: 'Bauchbinde (Nr.)', type: 'number', default: 1, min: 1, max: 99 }, bgcolor: RED, color: WHITE },
+      { id: 'on_air', label: 'CG ist On Air', stateKey: 'on_air', match: 'truthy', bgcolor: RED, color: WHITE },
+      { id: 'ndi', label: 'NDI läuft', stateKey: 'ndi', match: 'truthy', bgcolor: GREEN, color: WHITE },
     ],
   },
 
