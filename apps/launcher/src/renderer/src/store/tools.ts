@@ -5,11 +5,13 @@ import type {
   FeedbackInput,
   InstallProgress,
   LauncherUpdate,
+  PresenceRecord,
   SuiteSettingsInput,
   SuiteSettingsView,
   ToolManifest,
   ToolState,
 } from '@shared/types';
+import type { Show } from '@jm/show';
 
 function byId(states: ToolState[]): Record<string, ToolState> {
   return Object.fromEntries(states.map((s) => [s.id, s]));
@@ -26,13 +28,25 @@ interface ToolsStore {
   notice: string | null;
   version: string | null;
   launcherUpdate: LauncherUpdate | null;
+  updatingAll: boolean;
+  presence: PresenceRecord[];
+  systemOpen: boolean;
+  showEditorOpen: boolean;
   load: () => Promise<void>;
+  loadPresence: () => Promise<void>;
+  openShow: () => Promise<void>;
+  openShowEditor: () => void;
+  closeShowEditor: () => void;
+  saveShow: (show: Show) => Promise<boolean>;
+  openSystem: () => void;
+  closeSystem: () => void;
   checkUpdates: () => Promise<void>;
   loadLauncherUpdate: () => Promise<void>;
   updateLauncher: () => Promise<void>;
   open: (id: string) => Promise<void>;
   install: (id: string) => Promise<void>;
   update: (id: string) => Promise<void>;
+  updateAll: () => Promise<void>;
   uninstall: (id: string) => Promise<void>;
   setNotice: (notice: string | null) => void;
   openSettings: () => void;
@@ -95,6 +109,10 @@ export const useTools = create<ToolsStore>((set) => {
     notice: null,
     version: null,
     launcherUpdate: null,
+    updatingAll: false,
+    presence: [],
+    systemOpen: false,
+    showEditorOpen: false,
     patchNotes: null,
 
     load: async () => {
@@ -102,6 +120,10 @@ export const useTools = create<ToolsStore>((set) => {
         progressSubscribed = true;
         window.jmps.onProgress((p) => {
           set((s) => ({ progress: { ...s.progress, [p.id]: p } }));
+          // Abschluss (auch verzögert, nachdem ein interaktiver Installer durch
+          // ist) → Zustände nachladen, damit die Tool-Karte auf „installiert"
+          // umschlägt, ohne dass der User das Fenster neu fokussieren muss.
+          if (p.phase === 'done') void useTools.getState().checkUpdates();
         });
         window.jmps.onAppEvent(async (e) => {
           if (e.type === 'notice') {
@@ -115,6 +137,9 @@ export const useTools = create<ToolsStore>((set) => {
           } else if (e.type === 'changelog-changed') {
             // Live aktualisierte App-Patchnotes übernehmen (Issue #19).
             await useChangelog.getState().load();
+          } else if (e.type === 'presence-changed') {
+            // Ein Tool ist gestartet/gestoppt → Health-Dashboard auffrischen.
+            await useTools.getState().loadPresence();
           }
         });
         // Nach Rückkehr zum Launcher (z. B. wenn der NSIS-Installer durch ist
@@ -123,7 +148,15 @@ export const useTools = create<ToolsStore>((set) => {
         window.addEventListener('focus', () => {
           void useTools.getState().checkUpdates();
           void useTools.getState().loadLauncherUpdate();
+          void useTools.getState().loadPresence();
         });
+        // Hintergrund: regelmäßig auf Updates prüfen, auch ohne Fokuswechsel —
+        // so aktualisiert ein länger offener Launcher seine Update-Badges selbst.
+        // (Die Versionsabfrage ist serverseitig 5 min gecacht; 30 min reicht.)
+        setInterval(() => {
+          void useTools.getState().checkUpdates();
+          void useTools.getState().loadLauncherUpdate();
+        }, 30 * 60 * 1000);
       }
       const [tools, states, settings, version] = await Promise.all([
         window.jmps.listTools(),
@@ -141,7 +174,37 @@ export const useTools = create<ToolsStore>((set) => {
       // Zustände sofort rendern, die (langsameren, online) Prüfungen danach.
       void useTools.getState().checkUpdates();
       void useTools.getState().loadLauncherUpdate();
+      void useTools.getState().loadPresence();
     },
+
+    loadPresence: async () => {
+      try {
+        set({ presence: await window.jmps.getPresence() });
+      } catch {
+        // Hub nicht erreichbar → bestehenden Stand behalten
+      }
+    },
+
+    openShow: async () => {
+      const res = await window.jmps.openShow();
+      if (res.message) set({ notice: res.message });
+      // Nach dem koordinierten Start meldet sich Presence neu → Dashboard frisch.
+      void useTools.getState().loadPresence();
+    },
+
+    openShowEditor: () => set({ showEditorOpen: true }),
+    closeShowEditor: () => set({ showEditorOpen: false }),
+    saveShow: async (show) => {
+      const res = await window.jmps.saveShow(show);
+      if (res.message) set({ notice: res.message });
+      return res.ok;
+    },
+
+    openSystem: () => {
+      set({ systemOpen: true });
+      void useTools.getState().loadPresence();
+    },
+    closeSystem: () => set({ systemOpen: false }),
 
     checkUpdates: async () => {
       try {
@@ -165,6 +228,22 @@ export const useTools = create<ToolsStore>((set) => {
     open: (id) => run(id, () => window.jmps.open(id)),
     install: (id) => run(id, () => window.jmps.install(id), true),
     update: (id) => run(id, () => window.jmps.update(id), true),
+    updateAll: async () => {
+      // Schnappschuss der aktuell aktualisierbaren Tools nehmen (die Liste
+      // ändert sich, während die Updates durchlaufen) und sequentiell updaten —
+      // nicht parallel, sonst starten mehrere Installer gleichzeitig.
+      const { states, update } = useTools.getState();
+      const ids = Object.values(states)
+        .filter((s) => s.status === 'update-available')
+        .map((s) => s.id);
+      if (ids.length === 0) return;
+      set({ updatingAll: true });
+      try {
+        for (const id of ids) await update(id);
+      } finally {
+        set({ updatingAll: false });
+      }
+    },
     uninstall: (id) => run(id, () => window.jmps.uninstall(id), true),
     setNotice: (notice) => set({ notice }),
 

@@ -1,14 +1,40 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { createMainWindow, getMainWindow, resourcePath, setupSingleInstance } from '@jm/electron-kit';
+import { initAppRuntime } from '@jm/app-runtime';
+import { parseShowDeepLink } from '@jm/show';
 import type { AppEvent } from '@shared/types';
 import { registerIpc } from './ipc';
 import { initManifest, refreshManifest } from './manifest';
 import { initChangelog, refreshChangelog } from './changelog';
+import { startPresenceHub } from './presence';
+import { openShow } from './show';
 
 declare const __dirname: string;
 
 const preloadPath = join(__dirname, '../preload/index.mjs');
+
+// Geteilter Runtime-Layer. Der Launcher ist der Hub: er besitzt das
+// jmps://-Protokoll (registerProtocol) und sendet selbst keinen Heartbeat.
+const runtime = initAppRuntime({
+  appId: 'jm-launcher',
+  appName: 'JM Production Suite',
+  registerProtocol: true,
+  presence: false,
+  onDeepLink: (url) => handleDeepLink(url),
+});
+
+// jmps://open?show=<pfad> → Show öffnen und ihre Tools koordiniert starten.
+function handleDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) {
+    runtime.log.info(`deep-link (ohne Show) empfangen: ${url}`);
+    return;
+  }
+  void openShow(showPath).then((res) => {
+    if (res.message) emitAppEvent({ type: 'notice', message: res.message });
+  });
+}
 
 function emitAppEvent(event: AppEvent): void {
   getMainWindow()?.webContents.send('app:event', event);
@@ -28,6 +54,9 @@ if (setupSingleInstance(() => createWindow())) {
   app.whenReady().then(() => {
     initManifest(); // lokalen Manifest-Cache laden, bevor das Fenster Tools abfragt
     initChangelog(); // dito für die App-Patchnotes
+    // Presence-Hub: empfängt die Heartbeats der Tools und meldet Änderungen an
+    // die UI (Health-Dashboard). Best-effort — fällt der Port aus, läuft alles weiter.
+    startPresenceHub(() => emitAppEvent({ type: 'presence-changed' }));
     registerIpc();
     createWindow();
 

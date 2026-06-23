@@ -1,4 +1,5 @@
 import type { AppChangelog, ToolManifest, ToolState } from '@jm/suite-manifest';
+import type { Show } from '@jm/show';
 
 export type {
   ToolManifest,
@@ -59,13 +60,33 @@ export interface FeedbackInput {
   type: 'bug' | 'feature';
   title: string;
   description: string;
+  /** Aktuelle Logs (Launcher + gemeldete Tools) dem Issue beilegen. */
+  includeLogs?: boolean;
+}
+
+/** Laufzeit-Zustand eines Tools, gemeldet per Heartbeat an den Presence-Hub. */
+export interface PresenceRecord {
+  /** Stabile Tool-ID (entspricht ToolManifest.id, z. B. "jm-timer"). */
+  appId: string;
+  name: string;
+  version: string;
+  pid: number;
+  /** Port eines tooleigenen Servers (z. B. Timer 7777), falls vorhanden. */
+  servicePort?: number;
+  /** Läuft das Tool gerade (frischer Heartbeat, kein "bye")? */
+  running: boolean;
+  /** Zeitpunkt des letzten Heartbeats (epoch ms). */
+  lastSeen: number;
+  /** Zuletzt aufgezeichneter Absturz (aus einem früheren Lauf), falls vorhanden. */
+  lastCrash?: { kind: string; at: string } | null;
 }
 
 /** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */
 export type AppEvent =
   | { type: 'notice'; message: string }
   | { type: 'manifest-changed' }
-  | { type: 'changelog-changed' };
+  | { type: 'changelog-changed' }
+  | { type: 'presence-changed' };
 
 /** Die unter `window.jmps` bereitgestellte Launcher-API. */
 export interface JmpsApi {
@@ -77,7 +98,15 @@ export interface JmpsApi {
   getChangelog: () => Promise<AppChangelog[]>;
   getState: () => Promise<ToolState[]>;
   checkUpdates: () => Promise<ToolState[]>;
+  /** Laufzeit-Zustand aller Tools, die einen Heartbeat senden. */
+  getPresence: () => Promise<PresenceRecord[]>;
   open: (id: string) => Promise<ActionResult>;
+  /** Show-Datei (.jmshow) wählen und ihre Tools koordiniert starten. */
+  openShow: () => Promise<ActionResult>;
+  /** Zusammengestellte Show als .jmshow speichern (Save-Dialog). */
+  saveShow: (show: Show) => Promise<ActionResult>;
+  /** Datei-Dialog für ein Tool-Dokument (z. B. .jmpres) — liefert den Pfad. */
+  pickShowDocument: () => Promise<string | null>;
   install: (id: string) => Promise<ActionResult>;
   update: (id: string) => Promise<ActionResult>;
   uninstall: (id: string) => Promise<ActionResult>;

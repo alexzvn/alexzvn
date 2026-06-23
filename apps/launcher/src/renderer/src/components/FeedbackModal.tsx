@@ -11,6 +11,7 @@ export function FeedbackModal() {
   const [type, setType] = useState<FeedbackInput['type']>('bug');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [includeLogs, setIncludeLogs] = useState(true);
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
@@ -20,11 +21,12 @@ export function FeedbackModal() {
   const onSend = async (): Promise<void> => {
     setBusy(true);
     try {
-      const res = await submit({ type, title, description });
+      const res = await submit({ type, title, description, includeLogs });
       if (res.ok) {
         setTitle('');
         setDescription('');
         setType('bug');
+        setIncludeLogs(true);
       }
     } finally {
       setBusy(false);
@@ -81,6 +83,18 @@ export function FeedbackModal() {
                 'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--ring)]',
               )}
             />
+          </label>
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeLogs}
+              onChange={(e) => setIncludeLogs(e.target.checked)}
+              className="size-4 accent-[var(--primary)]"
+            />
+            <span className="text-xs text-[var(--muted-foreground)]">
+              Aktuelle Logs anhängen (Launcher + zuletzt genutzte Tools) — hilft bei Fehlerberichten
+            </span>
           </label>
         </div>
 

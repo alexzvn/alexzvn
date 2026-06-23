@@ -5,7 +5,12 @@ import { resolve } from 'node:path';
 
 // Workspace-Pakete als Quelle bündeln (nicht externalisieren), damit ihr TS
 // im Main-/Preload-Output landet statt zur Laufzeit `require`d zu werden.
-const internalPackages = ['@jm/electron-kit', '@jm/suite-manifest'];
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/electron-kit',
+  '@jm/show',
+  '@jm/suite-manifest',
+];
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 

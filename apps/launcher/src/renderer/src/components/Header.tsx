@@ -7,6 +7,10 @@ export function Header() {
   const openSettings = useTools((s) => s.openSettings);
   const openFeedback = useTools((s) => s.openFeedback);
   const openPatchNotes = useTools((s) => s.openPatchNotes);
+  const openShow = useTools((s) => s.openShow);
+  const openShowEditor = useTools((s) => s.openShowEditor);
+  const openSystem = useTools((s) => s.openSystem);
+  const runningCount = useTools((s) => s.presence.filter((p) => p.running).length);
   const version = useTools((s) => s.version);
 
   useEffect(() => {
@@ -57,6 +61,70 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2" style={noDragRegion}>
+        <button
+          type="button"
+          onClick={openShowEditor}
+          aria-label="Show anlegen"
+          title="Show anlegen · Tools auswählen und als .jmshow speichern"
+          className={cn(
+            'grid place-items-center size-8 rounded-[var(--radius)]',
+            'border border-[var(--border)] text-[var(--foreground)]',
+            'hover:bg-[var(--highlight)] transition-colors',
+          )}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <path d="M12 18v-6M9 15h6" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => void openShow()}
+          aria-label="Show öffnen"
+          title="Show öffnen · Tools koordiniert starten"
+          className={cn(
+            'grid place-items-center size-8 rounded-[var(--radius)]',
+            'border border-[var(--border)] text-[var(--foreground)]',
+            'hover:bg-[var(--highlight)] transition-colors',
+          )}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="2" y="2" width="20" height="20" rx="2.18" />
+            <line x1="7" y1="2" x2="7" y2="22" />
+            <line x1="17" y1="2" x2="17" y2="22" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <line x1="2" y1="7" x2="7" y2="7" />
+            <line x1="2" y1="17" x2="7" y2="17" />
+            <line x1="17" y1="17" x2="22" y2="17" />
+            <line x1="17" y1="7" x2="22" y2="7" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={openSystem}
+          aria-label="System-Zustand"
+          title="System-Zustand · laufende Tools"
+          className={cn(
+            'relative grid place-items-center size-8 rounded-[var(--radius)]',
+            'border border-[var(--border)] text-[var(--foreground)]',
+            'hover:bg-[var(--highlight)] transition-colors',
+          )}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+          {runningCount > 0 && (
+            <span
+              aria-hidden
+              className="absolute -top-1 -right-1 grid place-items-center min-w-4 h-4 px-1
+                         rounded-[var(--radius-full)] bg-[var(--success)] text-[9px] font-bold
+                         leading-none text-black tabular-nums"
+            >
+              {runningCount}
+            </span>
+          )}
+        </button>
         <button
           type="button"
           onClick={() => openPatchNotes()}

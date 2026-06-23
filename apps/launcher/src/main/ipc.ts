@@ -2,11 +2,14 @@ import { app, ipcMain, shell } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import type { ActionResult, FeedbackInput, InstallProgress, SuiteSettingsInput } from '@shared/types';
 import type { ToolManifest } from '@jm/suite-manifest';
+import type { Show } from '@jm/show';
 import { getTool, getTools } from './manifest';
 import { getChangelog } from './changelog';
 import { getAllStates } from './install-state';
+import { getPresence } from './presence';
 import { checkToolUpdates, checkLauncherUpdate } from './updates';
 import { openTool } from './launch';
+import { openShowDialog, saveShow, pickShowDocument } from './show';
 import { installTool, updateLauncher } from './installer';
 import { uninstallTool } from './uninstall';
 import { getSettingsView, setSettings } from './settings';
@@ -29,10 +32,18 @@ export function registerIpc(): void {
   // App-Patchnotes (live geladen, sonst gebündelter Fallback) — Issue #19.
   ipcMain.handle('changelog:get', () => getChangelog());
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
+  // Laufzeit-Zustand (welche Tools laufen gerade) für das Health-Dashboard.
+  ipcMain.handle('presence:get', () => getPresence());
   // Live-Update-Prüfung gegen die Releases (online, sonst unveränderte Zustände).
   ipcMain.handle('suite:check-updates', () => checkToolUpdates(getTools()));
 
   ipcMain.handle('tool:open', (_e, id: string) => withTool(id, openTool));
+
+  // Show öffnen (Datei-Dialog) und die referenzierten Tools koordiniert starten.
+  ipcMain.handle('show:open', () => openShowDialog());
+  // Show anlegen/bearbeiten: speichern + Dokument-Auswahl für die Authoring-UI.
+  ipcMain.handle('show:save', (_e, show: Show) => saveShow(show));
+  ipcMain.handle('show:pickDocument', () => pickShowDocument());
 
   // Download + Installation aus der konfigurierten Release-Quelle, mit
   // Fortschritt an das aufrufende Fenster. Update == Install der neuesten Version.

@@ -8,6 +8,8 @@ import { ToolCard } from '@/components/ToolCard';
 import { SettingsModal } from '@/components/SettingsModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { PatchNotesModal } from '@/components/PatchNotesModal';
+import { SystemStatusModal } from '@/components/SystemStatusModal';
+import { ShowEditorModal } from '@/components/ShowEditorModal';
 import { displayName } from '@/lib/monogram';
 import { useTools } from '@/store/tools';
 
@@ -23,6 +25,8 @@ export function App() {
   const notice = useTools((s) => s.notice);
   const load = useTools((s) => s.load);
   const setNotice = useTools((s) => s.setNotice);
+  const updatingAll = useTools((s) => s.updatingAll);
+  const updateAll = useTools((s) => s.updateAll);
 
   const [filter, setFilter] = useState<CategoryFilter>('Alle');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Alle');
@@ -79,6 +83,7 @@ export function App() {
   );
 
   const installedCount = Object.values(states).filter((s) => s.status === 'installed').length;
+  const updateCount = Object.values(states).filter((s) => s.status === 'update-available').length;
 
   return (
     <div className="h-full flex flex-col">
@@ -96,6 +101,20 @@ export function App() {
                   ? 'Lade Tools…'
                   : `${tools.length} Tools · ${installedCount} installiert`}
               </p>
+              {updateCount > 0 && (
+                <div className="mt-2">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={updatingAll}
+                    onClick={() => void updateAll()}
+                  >
+                    {updatingAll
+                      ? 'Aktualisiere…'
+                      : `${updateCount} ${updateCount === 1 ? 'Update' : 'Updates'} · Alle installieren`}
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               <input
@@ -140,6 +159,8 @@ export function App() {
       <SettingsModal />
       <FeedbackModal />
       <PatchNotesModal />
+      <SystemStatusModal />
+      <ShowEditorModal />
     </div>
   );
 }

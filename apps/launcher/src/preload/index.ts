@@ -7,11 +7,13 @@ import type {
   InstallProgress,
   JmpsApi,
   LauncherUpdate,
+  PresenceRecord,
   SuiteSettingsInput,
   SuiteSettingsView,
   ToolManifest,
   ToolState,
 } from '@shared/types';
+import type { Show } from '@jm/show';
 
 const api: JmpsApi = {
   platform: process.platform,
@@ -20,7 +22,11 @@ const api: JmpsApi = {
   getChangelog: () => invoke<AppChangelog[]>('changelog:get'),
   getState: () => invoke<ToolState[]>('suite:state'),
   checkUpdates: () => invoke<ToolState[]>('suite:check-updates'),
+  getPresence: () => invoke<PresenceRecord[]>('presence:get'),
   open: (id) => invoke<ActionResult>('tool:open', id),
+  openShow: () => invoke<ActionResult>('show:open'),
+  saveShow: (show: Show) => invoke<ActionResult>('show:save', show),
+  pickShowDocument: () => invoke<string | null>('show:pickDocument'),
   install: (id) => invoke<ActionResult>('tool:install', id),
   update: (id) => invoke<ActionResult>('tool:update', id),
   uninstall: (id) => invoke<ActionResult>('tool:uninstall', id),

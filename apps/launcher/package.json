@@ -23,7 +23,9 @@
   "dependencies": {},
   "devDependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
+    "@jm/app-runtime": "*",
     "@jm/electron-kit": "*",
+    "@jm/show": "*",
     "@jm/suite-manifest": "*",
     "@jm/ui": "*",
     "@tailwindcss/vite": "^4.0.0",
