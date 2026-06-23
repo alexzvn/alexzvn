@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-23T19:35:05.554Z",
+  "updatedAt": "2026-06-23T19:41:52.614Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -300,7 +300,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.transcribe",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.1",
+      "latestVersion": "0.2.0",
       "platforms": {
         "win": {
           "artifact": "JM Transcribe-${version}-win-x64.exe",
