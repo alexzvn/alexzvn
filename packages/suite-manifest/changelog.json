@@ -4,6 +4,16 @@
     "name": "JM Production Suite",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Neue Ansicht System-Zustand: zeigt laufende Tools, Version, letzte Aktivität und Hinweise nach einem Absturz.",
+          "Update-Installation mit Verifikation: Erfolg wird erst nach echter Installation gemeldet; zusätzlich Alle aktualisieren und Hintergrund-Prüfung auf Updates.",
+          "Show öffnen: startet die in einer Produktion beteiligten Tools koordiniert; jedes lädt seinen Teil (Ablaufplan, Folien, Skript, Bühnen-Anzeige).",
+          "Feedback kann die Logs aller Tools als Paket anhängen."
+        ]
+      },
+      {
         "version": "0.3.0",
         "date": "2026-06-20",
         "notes": [
@@ -166,6 +176,15 @@
     "name": "JM Presenter",
     "entries": [
       {
+        "version": "0.7.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Suite-Integration: per Show geöffnet, lädt der Presenter den hinterlegten Foliensatz automatisch.",
+          "Bei aktiver Fernsteuerung wird der Presenter im Netzwerk automatisch gefunden — das JM Stage Display verbindet ohne IP-Eingabe.",
+          "Mehr Stabilität durch zentrales Logging und Absturzerfassung."
+        ]
+      },
+      {
         "version": "0.6.0",
         "date": "2026-06-20",
         "notes": [
@@ -249,6 +268,15 @@
     "app": "timer",
     "name": "JM Timer",
     "entries": [
+      {
+        "version": "0.2.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Suite-Integration: per Show geöffnet, übernimmt der Timer seinen Ablaufplan automatisch.",
+          "Wird im Netzwerk automatisch gefunden (z. B. vom JM Stage Display) — keine IP-Eingabe nötig.",
+          "Mehr Stabilität durch zentrales Logging und Absturzerfassung."
+        ]
+      },
       {
         "version": "0.1.1",
         "notes": ["Beispiel-XLSX-Vorlage im Import zum Herunterladen."]
@@ -352,6 +380,15 @@
     "name": "JM Stage Display",
     "entries": [
       {
+        "version": "0.4.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Findet Timer, Switcher und Presenter automatisch im LAN — keine IP-Adressen mehr eintippen.",
+          "Suite-Integration: per Show geöffnet, verbindet sich das Stage Display automatisch mit den Quellen der Produktion.",
+          "Mehr Stabilität durch zentrales Logging und Absturzerfassung."
+        ]
+      },
+      {
         "version": "0.3.0",
         "date": "2026-06-20",
         "notes": [
@@ -384,6 +421,15 @@
     "app": "prompter",
     "name": "JM Prompter",
     "entries": [
+      {
+        "version": "0.4.0",
+        "date": "2026-06-23",
+        "notes": [
+          "Suite-Integration: per Show geöffnet, lädt der Prompter das hinterlegte Skript automatisch.",
+          "Behoben: der Scroller blieb bei größeren Schriften oder Fenstern in der Mitte stehen — er läuft jetzt zuverlässig bis zum Skriptende.",
+          "Bei aktiver Fernbedienung im Netzwerk auffindbar; mehr Stabilität durch zentrales Logging."
+        ]
+      },
       {
         "version": "0.3.0",
         "date": "2026-06-20",
