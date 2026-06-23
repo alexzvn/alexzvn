@@ -129,11 +129,17 @@ Zustand zurückmeldet. Befehle PLAYER GO/STOP/PAUSE/PANIC/CUE/STANDBY/NEXT/PREV/
 (Cue-Show + Soundboard); STATE-Push playing/paused/standby/standby_label/cues/
 playing_count ([apps/player/src/main/control-server.ts](../apps/player/src/main/control-server.ts)).
 
-**Als Nächstes (Welle 1.4–1.7):**
+**Erledigt (Welle 1.4 — Titler):** TCP-Steuerserver auf Port 8726; Take/Clear ist
+Live-Zustand im Renderer (engine.ts), Befehle gehen per IPC an OperatorView, der
+Zustand wird zurückgemeldet. Befehle TITLER TAKE/CLEAR/TOGGLE/TEMPLATE; STATE-Push
+on_air/template/ndi/connections
+([apps/titler/src/main/control-server.ts](../apps/titler/src/main/control-server.ts)).
+Der Titler zeigt EINE CG (keine nummerierten Bauchbinden) — Mapping entsprechend.
+
+**Als Nächstes (Welle 1.5–1.7):**
 
 | Schritt | Inhalt | Datei(en) |
 |---|---|---|
-| 1.4 | **Titler** Take/Clear (P3, Renderer-IPC wie Player) | apps/titler/src/main/index.ts (+ Renderer-IPC) |
 | 1.5 | **Prompter, Presenter, Recorder, DAW** (P4–P7) | jeweils src/main |
 | 1.6 | **`companion-jm-suite`-Modul** (manuell → mDNS) + Sync-Skript | packages/companion-jm-suite, scripts/sync-companion-protocol.mjs |
 | 1.7 | Versions-Bumps + Manifest/Changelog | packages/suite-manifest/ |
