@@ -1,9 +1,11 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { parseShow, parseShowDeepLink } from '@jm/show';
 import { RemoteServer } from '@jm/remote';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
-import type { QaEntry, QaState, QaSubmission, ToolLink } from '@shared/types';
+import type { QaConfig, QaEntry, QaState, QaSubmission, ToolLink } from '@shared/types';
 import {
   activate,
   activeEntry,
@@ -330,8 +332,38 @@ function createMainWindow(): BrowserWindow {
   return win;
 }
 
+/**
+ * Show-Integration: Wird Q&A über einen Show-Deep-Link gestartet, übernimmt es aus
+ * der Show (ShowToolRef.settings von jm-qa) die Sitzungs-Vorgaben — Redezeit,
+ * Moderation und Auto-Kopplung. So startet die Pressekonferenz korrekt eingestellt.
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const s = show.tools.find((t) => t.appId === 'jm-qa')?.settings;
+    if (!s) return;
+    const patch: Partial<QaConfig> = {};
+    if (typeof s.speakSeconds === 'number') patch.speakSeconds = Math.max(0, Math.round(s.speakSeconds));
+    if (typeof s.moderation === 'boolean') patch.moderation = s.moderation;
+    if (typeof s.autoTimer === 'boolean') patch.autoTimer = s.autoTimer;
+    if (typeof s.autoTitler === 'boolean') patch.autoTitler = s.autoTitler;
+    if (Object.keys(patch).length) {
+      patchConfig(patch);
+      broadcast();
+    }
+  } catch (err) {
+    getLog().error(`Show-Deep-Link konnte nicht geladen werden: ${(err as Error).message}`);
+  }
+}
+
 // Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
-initAppRuntime({ appId: 'jm-qa', appName: 'JM Q&A' });
+const runtime = initAppRuntime({
+  appId: 'jm-qa',
+  appName: 'JM Q&A',
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -350,6 +382,7 @@ if (!gotLock) {
   app.whenReady().then(() => {
     registerIpc();
     createMainWindow();
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
     coupling.setOverrides(getOverrides());
     coupling.start();
     // Saal-Einreichung wiederherstellen, falls zuletzt aktiv.

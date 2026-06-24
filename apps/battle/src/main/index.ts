@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path, { join } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { parseShow, parseShowDeepLink } from '@jm/show';
 import { RemoteServer } from '@jm/remote';
 import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
 import type { BattleConfig, BattleState, ClipJob, Competitor, RoundResult, Side, ToolLink } from '@shared/types';
@@ -409,7 +410,42 @@ function createMainWindow(): BrowserWindow {
   return win;
 }
 
-initAppRuntime({ appId: 'jm-battle', appName: 'JM Battle' });
+/**
+ * Show-Integration: Wird Battle über einen Show-Deep-Link gestartet, übernimmt es
+ * aus der Show (ShowToolRef.settings von jm-battle) die Rundenzahl und die
+ * Kontrahenten-Namen — so startet das Event mit der richtigen Paarung.
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const s = show.tools.find((t) => t.appId === 'jm-battle')?.settings;
+    if (!s) return;
+    if (typeof s.rounds === 'number') {
+      const next = patchConfig({ rounds: Math.max(1, Math.round(s.rounds)) });
+      rounds = resizeRounds(rounds, next.rounds);
+      round = clampRound(round, rounds.length);
+    }
+    const A: Competitor = { ...competitors.A };
+    const B: Competitor = { ...competitors.B };
+    if (typeof s.nameA === 'string' && s.nameA.trim()) A.name = s.nameA.trim();
+    if (typeof s.nameB === 'string' && s.nameB.trim()) B.name = s.nameB.trim();
+    if (typeof s.crewA === 'string') A.crew = s.crewA;
+    if (typeof s.crewB === 'string') B.crew = s.crewB;
+    competitors = { A, B };
+    setCompetitors(competitors);
+    broadcast();
+  } catch (err) {
+    getLog().error(`Show-Deep-Link konnte nicht geladen werden: ${(err as Error).message}`);
+  }
+}
+
+const runtime = initAppRuntime({
+  appId: 'jm-battle',
+  appName: 'JM Battle',
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -430,6 +466,7 @@ if (!gotLock) {
     rounds = makeRounds(getConfig().rounds);
     registerIpc();
     createMainWindow();
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
     coupling.setOverrides(getOverrides());
     coupling.start();
     void startControlServer({ getState: buildSuiteState, onCommand: handleSuiteCommand });

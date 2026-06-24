@@ -33,6 +33,10 @@ export function ShowEditorModal() {
   const [name, setName] = useState('');
   const [entries, setEntries] = useState<Record<string, Entry>>({});
   const [timetable, setTimetable] = useState<TtRow[]>([]);
+  const [battleA, setBattleA] = useState('');
+  const [battleB, setBattleB] = useState('');
+  const [battleRounds, setBattleRounds] = useState('');
+  const [qaSpeak, setQaSpeak] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
@@ -74,6 +78,18 @@ export function ShowEditorModal() {
         }));
       if (items.length) ref.settings = { timetable: items };
     }
+    if (id === 'jm-battle') {
+      const s: Record<string, unknown> = {};
+      if (battleA.trim()) s.nameA = battleA.trim();
+      if (battleB.trim()) s.nameB = battleB.trim();
+      const r = parseInt(battleRounds, 10);
+      if (Number.isFinite(r) && r > 0) s.rounds = r;
+      if (Object.keys(s).length) ref.settings = s;
+    }
+    if (id === 'jm-qa') {
+      const sec = parseInt(qaSpeak, 10);
+      if (Number.isFinite(sec) && sec > 0) ref.settings = { speakSeconds: sec };
+    }
     return ref;
   };
 
@@ -89,6 +105,10 @@ export function ShowEditorModal() {
         setName('');
         setEntries({});
         setTimetable([]);
+        setBattleA('');
+        setBattleB('');
+        setBattleRounds('');
+        setQaSpeak('');
         close();
       }
     } finally {
@@ -200,6 +220,40 @@ export function ShowEditorModal() {
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {t.id === 'jm-battle' && (
+                      <div className="mt-1 grid grid-cols-2 gap-2">
+                        <input
+                          value={battleA}
+                          placeholder="Kontrahent A"
+                          onChange={(e) => setBattleA(e.target.value)}
+                          className={cn(inputCls, 'h-8 px-2.5 text-xs')}
+                        />
+                        <input
+                          value={battleB}
+                          placeholder="Kontrahent B"
+                          onChange={(e) => setBattleB(e.target.value)}
+                          className={cn(inputCls, 'h-8 px-2.5 text-xs')}
+                        />
+                        <input
+                          value={battleRounds}
+                          inputMode="numeric"
+                          placeholder="Runden (z. B. 3)"
+                          onChange={(e) => setBattleRounds(e.target.value)}
+                          className={cn(inputCls, 'h-8 px-2.5 text-xs col-span-2 tabular-nums')}
+                        />
+                      </div>
+                    )}
+
+                    {t.id === 'jm-qa' && (
+                      <input
+                        value={qaSpeak}
+                        inputMode="numeric"
+                        placeholder="Redezeit je Wortmeldung (Sekunden)"
+                        onChange={(e) => setQaSpeak(e.target.value)}
+                        className={cn(inputCls, 'h-8 px-2.5 text-xs tabular-nums')}
+                      />
                     )}
                   </div>
                 )}
