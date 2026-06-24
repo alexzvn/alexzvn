@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T04:58:33.859Z",
+  "updatedAt": "2026-06-24T04:59:00.468Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -199,7 +199,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.presenter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.7.1",
+      "latestVersion": "0.8.0",
       "platforms": {
         "mac": {
           "artifact": "JM Presenter-${version}-mac-${arch}.dmg",
