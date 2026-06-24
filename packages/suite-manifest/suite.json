@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T11:18:52.480Z",
+  "updatedAt": "2026-06-24T11:34:05.079Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -422,7 +422,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.caption",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.1.0",
+      "latestVersion": "0.2.0",
       "platforms": {
         "win": {
           "artifact": "JM Caption-${version}-win-x64.exe",
