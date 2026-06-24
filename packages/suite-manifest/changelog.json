@@ -4,6 +4,14 @@
     "name": "JM Production Suite",
     "entries": [
       {
+        "version": "0.5.0",
+        "date": "2026-06-24",
+        "notes": [
+          "System-Zustand zeigt jetzt den Live-Status der Tools — Aufnahme, On Air, Stream, läuft, NDI — auch von Geräten auf anderen Rechnern im Netzwerk.",
+          "Show-Editor: Einstellungen für JM Battle (Kontrahenten, Runden) und JM Q&A (Redezeit) lassen sich direkt in der Show anlegen."
+        ]
+      },
+      {
         "version": "0.4.1",
         "date": "2026-06-23",
         "notes": [
@@ -846,6 +854,13 @@
     "name": "JM Q&A",
     "entries": [
       {
+        "version": "0.2.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Show-Teilnahme: Beim koordinierten Start über eine .jmshow übernimmt Q&A automatisch die Redezeit und die Moderationseinstellung aus der Show."
+        ]
+      },
+      {
         "version": "0.1.0",
         "date": "2026-06-24",
         "notes": [
@@ -859,6 +874,13 @@
     "app": "battle",
     "name": "JM Battle",
     "entries": [
+      {
+        "version": "0.2.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Show-Teilnahme: Beim koordinierten Start über eine .jmshow übernimmt Battle automatisch Rundenzahl und Kontrahenten-Namen aus der Show."
+        ]
+      },
       {
         "version": "0.1.0",
         "date": "2026-06-24",
