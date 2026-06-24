@@ -404,6 +404,34 @@ var CAPABILITIES = {
       { id: "label", label: "Scharfe Zeile (Titel)" }
     ],
     feedbacks: []
+  },
+  // ── Q&A (Wortmeldungs-/Pressekonferenz-Queue) ───────────────────────────────
+  qa: {
+    role: "qa",
+    label: "JM Q&A",
+    port: 8733,
+    actions: [
+      { id: "next", label: "N\xE4chste Wortmeldung (ans Wort)", verb: "next" },
+      { id: "end", label: "Sprecher beenden", verb: "end" },
+      {
+        id: "extend",
+        label: "Redezeit verl\xE4ngern (s)",
+        verb: "extend",
+        args: [{ id: "seconds", label: "Sekunden", type: "number", default: 30, min: 5, max: 600 }]
+      },
+      { id: "clear", label: "Erledigte entfernen", verb: "clear" }
+    ],
+    variables: [
+      { id: "active", label: "Aktiver Sprecher" },
+      { id: "waiting", label: "Wartende Wortmeldungen" },
+      { id: "total", label: "Eintr\xE4ge gesamt" },
+      { id: "live", label: "Sprecher aktiv (1/0)" },
+      { id: "remote", label: "Saal-Einreichung (1/0)" }
+    ],
+    feedbacks: [
+      { id: "live", label: "Sprecher am Wort", stateKey: "live", match: "truthy", bgcolor: GREEN, color: WHITE },
+      { id: "remote", label: "Saal-Einreichung an", stateKey: "remote", match: "truthy", bgcolor: YELLOW, color: BLACK }
+    ]
   }
 };
 var KNOWN_ROLES = Object.keys(CAPABILITIES);
