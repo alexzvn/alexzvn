@@ -59,8 +59,17 @@ function send(channel: string, payload: unknown): void {
   const wc = win.webContents;
   if (!wc.isDestroyed()) wc.send(channel, payload);
 }
+
+// Zustands-Listener (z. B. der TCP-Steuerserver für den Companion-STATE-Push).
+const stateListeners = new Set<() => void>();
+export function onStateChange(cb: () => void): () => void {
+  stateListeners.add(cb);
+  return () => stateListeners.delete(cb);
+}
+
 function emitState(): void {
   send('recorder:state', { ...state });
+  for (const cb of stateListeners) cb();
 }
 function notice(msg: string): void {
   send('recorder:notice', msg);

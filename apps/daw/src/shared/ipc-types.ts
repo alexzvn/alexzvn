@@ -152,4 +152,28 @@ export interface JmdawApi {
   onExportDone: (cb: (r: ExportResult) => void) => () => void;
   onRecLevels: (cb: (l: Levels) => void) => () => void;
   onRecState: (cb: (s: RecorderState) => void) => () => void;
+  /** TCP-Fernsteuerung (Bitfocus Companion) ↔ Renderer. */
+  remote: {
+    /** Auf Fernsteuer-Befehle hören (Main → Renderer). Liefert Unsubscribe. */
+    onCommand: (cb: (cmd: DawRemoteCommand) => void) => () => void;
+    /** Transport-/Aufnahme-Zustand an den Main melden (Renderer → Steuerserver). */
+    reportState: (state: DawRemoteState) => Promise<void>;
+  };
+}
+
+/**
+ * Befehl der TCP-Fernsteuerung (Bitfocus Companion), vom Main an den Renderer
+ * gepusht. Transport (Play/Stop) lebt im Renderer-Store, die Aufnahme-Flows
+ * ebenfalls (sie platzieren den Clip), daher der Push statt direktem Main-Aufruf.
+ */
+export type DawRemoteCommand =
+  | { t: 'play' }
+  | { t: 'stop' }
+  | { t: 'toggle' }
+  | { t: 'rec'; mode: 'on' | 'off' | 'toggle' };
+
+/** Transport-/Aufnahme-Zustand, vom Renderer an den Main gemeldet (Companion-STATE). */
+export interface DawRemoteState {
+  playing: boolean;
+  recording: boolean;
 }

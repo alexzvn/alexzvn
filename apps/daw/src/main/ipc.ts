@@ -7,10 +7,12 @@ import type {
   SaveProjectRequest,
   StartRecordInput,
 } from '@shared/ipc-types';
+import type { DawRemoteState } from '@shared/ipc-types';
 import { importPaths, transcodeForDecode } from './media';
 import { openProject, saveProject } from './project/io';
 import { cancelExport, setExportEmitter, startExport } from './export/run';
 import * as rec from './recording';
+import { updateDawState } from './control-server';
 
 const AUDIO_EXT = ['wav', 'mp3', 'm4a', 'aac', 'flac', 'ogg', 'opus', 'aif', 'aiff', 'wma'];
 
@@ -67,6 +69,9 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('rec:start', (_e, input: StartRecordInput) => rec.startRecording(input));
   ipcMain.handle('rec:stop', () => rec.stopRecording());
   ipcMain.handle('rec:state', () => rec.getState());
+
+  // ── TCP-Fernsteuerung (Companion): Renderer meldet Transport-/Aufnahme-State ─
+  ipcMain.handle('daw:report-state', (_e, state: DawRemoteState) => updateDawState(state));
 
   // ── Shell ───────────────────────────────────────────────────────────────
   ipcMain.handle('shell:reveal', (_e, p: string) => shell.showItemInFolder(p));

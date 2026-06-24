@@ -8,3 +8,7 @@ Einstieg und Hintergründe rund um die Suite-Integration.
 - **[Suite-Auto-Discovery (mDNS)](suite-discovery.md)** — wie sich Quellen im
   LAN automatisch finden (kein IP-Eintippen). *Für Entwicklung & Betriebs-
   Diagnose.* Rollen/Ports, Lebenszyklus, Packaging, offene Punkte.
+- **[Suite-Steuerebene & Companion](suite-control-plane.md)** — einheitliches
+  Fernsteuer-Protokoll für alle Tools + generisches Bitfocus-Companion-Modul.
+  *Für Entwicklung & Show-Control.* Protokoll, Server/Client, Tally-Rückkanal,
+  Migrationsweg, Stand.

@@ -7,7 +7,8 @@
   "workspaces": [
     "packages/*",
     "apps/*",
-    "!packages/companion-jm-switcher"
+    "!packages/companion-jm-switcher",
+    "!packages/companion-jm-suite"
   ],
   "scripts": {
     "launcher:dev": "npm run dev -w @jm/launcher",

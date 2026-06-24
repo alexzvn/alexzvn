@@ -5,9 +5,16 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
-// @jm/electron-kit + @jm/media als Quelle bündeln. @jm/audio ist ein natives
-// Addon → extern halten (Laufzeit-require), NICHT bündeln. @jm/ui nur im Renderer.
-const internalPackages = ['@jm/app-runtime', '@jm/electron-kit', '@jm/media'];
+// @jm/electron-kit + @jm/media + @jm/suite-control-protocol (TCP-Fernsteuerung)
+// als Quelle bündeln (dessen Transitiv-Deps @jm/discovery + bonjour-service mit).
+// @jm/audio ist ein natives Addon → extern halten (Laufzeit-require), NICHT
+// bündeln. @jm/ui nur im Renderer.
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/electron-kit',
+  '@jm/media',
+  '@jm/suite-control-protocol',
+];
 
 export default defineConfig({
   main: {

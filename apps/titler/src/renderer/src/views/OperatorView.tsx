@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Button, cn, Logo } from '@jm/ui';
 import { DEFAULT_CONFIG, type TemplateKind, type TitlerConfig } from '@shared/types';
 import { useTitler } from '@/store/titler';
@@ -28,6 +28,36 @@ export function OperatorView(): React.JSX.Element {
 
   const previewRef = useRef<HTMLCanvasElement>(null);
   const { live, take, clear } = useTitlerEngine(config, ndiActive, previewRef);
+
+  // ── TCP-Fernsteuerung (Bitfocus Companion) ─────────────────────────────────
+  const liveRef = useRef(live);
+  liveRef.current = live;
+
+  // Befehle vom Steuerserver ausführen (Take/Clear/Toggle/Template).
+  useEffect(() => {
+    return window.jmtitler.remote.onCommand((cmd) => {
+      switch (cmd.t) {
+        case 'take':
+          take();
+          break;
+        case 'clear':
+          clear();
+          break;
+        case 'toggle':
+          if (liveRef.current) clear();
+          else take();
+          break;
+        case 'template':
+          void setConfig({ template: cmd.kind });
+          break;
+      }
+    });
+  }, [take, clear, setConfig]);
+
+  // Live-Zustand an den Steuerserver melden (Companion-STATE).
+  useEffect(() => {
+    void window.jmtitler.remote.reportState({ onAir: live, template: config.template, ndiActive, connections });
+  }, [live, config.template, ndiActive, connections]);
 
   if (!state) {
     return <div className="h-screen grid place-items-center text-[var(--muted-foreground)]">Lädt…</div>;

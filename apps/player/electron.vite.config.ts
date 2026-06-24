@@ -7,7 +7,15 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/media + @jm/media-library als Quelle bündeln (kein Laufzeit-require);
 // better-sqlite3 bleibt extern (nativ → asarUnpack + electron-rebuild).
-const internalPackages = ['@jm/app-runtime', '@jm/media', '@jm/media-library'];
+// @jm/suite-control-protocol (TCP-Fernsteuerung) bündeln; dessen Transitiv-Deps
+// (@jm/discovery + bonjour-service) werden automatisch mitgebündelt, da sie
+// nicht in den direkten dependencies stehen.
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/media',
+  '@jm/media-library',
+  '@jm/suite-control-protocol',
+];
 
 export default defineConfig({
   main: {

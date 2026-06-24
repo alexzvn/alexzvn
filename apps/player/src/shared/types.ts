@@ -131,6 +131,37 @@ export interface ImportResult {
 }
 
 /** Shape, die der Preload auf `window.jmplay` legt. */
+/**
+ * Befehl der TCP-Fernsteuerung (Bitfocus Companion), vom Main an den Renderer
+ * gepusht. Zielt auf die Cue-Show (Standby/GO) und das Soundboard (Pads).
+ */
+export type RemoteCommand =
+  | { t: 'go' } // Standby-Cue feuern (= GO/PLAY)
+  | { t: 'stop' } // alle laufenden Cues stoppen
+  | { t: 'pause' } // Pause/Resume umschalten
+  | { t: 'panic' } // Hard-Stop
+  | { t: 'cue'; n: number } // Show-Cue n (1-basiert) feuern
+  | { t: 'standby'; n: number } // Standby auf Cue n (1-basiert) setzen
+  | { t: 'next' } // Standby +1
+  | { t: 'prev' } // Standby -1
+  | { t: 'pad'; slot: number }; // Soundboard-Pad (slot) triggern
+
+/** Wiedergabe-Zustand, vom Renderer an den Main gemeldet (für Companion-STATE). */
+export interface RemotePlayerState {
+  /** Spielt etwas (Cues oder Ausgabe-Video). */
+  playing: boolean;
+  /** Cue-Show pausiert. */
+  paused: boolean;
+  /** Standby-Cue (1-basiert; 0 = keiner). */
+  standby: number;
+  /** Titel des Standby-Cues (leer → '-'). */
+  standbyLabel: string;
+  /** Anzahl Cues in der aktiven Show. */
+  cues: number;
+  /** Anzahl gerade klingender/pending Cues. */
+  playingCount: number;
+}
+
 export interface JmplayApi {
   platform: NodeJS.Platform;
   pathForFile: (file: File) => string;
@@ -195,6 +226,13 @@ export interface JmplayApi {
     onEnded: (cb: () => void) => () => void;
     /** Hauptfenster-Seite: auf Positions-Updates des Ausgabe-Videos hören. */
     onTime: (cb: (t: OutputTime) => void) => () => void;
+  };
+  /** TCP-Fernsteuerung (Bitfocus Companion) ↔ Renderer. */
+  remote: {
+    /** Auf Fernsteuer-Befehle hören (Main → Renderer). Liefert Unsubscribe. */
+    onCommand: (cb: (cmd: RemoteCommand) => void) => () => void;
+    /** Wiedergabe-Zustand an den Main melden (Renderer → Steuerserver). */
+    reportState: (state: RemotePlayerState) => Promise<void>;
   };
   shell: {
     reveal: (path: string) => Promise<void>;

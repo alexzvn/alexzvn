@@ -5,6 +5,7 @@ import type {
   JmrecApi,
   Levels,
   OpResult,
+  RecorderRemoteCommand,
   RecordInput,
   RecordResult,
   RecorderState,
@@ -41,6 +42,11 @@ const api: JmrecApi = {
     const listener = (_e: unknown, msg: string): void => cb(msg);
     ipcRenderer.on('recorder:notice', listener);
     return () => ipcRenderer.off('recorder:notice', listener);
+  },
+  onRemoteCommand: (cb) => {
+    const listener = (_e: unknown, cmd: RecorderRemoteCommand): void => cb(cmd);
+    ipcRenderer.on('recorder:remote-cmd', listener);
+    return () => ipcRenderer.off('recorder:remote-cmd', listener);
   },
 };
 

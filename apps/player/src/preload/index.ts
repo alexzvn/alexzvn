@@ -11,6 +11,8 @@ import type {
   Playlist,
   PlaylistItem,
   PlaylistKind,
+  RemoteCommand,
+  RemotePlayerState,
   Show,
   ShowCue,
   ShowCuePatch,
@@ -88,6 +90,15 @@ const api: JmplayApi = {
       ipcRenderer.on('output:time', listener);
       return () => ipcRenderer.off('output:time', listener);
     },
+  },
+  remote: {
+    onCommand: (cb) => {
+      const listener = (_e: unknown, cmd: RemoteCommand): void => cb(cmd);
+      ipcRenderer.on('remote:cmd', listener);
+      return () => ipcRenderer.off('remote:cmd', listener);
+    },
+    reportState: (state: RemotePlayerState) =>
+      ipcRenderer.invoke('remote:reportState', state) as Promise<void>,
   },
   shell: {
     reveal: (filePath) => ipcRenderer.invoke('shell:reveal', filePath) as Promise<void>,

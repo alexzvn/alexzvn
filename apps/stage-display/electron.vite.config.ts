@@ -10,6 +10,7 @@ const internalPackages = [
   '@jm/app-runtime',
   '@jm/output-window',
   '@jm/companion-protocol',
+  '@jm/suite-control-protocol',
   '@jm/show',
   // @jm/discovery + bonjour-service in den Main-Bundle nehmen (kein node_modules
   // in der gepackten App).

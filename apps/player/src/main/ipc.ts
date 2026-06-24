@@ -1,6 +1,14 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import type { CueInput, OutputCommand, OutputTime, PlaylistKind, ShowCuePatch } from '@shared/types';
+import type {
+  CueInput,
+  OutputCommand,
+  OutputTime,
+  PlaylistKind,
+  RemotePlayerState,
+  ShowCuePatch,
+} from '@shared/types';
 import * as lib from './library';
+import { updatePlayerState } from './control-server';
 import { ensureThumb } from './thumbs';
 import {
   closeOutputWindow,
@@ -83,6 +91,9 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('output:time', (_e, t: OutputTime) => {
     getWin()?.webContents.send('output:time', t);
   });
+
+  // TCP-Fernsteuerung: Renderer meldet seinen Wiedergabe-Zustand → Steuerserver.
+  ipcMain.handle('remote:reportState', (_e, state: RemotePlayerState) => updatePlayerState(state));
 
   ipcMain.handle('shell:reveal', (_e, p: string) => {
     shell.showItemInFolder(p);

@@ -95,6 +95,28 @@ export interface PartialTitlerConfig {
   fps?: number;
 }
 
+/**
+ * Befehl der TCP-Fernsteuerung (Bitfocus Companion), vom Main an den Renderer
+ * gepusht. Take/Clear ist Live-Zustand im Renderer (engine.ts), daher der Push.
+ */
+export type TitlerRemoteCommand =
+  | { t: 'take' } // CG einblenden (On Air)
+  | { t: 'clear' } // CG ausblenden
+  | { t: 'toggle' } // On Air umschalten
+  | { t: 'template'; kind: TemplateKind }; // Vorlage wechseln
+
+/** Live-Zustand, vom Renderer an den Main gemeldet (für Companion-STATE). */
+export interface TitlerRemoteState {
+  /** CG ist eingeblendet (On Air). */
+  onAir: boolean;
+  /** Aktive Vorlage. */
+  template: TemplateKind;
+  /** NDI-Sender läuft. */
+  ndiActive: boolean;
+  /** Verbundene NDI-Empfänger. */
+  connections: number;
+}
+
 /** Shape, die der Preload auf `window.jmtitler` legt. */
 export interface JmtitlerApi {
   platform: NodeJS.Platform;
@@ -106,5 +128,12 @@ export interface JmtitlerApi {
     start: (name: string) => Promise<void>;
     stop: () => Promise<void>;
     status: () => Promise<TitlerStatus>;
+  };
+  /** TCP-Fernsteuerung (Bitfocus Companion) ↔ Renderer. */
+  remote: {
+    /** Auf Fernsteuer-Befehle hören (Main → Renderer). Liefert Unsubscribe. */
+    onCommand: (cb: (cmd: TitlerRemoteCommand) => void) => () => void;
+    /** Live-Zustand an den Main melden (Renderer → Steuerserver). */
+    reportState: (state: TitlerRemoteState) => Promise<void>;
   };
 }

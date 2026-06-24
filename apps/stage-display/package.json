@@ -1,6 +1,6 @@
 {
   "name": "@jm/stage-display",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "JM Stage Display — Bühnen-/Crew-Schirm: Timer-Countdown + Uhr + Switcher-PGM + Nachrichten",
   "main": "out/main/index.cjs",
@@ -26,6 +26,7 @@
     "@jm/discovery": "*",
     "@jm/output-window": "*",
     "@jm/show": "*",
+    "@jm/suite-control-protocol": "*",
     "@jm/ui": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

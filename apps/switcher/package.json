@@ -29,6 +29,7 @@
     "@jm/discovery": "*",
     "@jm/media": "*",
     "@jm/ndi": "*",
+    "@jm/suite-control-protocol": "*",
     "@jm/ui": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

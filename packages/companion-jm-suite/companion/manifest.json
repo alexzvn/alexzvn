@@ -1,0 +1,35 @@
+{
+  "id": "jm-suite",
+  "name": "jm-suite",
+  "shortname": "JM Suite",
+  "description": "Steuert die JM Production Suite (Switcher, Timer, Player, Titler, Presenter, Prompter, Recorder, DAW) über TCP. Eine Verbindung je Tool — Rolle wählen, Rest wird automatisch generiert.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/AlexmachtCode/alexzvn",
+  "bugs": "https://github.com/AlexmachtCode/alexzvn/issues",
+  "maintainers": [
+    {
+      "name": "Jakobs Medien GmbH",
+      "email": "tech@jakobsmedien.com"
+    }
+  ],
+  "legacyIds": [],
+  "runtime": {
+    "type": "node22",
+    "api": "nodejs-ipc",
+    "apiVersion": "1.0.0",
+    "entrypoint": "../main.js"
+  },
+  "manufacturer": "Jakobs Medien GmbH",
+  "products": [
+    "JM Switcher",
+    "JM Timer",
+    "JM Player",
+    "JM Titler",
+    "JM Presenter",
+    "JM Prompter",
+    "JM Audio Recorder",
+    "JM DAW"
+  ],
+  "keywords": ["video", "switcher", "timer", "teleprompter", "playback", "broadcast"]
+}

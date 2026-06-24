@@ -98,6 +98,14 @@
     "name": "JM Player",
     "entries": [
       {
+        "version": "0.6.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: Cues und Soundboard-Pads auslösen, Go/Stop/Pause/Panik, Standby sowie Nächster/Vorheriger — mit Status-Rückmeldung für Button-Farben.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
+      {
         "version": "0.5.0",
         "date": "2026-06-23",
         "notes": [
@@ -140,6 +148,14 @@
     "app": "recorder",
     "name": "JM Audio Recorder",
     "entries": [
+      {
+        "version": "0.5.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: Aufnahme starten und stoppen sowie scharf/unscharf schalten — mit Aufnahme-Status für Button-Farben.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
       {
         "version": "0.4.0",
         "date": "2026-06-23",
@@ -227,6 +243,14 @@
     "app": "presenter",
     "name": "JM Presenter",
     "entries": [
+      {
+        "version": "0.8.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: nächste oder vorherige Folie, gezielt zu einer Folie springen sowie Schwarz/Weiß/Live — mit Folien-Status für Variablen.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
       {
         "version": "0.7.1",
         "date": "2026-06-23",
@@ -336,6 +360,14 @@
     "app": "timer",
     "name": "JM Timer",
     "entries": [
+      {
+        "version": "0.3.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: Start/Stop/Reset, Zeit addieren oder setzen und Blockwechsel — mit Status-Rückmeldung (läuft, Überzug, Warnung) für Button-Farben.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
       {
         "version": "0.2.1",
         "date": "2026-06-23",
@@ -500,6 +532,13 @@
     "name": "JM Stage Display",
     "entries": [
       {
+        "version": "0.4.2",
+        "date": "2026-06-24",
+        "notes": [
+          "Findet jetzt zuverlässig den richtigen Dienst je Tool (Timer/Switcher/Presenter), auch wenn ein Tool zusätzlich einen Companion-Steuerport im LAN anbietet."
+        ]
+      },
+      {
         "version": "0.4.1",
         "date": "2026-06-23",
         "notes": [
@@ -549,6 +588,14 @@
     "name": "JM Prompter",
     "entries": [
       {
+        "version": "0.5.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: Scrollen starten/stoppen, Tempo schneller/langsamer oder direkt setzen und an den Anfang springen — mit Status-Rückmeldung.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
+      {
         "version": "0.4.1",
         "date": "2026-06-23",
         "notes": [
@@ -592,6 +639,14 @@
     "app": "titler",
     "name": "JM Titler",
     "entries": [
+      {
+        "version": "0.3.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: Bauchbinde einblenden, ausblenden oder umschalten und Vorlage wählen (Lower Third, Banner, Ticker) — mit On-Air-Rückmeldung für Button-Farben.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
       {
         "version": "0.2.0",
         "date": "2026-06-23",
@@ -692,6 +747,14 @@
     "app": "daw",
     "name": "JM DAW",
     "entries": [
+      {
+        "version": "0.8.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Fernsteuerung über Bitfocus Companion: Transport Play/Stop/Umschalten und Aufnahme — mit Status-Rückmeldung für Button-Farben.",
+          "Im LAN automatisch auffindbar (mDNS) — Companion verbindet sich ohne IP-Eingabe."
+        ]
+      },
       {
         "version": "0.7.1",
         "date": "2026-06-23",

@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
   ArmInput,
+  DawRemoteCommand,
+  DawRemoteState,
   ExportProgress,
   ExportResult,
   ExportRunRequest,
@@ -63,6 +65,15 @@ const api: JmdawApi = {
     const listener = (_e: unknown, s: RecorderState): void => cb(s);
     ipcRenderer.on('rec:state', listener);
     return () => ipcRenderer.off('rec:state', listener);
+  },
+  remote: {
+    onCommand: (cb) => {
+      const listener = (_e: unknown, cmd: DawRemoteCommand): void => cb(cmd);
+      ipcRenderer.on('daw:remote-cmd', listener);
+      return () => ipcRenderer.off('daw:remote-cmd', listener);
+    },
+    reportState: (state: DawRemoteState) =>
+      ipcRenderer.invoke('daw:report-state', state) as Promise<void>,
   },
 };
 

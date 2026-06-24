@@ -9,7 +9,13 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 // liefern kein node_modules, also darf nichts zur Laufzeit `require`d werden.
 // @jm/discovery + bonjour-service (dessen Transitiv-Dep) mit in den Main-Bundle
 // nehmen — die gepackte App liefert kein node_modules.
-const internalPackages = ['@jm/app-runtime', '@jm/show', '@jm/discovery', 'bonjour-service'];
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/show',
+  '@jm/discovery',
+  '@jm/suite-control-protocol',
+  'bonjour-service',
+];
 
 export default defineConfig({
   main: {

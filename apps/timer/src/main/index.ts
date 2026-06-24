@@ -22,6 +22,7 @@ import {
   getRemoteUrls,
   getLanAddresses,
 } from './server';
+import { startControlServer, stopControlServer, CONTROL_PORT } from './control-server';
 import {
   getAuth,
   loadAuth,
@@ -360,6 +361,15 @@ if (!gotLock) {
     } catch (err) {
       getLog().warn(`mDNS-Annoncierung fehlgeschlagen: ${(err as Error).message}`);
     }
+    // TCP-Steuerserver (suite-weites Protokoll) für Companion u. a. — neben
+    // Socket.IO, ohne eigene mDNS-Annoncierung (siehe control-server.ts).
+    try {
+      const r = await startControlServer();
+      if (!r.ok) getLog().warn(`Timer-Steuerserver nicht gestartet: ${r.error ?? 'unbekannt'}`);
+      else getLog().info(`Timer-Steuerserver (Companion) lauscht auf :${CONTROL_PORT}`);
+    } catch (err) {
+      getLog().warn(`Timer-Steuerserver fehlgeschlagen: ${(err as Error).message}`);
+    }
     registerIpc();
     // Per Show gestartet? Ablaufplan/Countdown aus der Show übernehmen (nach
     // startServer, damit der Broadcast verbundene Clients sofort erreicht).
@@ -381,6 +391,7 @@ if (!gotLock) {
   app.on('before-quit', () => {
     isQuitting = true;
     advertiser?.stop();
+    stopControlServer();
   });
 }
 

@@ -7,8 +7,10 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
 // @jm/audio ist ein natives Addon → extern halten (Laufzeit-require), NICHT
 // bündeln. @jm/ui wird nur im Renderer genutzt und dort von Vite gebündelt.
-// @jm/app-runtime ist reines TS und wird in den Main-Bundle gebündelt.
-const internalPackages = ['@jm/app-runtime'];
+// @jm/app-runtime + @jm/suite-control-protocol (TCP-Fernsteuerung) sind reines TS
+// und werden in den Main-Bundle gebündelt (dessen Transitiv-Deps @jm/discovery +
+// bonjour-service automatisch mit).
+const internalPackages = ['@jm/app-runtime', '@jm/suite-control-protocol'];
 
 export default defineConfig({
   main: {

@@ -4,6 +4,7 @@ import { initAppRuntime } from '@jm/app-runtime';
 import { MEDIA_SCHEME } from '@shared/media-url';
 import { registerIpc } from './ipc';
 import { registerMediaProtocol } from './media-protocol';
+import { startControlServer, stopControlServer } from './control-server';
 
 declare const __dirname: string;
 
@@ -104,11 +105,16 @@ if (!gotLock) {
     registerMediaProtocol();
     registerIpc(() => mainWindow);
     createMainWindow();
+    // TCP-Steuerserver (suite-weites Protokoll) für Companion u. a. — Befehle
+    // gehen per IPC an den Renderer, der seinen Zustand zurückmeldet.
+    void startControlServer(() => mainWindow);
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
   });
+
+  app.on('before-quit', () => stopControlServer());
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

@@ -1,5 +1,5 @@
-import net from 'node:net';
-import { createLineBuffer, parseState } from '@jm/companion-protocol';
+import { SuiteControlClient } from '@jm/suite-control-protocol/client';
+import { switcherStateFromSuite } from '@jm/suite-control-protocol';
 import type { SwitcherSource } from '@shared/types';
 
 export const SWITCHER_OFFLINE: SwitcherSource = {
@@ -11,75 +11,41 @@ export const SWITCHER_OFFLINE: SwitcherSource = {
   scenes: 0,
 };
 
-const RECONNECT_MS = 2000;
-
-/** TCP-Client auf den Switcher-Steuerserver (Companion-Zeilenprotokoll). */
+/**
+ * TCP-Client auf den Switcher-Steuerserver. Dünner Wrapper um den geteilten
+ * SuiteControlClient (suite-weites Zeilenprotokoll, Auto-Reconnect): liest die
+ * `ns=switcher`-STATE-Zeilen und mappt sie auf die Stage-Display-Quelle. Die
+ * öffentliche API (connect/disconnect/onChange) bleibt unverändert.
+ */
 export class SwitcherClient {
-  private socket: net.Socket | null = null;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private active = false;
-  private host = '';
-  private port = 0;
-  private readonly onChange: (s: SwitcherSource) => void;
+  private readonly client: SuiteControlClient;
 
   constructor(onChange: (s: SwitcherSource) => void) {
-    this.onChange = onChange;
+    this.client = new SuiteControlClient({
+      onState: (st) => {
+        const s = switcherStateFromSuite(st);
+        onChange({
+          connected: true,
+          program: s.program,
+          preview: s.preview,
+          recording: s.recording,
+          streaming: s.streaming,
+          scenes: s.scenes,
+        });
+      },
+      onConnectedChange: (connected) => {
+        // Bei Trennung (close/disconnect) auf „offline" zurückfallen; beim
+        // Connect warten wir auf die erste STATE-Zeile (wie bisher).
+        if (!connected) onChange({ ...SWITCHER_OFFLINE });
+      },
+    });
   }
 
   connect(host: string, port: number): void {
-    this.disconnect();
-    this.active = true;
-    this.host = host;
-    this.port = port;
-    this.open();
-  }
-
-  private open(): void {
-    if (!this.active) return;
-    const socket = net.connect({ host: this.host, port: this.port });
-    socket.setEncoding('utf8');
-    const feed = createLineBuffer((line) => {
-      const st = parseState(line);
-      if (st) {
-        this.onChange({
-          connected: true,
-          program: st.program,
-          preview: st.preview,
-          recording: st.recording,
-          streaming: st.streaming,
-          scenes: st.scenes,
-        });
-      }
-    });
-    socket.on('connect', () => socket.write('STATE?\n'));
-    socket.on('data', (chunk: string) => feed(chunk));
-    socket.on('error', () => {
-      /* 'close' folgt → Reconnect dort */
-    });
-    socket.on('close', () => {
-      this.onChange({ ...SWITCHER_OFFLINE });
-      this.scheduleReconnect();
-    });
-    this.socket = socket;
-  }
-
-  private scheduleReconnect(): void {
-    if (!this.active) return;
-    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.reconnectTimer = setTimeout(() => this.open(), RECONNECT_MS);
+    this.client.connect(host, port);
   }
 
   disconnect(): void {
-    this.active = false;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    if (this.socket) {
-      this.socket.removeAllListeners();
-      this.socket.destroy();
-      this.socket = null;
-    }
-    this.onChange({ ...SWITCHER_OFFLINE });
+    this.client.disconnect();
   }
 }

@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { JmtitlerApi, PartialTitlerConfig, TitlerState, TitlerStatus } from '@shared/types';
+import type {
+  JmtitlerApi,
+  PartialTitlerConfig,
+  TitlerRemoteCommand,
+  TitlerRemoteState,
+  TitlerState,
+  TitlerStatus,
+} from '@shared/types';
 
 // Den vom Main übertragenen Frame-MessagePort in den Renderer-Main-World
 // durchreichen — contextBridge kann MessagePorts nicht direkt übergeben, daher
@@ -22,6 +29,15 @@ const api: JmtitlerApi = {
     start: (name: string) => ipcRenderer.invoke('titler:ndi-start', name) as Promise<void>,
     stop: () => ipcRenderer.invoke('titler:ndi-stop') as Promise<void>,
     status: () => ipcRenderer.invoke('titler:ndi-status') as Promise<TitlerStatus>,
+  },
+  remote: {
+    onCommand: (cb) => {
+      const listener = (_e: unknown, cmd: TitlerRemoteCommand): void => cb(cmd);
+      ipcRenderer.on('titler:remote-cmd', listener);
+      return () => ipcRenderer.off('titler:remote-cmd', listener);
+    },
+    reportState: (state: TitlerRemoteState) =>
+      ipcRenderer.invoke('titler:report-state', state) as Promise<void>,
   },
 };
 
