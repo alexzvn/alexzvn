@@ -1,0 +1,238 @@
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import path, { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { parseShow, parseShowDeepLink } from '@jm/show';
+import { buildActionLine, navigate } from '@shared/conductor';
+import type { FireReport, RundownDoc, RundownNav, RundownState } from '@shared/types';
+import { Conductor } from './conductor';
+import { defaultDoc, loadAutosave, readDoc, saveAutosave, writeDoc } from './store';
+
+declare const __dirname: string;
+
+let mainWindow: BrowserWindow | null = null;
+const preloadPath = join(__dirname, '../preload/index.mjs');
+
+// ── Autoritativer Zustand (lebt im Main, damit auch der spätere RUNDOWN-
+//    Steuerserver / Companion navigieren kann) ───────────────────────────────
+let doc: RundownDoc = defaultDoc();
+let index = 0;
+let filePath: string | null = null;
+let dirty = false;
+let lastFired: FireReport | null = null;
+
+const conductor = new Conductor(() => broadcast());
+
+function resourcePath(filename: string): string {
+  if (app.isPackaged) return path.join(process.resourcesPath, filename);
+  return path.join(__dirname, '..', '..', 'resources', filename);
+}
+
+function buildState(): RundownState {
+  return { doc, index, filePath, dirty, links: conductor.snapshot(), lastFired };
+}
+
+function broadcast(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('rundown:state', buildState());
+}
+
+function setDoc(next: RundownDoc, nextPath: string | null, markDirty: boolean): void {
+  doc = next;
+  if (index > doc.rows.length - 1) index = Math.max(0, doc.rows.length - 1);
+  filePath = nextPath;
+  dirty = markDirty;
+  saveAutosave(doc);
+  broadcast();
+}
+
+/** Navigation auswerten; bei GO die Aktionen der scharfen Zeile feuern. */
+function doNav(cmd: RundownNav): void {
+  const res = navigate(doc, index, cmd);
+  if (cmd.t === 'go') {
+    const row = doc.rows[index];
+    const sent = res.fire.map((a) => {
+      const line = buildActionLine(a.role, a.verb, a.args);
+      const delivered = conductor.fire(a.role, line);
+      return { role: a.role, line, delivered };
+    });
+    lastFired = row ? { rowId: row.id, rowLabel: row.label, sent } : null;
+    if (row && sent.length) {
+      getLog().info(
+        `GO „${row.label}": ${sent.map((s) => s.line + (s.delivered ? '' : ' (offline)')).join(' | ')}`,
+      );
+    }
+  }
+  index = res.index;
+  broadcast();
+}
+
+async function openDialog(): Promise<void> {
+  const r = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'JM Rundown', extensions: ['jmrundown'] }],
+  });
+  if (r.canceled || !r.filePaths[0]) return;
+  try {
+    const d = readDoc(r.filePaths[0]);
+    index = 0;
+    lastFired = null;
+    setDoc(d, r.filePaths[0], false);
+  } catch (err) {
+    getLog().error(`Öffnen fehlgeschlagen: ${(err as Error).message}`);
+  }
+}
+
+async function saveDialog(forceNew: boolean): Promise<void> {
+  let target = filePath;
+  if (forceNew || !target) {
+    const r = await dialog.showSaveDialog({
+      defaultPath: `${doc.name}.jmrundown`,
+      filters: [{ name: 'JM Rundown', extensions: ['jmrundown'] }],
+    });
+    if (r.canceled || !r.filePath) return;
+    target = r.filePath;
+  }
+  try {
+    writeDoc(target, doc);
+    filePath = target;
+    dirty = false;
+    broadcast();
+  } catch (err) {
+    getLog().error(`Speichern fehlgeschlagen: ${(err as Error).message}`);
+  }
+}
+
+function registerIpc(): void {
+  ipcMain.handle('rundown:getState', () => buildState());
+  ipcMain.handle('rundown:nav', (_e, cmd: RundownNav) => {
+    doNav(cmd);
+    return buildState();
+  });
+  ipcMain.handle('rundown:setDoc', (_e, next: RundownDoc) => {
+    setDoc(next, filePath, true);
+    return buildState();
+  });
+  ipcMain.handle('rundown:new', () => {
+    index = 0;
+    lastFired = null;
+    setDoc(defaultDoc(), null, false);
+    return buildState();
+  });
+  ipcMain.handle('rundown:open', async () => {
+    await openDialog();
+    return buildState();
+  });
+  ipcMain.handle('rundown:save', async () => {
+    await saveDialog(false);
+    return buildState();
+  });
+  ipcMain.handle('rundown:saveAs', async () => {
+    await saveDialog(true);
+    return buildState();
+  });
+}
+
+/**
+ * Show-Integration: Wird Rundown über einen Show-Deep-Link gestartet, lädt es das
+ * in der Show referenzierte `.jmrundown`-Dokument (ShowToolRef.document von
+ * jm-rundown). So startet die ganze Produktion mit dem richtigen Ablauf.
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const ref = show.tools.find((t) => t.appId === 'jm-rundown');
+    if (ref?.document) {
+      index = 0;
+      lastFired = null;
+      setDoc(readDoc(ref.document), ref.document, false);
+    }
+  } catch (err) {
+    getLog().error(`Show-Deep-Link konnte nicht geladen werden: ${(err as Error).message}`);
+  }
+}
+
+function rendererUrl(): string | undefined {
+  return process.env['ELECTRON_RENDERER_URL'];
+}
+function rendererFile(): string {
+  return join(__dirname, '../renderer/index.html');
+}
+
+function createMainWindow(): BrowserWindow {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    return mainWindow;
+  }
+  const win = new BrowserWindow({
+    width: 1180,
+    height: 800,
+    minWidth: 960,
+    minHeight: 640,
+    backgroundColor: '#121212',
+    show: false,
+    title: 'JM Rundown',
+    icon: resourcePath('icon.png'),
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: preloadPath,
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  win.on('ready-to-show', () => win.show());
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.on('closed', () => {
+    mainWindow = null;
+  });
+  const url = rendererUrl();
+  if (url) win.loadURL(url);
+  else win.loadFile(rendererFile());
+  mainWindow = win;
+  return win;
+}
+
+// Geteilter Runtime-Layer: Logging, Crash-Handler, Deep-Links, Presence.
+const runtime = initAppRuntime({
+  appId: 'jm-rundown',
+  appName: 'JM Rundown',
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    } else {
+      createMainWindow();
+    }
+  });
+
+  app.whenReady().then(() => {
+    // Letzten Stand wiederherstellen (sofern kein Deep-Link kommt).
+    const saved = loadAutosave();
+    if (saved) doc = saved;
+    registerIpc();
+    createMainWindow();
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
+    conductor.start();
+  });
+
+  app.on('before-quit', () => conductor.stop());
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}
