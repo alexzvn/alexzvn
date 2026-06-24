@@ -386,6 +386,24 @@ var CAPABILITIES = {
       { id: "playing", label: "Wiedergabe l\xE4uft", stateKey: "playing", match: "truthy", bgcolor: GREEN, color: WHITE },
       { id: "recording", label: "Aufnahme l\xE4uft", stateKey: "recording", match: "truthy", bgcolor: RED, color: WHITE }
     ]
+  },
+  // ── Rundown (Ablaufregie/Conductor) ─────────────────────────────────────────
+  rundown: {
+    role: "rundown",
+    label: "JM Rundown",
+    port: 8731,
+    actions: [
+      { id: "go", label: "GO (Zeile feuern + weiter)", verb: "go" },
+      { id: "next", label: "Weiter (ohne feuern)", verb: "next" },
+      { id: "prev", label: "Zur\xFCck", verb: "prev" },
+      { id: "goto", label: "Zeile anspringen", verb: "goto", args: [{ id: "n", label: "Zeile (Nr.)", type: "number", default: 1, min: 1, max: 999 }] }
+    ],
+    variables: [
+      { id: "cue", label: "Scharfe Zeile (Nr.)" },
+      { id: "total", label: "Zeilen gesamt" },
+      { id: "label", label: "Scharfe Zeile (Titel)" }
+    ],
+    feedbacks: []
   }
 };
 var KNOWN_ROLES = Object.keys(CAPABILITIES);
