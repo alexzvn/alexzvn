@@ -1228,9 +1228,7 @@
       "prerequisites": [
         "JM Rundown installiert (über den Launcher)",
         "Die anzusteuernden Tools im selben LAN (werden per mDNS gefunden)",
-        {
-          "Optional": "Bitfocus Companion für Fern-GO"
-        }
+        "Bitfocus Companion für Fern-GO (optional)"
       ],
       "equipmentOwner": "jm",
       "crewRoles": [
@@ -1335,9 +1333,7 @@
         "JM Studio Control installiert (über den Launcher)",
         "Studiogeräte im Netz erreichbar (TriCaster, ATEM, OBS, PTZ, Audio/Licht)",
         "Nutzer und Rollen festgelegt",
-        {
-          "Optional": "Bitfocus Companion (Gateway-Rolle \"studio\")"
-        }
+        "Bitfocus Companion (Gateway-Rolle „studio\", optional)"
       ],
       "equipmentOwner": "gemischt",
       "crewRoles": [
@@ -1440,12 +1436,8 @@
         "JM Switcher installiert (über den Launcher)",
         "NDI-Runtime, falls NDI-Quellen genutzt werden",
         "Capture-Karte inkl. Treiber, falls SDI/HDMI-Quellen",
-        {
-          "Für Streaming": "RTMP-Ziel (Stream-Key) + stabile Upload-Leitung"
-        },
-        {
-          "Optional": "Bitfocus Companion für die Fernsteuerung"
-        }
+        "RTMP-Ziel (Stream-Key) + stabile Upload-Leitung (nur fürs Streaming)",
+        "Bitfocus Companion für die Fernsteuerung (optional)"
       ],
       "equipmentOwner": "jm",
       "crewRoles": [
@@ -1553,12 +1545,8 @@
       ],
       "prerequisites": [
         "JM Timer installiert (über den Launcher)",
-        {
-          "Optional": "zweiter Bildschirm / Sprecher-Monitor"
-        },
-        {
-          "Optional": "Netzwerk / Bitfocus Companion für die Fernsteuerung"
-        }
+        "Zweiter Bildschirm / Sprecher-Monitor (optional)",
+        "Netzwerk / Bitfocus Companion für die Fernsteuerung (optional)"
       ],
       "equipmentOwner": "jm",
       "crewRoles": [

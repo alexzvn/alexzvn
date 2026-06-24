@@ -9,8 +9,8 @@ tags: [timer, countdown, sprecher, companion, manual]
 relatedTools: [jm-timer, jm-stage-display, jm-rundown]
 prerequisites:
   - JM Timer installiert (über den Launcher)
-  - Optional: zweiter Bildschirm / Sprecher-Monitor
-  - Optional: Netzwerk / Bitfocus Companion für die Fernsteuerung
+  - Zweiter Bildschirm / Sprecher-Monitor (optional)
+  - Netzwerk / Bitfocus Companion für die Fernsteuerung (optional)
 equipmentOwner: jm
 crewRoles:
   - Regie / Media Operator

@@ -11,8 +11,8 @@ prerequisites:
   - JM Switcher installiert (über den Launcher)
   - NDI-Runtime, falls NDI-Quellen genutzt werden
   - Capture-Karte inkl. Treiber, falls SDI/HDMI-Quellen
-  - Für Streaming: RTMP-Ziel (Stream-Key) + stabile Upload-Leitung
-  - Optional: Bitfocus Companion für die Fernsteuerung
+  - RTMP-Ziel (Stream-Key) + stabile Upload-Leitung (nur fürs Streaming)
+  - Bitfocus Companion für die Fernsteuerung (optional)
 equipmentOwner: jm
 crewRoles:
   - Media Operator (Bildregie)

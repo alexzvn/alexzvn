@@ -10,7 +10,7 @@ relatedTools: [jm-rundown, jm-timer, jm-prompter, jm-presenter, jm-titler, jm-sw
 prerequisites:
   - JM Rundown installiert (über den Launcher)
   - Die anzusteuernden Tools im selben LAN (werden per mDNS gefunden)
-  - Optional: Bitfocus Companion für Fern-GO
+  - Bitfocus Companion für Fern-GO (optional)
 equipmentOwner: jm
 crewRoles:
   - Regie / Ablaufregie

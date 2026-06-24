@@ -11,7 +11,7 @@ prerequisites:
   - JM Studio Control installiert (über den Launcher)
   - Studiogeräte im Netz erreichbar (TriCaster, ATEM, OBS, PTZ, Audio/Licht)
   - Nutzer und Rollen festgelegt
-  - Optional: Bitfocus Companion (Gateway-Rolle "studio")
+  - Bitfocus Companion (Gateway-Rolle „studio", optional)
 equipmentOwner: gemischt
 crewRoles:
   - Studio-Operator / Technische Leitung
