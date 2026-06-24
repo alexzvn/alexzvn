@@ -100,7 +100,7 @@ function ActionRow({
           title="aktiviert"
         />
         <select value={action.role} onChange={(e) => setRole(e.target.value)} className={select}>
-          {KNOWN_ROLES.map((r) => (
+          {KNOWN_ROLES.filter((r) => r !== 'rundown').map((r) => (
             <option key={r} value={r}>
               {CAPABILITIES[r].label}
             </option>

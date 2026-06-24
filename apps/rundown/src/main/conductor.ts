@@ -52,7 +52,8 @@ export class Conductor {
   }
 
   private isControl(s: DiscoveredService): boolean {
-    return (s.ctl || s.role === 'switcher') && !!CAPABILITIES[s.role];
+    // 'rundown' ausschließen — der Conductor dirigiert nicht sich selbst.
+    return s.role !== 'rundown' && (s.ctl || s.role === 'switcher') && !!CAPABILITIES[s.role];
   }
 
   private onDiscovered(svcs: DiscoveredService[]): void {

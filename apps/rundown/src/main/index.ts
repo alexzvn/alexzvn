@@ -4,9 +4,11 @@ import { readFileSync } from 'node:fs';
 import { initAppRuntime, getLog } from '@jm/app-runtime';
 import { parseShow, parseShowDeepLink } from '@jm/show';
 import { buildActionLine, navigate } from '@shared/conductor';
+import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
 import type { FireReport, RundownDoc, RundownNav, RundownState } from '@shared/types';
 import { Conductor } from './conductor';
 import { getOverrides, setOverride } from './config';
+import { startControlServer, stopControlServer, pushControlState } from './control-server';
 import { defaultDoc, loadAutosave, readDoc, saveAutosave, writeDoc } from './store';
 
 declare const __dirname: string;
@@ -35,6 +37,41 @@ function buildState(): RundownState {
 
 function broadcast(): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('rundown:state', buildState());
+  pushControlState(buildSuiteState());
+}
+
+/** Zustand fürs Suite-Steuerprotokoll (Companion liest cue/total/label). */
+function buildSuiteState(): SuiteState {
+  const cur = doc.rows[index];
+  return {
+    ns: 'rundown',
+    kv: {
+      cue: doc.rows.length ? index + 1 : 0,
+      total: doc.rows.length,
+      // STATE ist whitespace-getrennt → Leerzeichen im Titel ersetzen.
+      label: cur ? cur.label.trim().replace(/\s+/g, '_') || '-' : '-',
+    },
+  };
+}
+
+/** RUNDOWN-Befehl (von Companion) → Navigation. */
+function handleSuiteCommand(cmd: SuiteCommand): void {
+  switch (cmd.verb) {
+    case 'go':
+      doNav({ t: 'go' });
+      break;
+    case 'next':
+      doNav({ t: 'next' });
+      break;
+    case 'prev':
+      doNav({ t: 'prev' });
+      break;
+    case 'goto': {
+      const n = Number(cmd.args[0]);
+      if (Number.isFinite(n)) doNav({ t: 'goto', n: Math.trunc(n) });
+      break;
+    }
+  }
 }
 
 // Tally/Verbindungen ändern sich häufig (z. B. Timer-Tick 1×/s je Tool) → nur die
@@ -251,9 +288,14 @@ if (!gotLock) {
     if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
     conductor.setOverrides(getOverrides());
     conductor.start();
+    // Eigener Steuerserver: Rundown selbst per Companion fern-GO-bar (Port 8731).
+    void startControlServer({ getState: buildSuiteState, onCommand: handleSuiteCommand });
   });
 
-  app.on('before-quit', () => conductor.stop());
+  app.on('before-quit', () => {
+    conductor.stop();
+    stopControlServer();
+  });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
