@@ -1,4 +1,5 @@
 import type { AppChangelog, ToolManifest, ToolState } from '@jm/suite-manifest';
+import type { Recipe } from '@jm/cookbook';
 import type { Show } from '@jm/show';
 
 export type {
@@ -9,6 +10,19 @@ export type {
   AppChangelog,
   ChangelogEntry,
 } from '@jm/suite-manifest';
+
+export type {
+  Recipe,
+  Cookbook,
+  CookbookCategory,
+  Difficulty,
+  EquipmentOwner,
+  RecipeBlocks,
+  IngredientGroup,
+  RecipeSteps,
+  TroubleshootingRow,
+  Checklist,
+} from '@jm/cookbook';
 
 /** Ergebnis einer Launcher-Aktion (öffnen/installieren/aktualisieren). */
 export interface ActionResult {
@@ -100,6 +114,7 @@ export type AppEvent =
   | { type: 'notice'; message: string }
   | { type: 'manifest-changed' }
   | { type: 'changelog-changed' }
+  | { type: 'cookbook-changed' }
   | { type: 'presence-changed' }
   | { type: 'health-changed' };
 
@@ -111,6 +126,8 @@ export interface JmpsApi {
   listTools: () => Promise<ToolManifest[]>;
   /** App-Patchnotes (live geladen, sonst gebündelter Fallback). */
   getChangelog: () => Promise<AppChangelog[]>;
+  /** Kochbuch-Rezepte (live geladen, sonst gebündelter Fallback). */
+  getCookbook: () => Promise<Recipe[]>;
   getState: () => Promise<ToolState[]>;
   checkUpdates: () => Promise<ToolState[]>;
   /** Laufzeit-Zustand aller Tools, die einen Heartbeat senden. */

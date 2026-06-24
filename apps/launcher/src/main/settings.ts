@@ -23,6 +23,9 @@ const DEFAULT_MANIFEST_URL = `${DEFAULT_PROXY_URL}/suite.json`;
 // App-Patchnotes ebenfalls live vom Proxy (Route /changelog.json) — so erscheinen
 // neue Patchnotes ohne Launcher-Release (Issue #19).
 const DEFAULT_CHANGELOG_URL = `${DEFAULT_PROXY_URL}/changelog.json`;
+// Kochbuch-Rezepte ebenfalls live vom Proxy (Route /cookbook.json) — neue Rezepte
+// ohne Launcher-Release.
+const DEFAULT_COOKBOOK_URL = `${DEFAULT_PROXY_URL}/cookbook.json`;
 
 /** Eingebackene Standard-Katalog-URL (für den Fetch-Fallback in manifest.ts). */
 export function defaultManifestUrl(): string {
@@ -32,6 +35,11 @@ export function defaultManifestUrl(): string {
 /** Effektive Changelog-URL: Env (JMPS_CHANGELOG_URL) > eingebackener Default. */
 export function resolveChangelogUrl(): string {
   return process.env['JMPS_CHANGELOG_URL'] || DEFAULT_CHANGELOG_URL;
+}
+
+/** Effektive Cookbook-URL: Env (JMPS_COOKBOOK_URL) > eingebackener Default. */
+export function resolveCookbookUrl(): string {
+  return process.env['JMPS_COOKBOOK_URL'] || DEFAULT_COOKBOOK_URL;
 }
 
 function settingsFile(): string {

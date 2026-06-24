@@ -5,6 +5,7 @@ import type { ToolManifest } from '@jm/suite-manifest';
 import type { Show } from '@jm/show';
 import { getTool, getTools } from './manifest';
 import { getChangelog } from './changelog';
+import { getCookbook } from './cookbook';
 import { getAllStates } from './install-state';
 import { getPresence } from './presence';
 import { getHealth } from './health';
@@ -32,6 +33,8 @@ export function registerIpc(): void {
   ipcMain.handle('suite:list', () => getTools());
   // App-Patchnotes (live geladen, sonst gebündelter Fallback) — Issue #19.
   ipcMain.handle('changelog:get', () => getChangelog());
+  // Kochbuch-Rezepte (live geladen, sonst gebündelter Fallback).
+  ipcMain.handle('cookbook:get', () => getCookbook());
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
   // Laufzeit-Zustand (welche Tools laufen gerade) für das Health-Dashboard.
   ipcMain.handle('presence:get', () => getPresence());

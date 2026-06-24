@@ -7,6 +7,7 @@ import type { AppEvent } from '@shared/types';
 import { registerIpc } from './ipc';
 import { initManifest, refreshManifest } from './manifest';
 import { initChangelog, refreshChangelog } from './changelog';
+import { initCookbook, refreshCookbook } from './cookbook';
 import { startPresenceHub } from './presence';
 import { startHealth } from './health';
 import { openShow } from './show';
@@ -55,6 +56,7 @@ if (setupSingleInstance(() => createWindow())) {
   app.whenReady().then(() => {
     initManifest(); // lokalen Manifest-Cache laden, bevor das Fenster Tools abfragt
     initChangelog(); // dito für die App-Patchnotes
+    initCookbook(); // dito für die Kochbuch-Rezepte
     // Presence-Hub: empfängt die Heartbeats der Tools und meldet Änderungen an
     // die UI (Health-Dashboard). Best-effort — fällt der Port aus, läuft alles weiter.
     startPresenceHub(() => emitAppEvent({ type: 'presence-changed' }));
@@ -74,6 +76,12 @@ if (setupSingleInstance(() => createWindow())) {
     refreshChangelog()
       .then((changed) => {
         if (changed) emitAppEvent({ type: 'changelog-changed' });
+      })
+      .catch(() => {});
+    // … und die remote cookbook.json (neue Rezepte ohne Launcher-Release).
+    refreshCookbook()
+      .then((changed) => {
+        if (changed) emitAppEvent({ type: 'cookbook-changed' });
       })
       .catch(() => {});
     // Launcher-Self-Update läuft über den Renderer (loadLauncherUpdate → Banner

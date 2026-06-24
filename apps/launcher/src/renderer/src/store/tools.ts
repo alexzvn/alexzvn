@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useChangelog } from '@/store/changelog';
+import { useCookbook } from '@/store/cookbook';
 import type {
   ActionResult,
   FeedbackInput,
@@ -141,6 +142,9 @@ export const useTools = create<ToolsStore>((set) => {
           } else if (e.type === 'changelog-changed') {
             // Live aktualisierte App-Patchnotes übernehmen (Issue #19).
             await useChangelog.getState().load();
+          } else if (e.type === 'cookbook-changed') {
+            // Live aktualisierte Kochbuch-Rezepte übernehmen.
+            await useCookbook.getState().load();
           } else if (e.type === 'presence-changed') {
             // Ein Tool ist gestartet/gestoppt → Health-Dashboard auffrischen.
             await useTools.getState().loadPresence();
@@ -172,6 +176,7 @@ export const useTools = create<ToolsStore>((set) => {
         window.jmps.getSettings(),
         window.jmps.getVersion(),
         useChangelog.getState().load(),
+        useCookbook.getState().load(),
       ]);
       set({ tools, states: byId(states), settings, version, loading: false });
       // „Was ist neu?" nach einem Launcher-Update (oder beim ersten Start dieser
