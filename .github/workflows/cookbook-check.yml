@@ -1,0 +1,27 @@
+name: Kochbuch Check
+
+# Stellt sicher, dass cookbook.json zum Markdown-Content passt (Single Source).
+# Läuft nur bei Änderungen am Kochbuch-Paket. --ignore-scripts überspringt die
+# schweren nativen Postinstalls (electron, better-sqlite3, freetype2) — der Check
+# braucht nur gray-matter (reines JS).
+on:
+  push:
+    paths:
+      - "packages/cookbook/**"
+  pull_request:
+    paths:
+      - "packages/cookbook/**"
+
+jobs:
+  check:
+    name: cookbook.json frisch?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - name: Install (ohne native Postinstalls)
+        run: npm ci --ignore-scripts
+      - name: Check
+        run: npm run cookbook:check

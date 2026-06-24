@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T12:00:00.000Z",
+  "updatedAt": "2026-06-24T00:00:00.000Z",
   "recipes": [
     {
       "id": "hybrid-konferenz",
@@ -9,8 +9,19 @@
       "difficulty": "anspruchsvoll",
       "setupTimeMin": 480,
       "teamSize": "4-6",
-      "tags": ["hybrid", "streaming", "konferenz", "regie"],
-      "relatedTools": ["jm-rundown", "jm-switcher", "jm-caption", "jm-timer", "jm-prompter"],
+      "tags": [
+        "hybrid",
+        "streaming",
+        "konferenz",
+        "regie"
+      ],
+      "relatedTools": [
+        "jm-rundown",
+        "jm-switcher",
+        "jm-caption",
+        "jm-timer",
+        "jm-prompter"
+      ],
       "prerequisites": [
         "Stabile Upload-Leitung (mind. 10 Mbit/s)",
         "Backup-Internet (Mobile-Hotspot)",
@@ -94,16 +105,27 @@
             "Material an Kunden senden"
           ]
         },
-        "tips": [
-          "Gleichwertiges Erlebnis für beide Gruppen aktiv mitdenken — Remote nicht als Publikum zweiter Klasse behandeln.",
-          "Regieplan mit Puffern bauen, um Verzögerungen abzufangen."
-        ],
         "troubleshooting": [
-          { "risk": "Internet bricht ab", "remedy": "Mobile-Hotspot als Backup, Backup-Stream vorbereitet halten" },
-          { "risk": "Mikrofon fällt aus", "remedy": "Ersatzmikrofon griffbereit bereitstellen" },
-          { "risk": "Präsentation startet nicht", "remedy": "Zweiter Laptop mit gespiegelten Folien" },
-          { "risk": "Kameraausfall", "remedy": "Ersatzkamera oder kurzfristig auf Totale umschalten" },
-          { "risk": "Verzögerungen im Ablauf", "remedy": "Regieplan mit Puffern, Segmente kürzbar planen" }
+          {
+            "risk": "Internet bricht ab",
+            "remedy": "Mobile-Hotspot als Backup, Backup-Stream vorbereitet halten"
+          },
+          {
+            "risk": "Mikrofon fällt aus",
+            "remedy": "Ersatzmikrofon griffbereit bereitstellen"
+          },
+          {
+            "risk": "Präsentation startet nicht",
+            "remedy": "Zweiter Laptop mit gespiegelten Folien"
+          },
+          {
+            "risk": "Kameraausfall",
+            "remedy": "Ersatzkamera oder kurzfristig auf Totale umschalten"
+          },
+          {
+            "risk": "Verzögerungen im Ablauf",
+            "remedy": "Regieplan mit Puffern, Segmente kürzbar planen"
+          }
         ],
         "checklists": [
           {
@@ -125,6 +147,10 @@
               "Chat-Team eingewiesen"
             ]
           }
+        ],
+        "tips": [
+          "Gleichwertiges Erlebnis für beide Gruppen aktiv mitdenken — Remote nicht als Publikum zweiter Klasse behandeln.",
+          "Regieplan mit Puffern bauen, um Verzögerungen abzufangen."
         ]
       }
     },
@@ -135,8 +161,19 @@
       "difficulty": "mittel",
       "setupTimeMin": 240,
       "teamSize": "2-3",
-      "tags": ["livestream", "tricaster", "ptz", "ndi", "regie"],
-      "relatedTools": ["jm-switcher", "jm-caption", "jm-titler", "jm-stage-display"],
+      "tags": [
+        "livestream",
+        "tricaster",
+        "ptz",
+        "ndi",
+        "regie"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-caption",
+        "jm-titler",
+        "jm-stage-display"
+      ],
       "prerequisites": [
         "Strom 230 V / 10 A, einzeln abgesichert",
         "DSL-/Upload-Zugang vom Kunden",
@@ -209,15 +246,23 @@
             "Material für Postproduktion übergeben"
           ]
         },
-        "tips": [
-          "Mehr Kamerabewegung und Inserts halten den Stream dynamisch — statische Totalen wirken schnell langweilig.",
-          "Vorhandene Haustechnik (Licht, LED-Wand, Audiopult) vorab auf Verfügbarkeit und Funktion prüfen — nicht blind aufs Inventar verlassen."
-        ],
         "troubleshooting": [
-          { "risk": "Kundeninternet instabil / ohne Haftung", "remedy": "Mobiler Backup-Uplink (Bonding/LTE), Stream-Bitrate konservativ wählen" },
-          { "risk": "PTZ-Kamera reagiert nicht", "remedy": "Netzwerk/PoE prüfen, Ersatz-Patch, Kamera am Panel neu zuweisen" },
-          { "risk": "Tally fehlt oder ist falsch", "remedy": "FlexTally-Zuordnung im TriCaster prüfen" },
-          { "risk": "Intercom-Aussetzer", "remedy": "Antennenposition/Frequenz prüfen, Beltpack-Akkus tauschen" }
+          {
+            "risk": "Kundeninternet instabil / ohne Haftung",
+            "remedy": "Mobiler Backup-Uplink (Bonding/LTE), Stream-Bitrate konservativ wählen"
+          },
+          {
+            "risk": "PTZ-Kamera reagiert nicht",
+            "remedy": "Netzwerk/PoE prüfen, Ersatz-Patch, Kamera am Panel neu zuweisen"
+          },
+          {
+            "risk": "Tally fehlt oder ist falsch",
+            "remedy": "FlexTally-Zuordnung im TriCaster prüfen"
+          },
+          {
+            "risk": "Intercom-Aussetzer",
+            "remedy": "Antennenposition/Frequenz prüfen, Beltpack-Akkus tauschen"
+          }
         ],
         "checklists": [
           {
@@ -239,6 +284,10 @@
               "Probe mit Regie gelaufen"
             ]
           }
+        ],
+        "tips": [
+          "Mehr Kamerabewegung und Inserts halten den Stream dynamisch — statische Totalen wirken schnell langweilig.",
+          "Vorhandene Haustechnik (Licht, LED-Wand, Audiopult) vorab auf Verfügbarkeit und Funktion prüfen — nicht blind aufs Inventar verlassen."
         ]
       }
     }

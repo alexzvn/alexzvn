@@ -7,5 +7,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./cookbook.json": "./cookbook.json"
+  },
+  "scripts": {
+    "build": "node src/build.mjs",
+    "check": "node src/build.mjs --check"
+  },
+  "devDependencies": {
+    "gray-matter": "^4.0.3"
   }
 }
