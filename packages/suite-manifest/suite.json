@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T05:00:29.887Z",
+  "updatedAt": "2026-06-24T05:18:50.029Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -115,7 +115,7 @@
       "category": "Ingest",
       "appId": "gmbh.jakobs.recorder",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.4.0",
+      "latestVersion": "0.5.0",
       "platforms": {
         "mac": {
           "artifact": "JM Audio Recorder-${version}-mac-${arch}.dmg",
@@ -283,7 +283,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.titler",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.2.0",
+      "latestVersion": "0.3.0",
       "platforms": {
         "win": {
           "artifact": "JM Titler-${version}-win-x64.exe",
@@ -338,7 +338,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.daw",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.7.1",
+      "latestVersion": "0.8.0",
       "platforms": {
         "mac": {
           "artifact": "JM DAW-${version}-mac-${arch}.dmg",
