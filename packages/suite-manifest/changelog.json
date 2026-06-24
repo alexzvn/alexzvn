@@ -840,5 +840,19 @@
         ]
       }
     ]
+  },
+  {
+    "app": "caption",
+    "name": "JM Caption",
+    "entries": [
+      {
+        "version": "0.1.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Neu im Werkzeugkasten: JM Caption — Live-Untertitel. Transkribiert Mikrofon/Ton offline mit whisper.cpp und gibt die Untertitel als transparente NDI-Quelle für TriCaster, vMix oder OBS aus.",
+          "Modell- und Sprachwahl, Hold zum Einfrieren der Ausgabe und Korrektur der letzten Zeile per Doppelklick. Per Bitfocus Companion fernsteuerbar (Transkription an/aus, Hold, NDI). Für Politik-Streams, Pressekonferenzen und Barrierefreiheit."
+        ]
+      }
+    ]
   }
 ]

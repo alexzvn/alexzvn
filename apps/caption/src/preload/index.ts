@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { CaptionConfig, CaptionState, JmCaptionApi } from '@shared/types';
+import type { CaptionConfig, CaptionState, CaptionStatus, JmCaptionApi } from '@shared/types';
+
+// Den vom Main übertragenen Frame-MessagePort in den Renderer-Main-World
+// durchreichen — contextBridge kann MessagePorts nicht direkt übergeben, daher
+// der dokumentierte window.postMessage-Transfer (Empfang im Renderer: 'message').
+ipcRenderer.on('jmcaption:frame-port', (e) => {
+  window.postMessage('jmcaption:frame-port', '*', e.ports);
+});
 
 const api: JmCaptionApi = {
   platform: process.platform,
@@ -18,6 +25,11 @@ const api: JmCaptionApi = {
   correctLast: (text: string) => ipcRenderer.invoke('caption:correctLast', text) as Promise<CaptionState>,
   pushUtterance: (pcm: Float32Array, sampleRate: number) =>
     ipcRenderer.send('caption:utterance', pcm, sampleRate),
+  ndi: {
+    start: (name?: string) => ipcRenderer.invoke('caption:ndi-start', name ?? '') as Promise<CaptionStatus>,
+    stop: () => ipcRenderer.invoke('caption:ndi-stop') as Promise<CaptionStatus>,
+    status: () => ipcRenderer.invoke('caption:ndi-status') as Promise<CaptionStatus>,
+  },
 };
 
 if (process.contextIsolated) {

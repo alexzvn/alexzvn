@@ -12,6 +12,8 @@ interface Store {
   setHold: (hold: boolean) => Promise<void>;
   clear: () => Promise<void>;
   correctLast: (text: string) => Promise<void>;
+  ndiStart: (name?: string) => Promise<void>;
+  ndiStop: () => Promise<void>;
 }
 
 let subscribed = false;
@@ -33,4 +35,12 @@ export const useCaption = create<Store>((set) => ({
   setHold: async (hold) => set({ state: await window.jmcaption.setHold(hold) }),
   clear: async () => set({ state: await window.jmcaption.clear() }),
   correctLast: async (text) => set({ state: await window.jmcaption.correctLast(text) }),
+  // NDI-Start/Stop liefern nur den Status zurück; der vollständige State kommt
+  // über den onState-Broadcast (startNdi/stopNdi im Main rufen broadcast()).
+  ndiStart: async (name) => {
+    await window.jmcaption.ndi.start(name);
+  },
+  ndiStop: async () => {
+    await window.jmcaption.ndi.stop();
+  },
 }));

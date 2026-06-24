@@ -4,7 +4,15 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { initAppRuntime, getLog } from '@jm/app-runtime';
 import { whisperAvailable } from './locate';
 import { enqueueUtterance, initTranscriber, stopTranscriber } from './transcriber';
-import type { CaptionConfig, CaptionLine, CaptionState } from '@shared/types';
+import { startSender, stopSender, senderActive } from './ndi/sender-process';
+import {
+  startControlServer,
+  stopControlServer,
+  pushControlState,
+  resolveMode,
+} from './control-server';
+import type { SuiteCommand, SuiteState } from '@jm/suite-control-protocol';
+import type { CaptionConfig, CaptionLine, CaptionState, CaptionStatus } from '@shared/types';
 
 declare const __dirname: string;
 
@@ -18,6 +26,13 @@ const defaultConfig: CaptionConfig = {
   maxUtteranceSec: 8,
   silenceMs: 700,
   silenceThreshold: 0.012,
+  ndiName: 'JM Caption',
+  ndiWidth: 1920,
+  ndiHeight: 1080,
+  ndiFps: 30,
+  ndiFontSize: 54,
+  ndiLines: 2,
+  ndiBand: true,
 };
 
 let config: CaptionConfig = { ...defaultConfig };
@@ -27,6 +42,7 @@ let busy = false;
 let error: string | null = null;
 let lines: CaptionLine[] = [];
 let lineSeq = 0;
+const status: CaptionStatus = { ndiActive: false, connections: 0 };
 
 function configPath(): string {
   return join(app.getPath('userData'), 'caption.config.json');
@@ -53,10 +69,81 @@ function resourcePath(filename: string): string {
 }
 
 function buildState(): CaptionState {
-  return { running, hold, busy, whisperAvailable: whisperAvailable(), lines, config, error };
+  return { running, hold, busy, whisperAvailable: whisperAvailable(), lines, config, status, error };
 }
 function broadcast(): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('caption:state', buildState());
+  pushControlState(buildSuiteState());
+}
+
+/** Zustand fürs Suite-Steuerprotokoll (Companion liest running/hold/ndi/…). */
+function buildSuiteState(): SuiteState {
+  return {
+    ns: 'caption',
+    kv: {
+      running,
+      hold,
+      ndi: status.ndiActive,
+      connections: status.connections,
+      lines: lines.length,
+    },
+  };
+}
+
+/** CAPTION-Befehl (von Companion) → Zustandsänderung. */
+function handleSuiteCommand(cmd: SuiteCommand): void {
+  const arg = cmd.args[0];
+  switch (cmd.verb) {
+    case 'transcribe':
+      setRunning(resolveMode(arg, running));
+      break;
+    case 'hold':
+      setHoldState(resolveMode(arg, hold));
+      break;
+    case 'ndi':
+      if (resolveMode(arg, status.ndiActive)) startNdi(config.ndiName);
+      else stopNdi();
+      break;
+    case 'clear':
+      doClear();
+      break;
+  }
+}
+
+// ── Geteilte Zustandsänderungen (IPC + Steuerserver nutzen dieselben) ──────────
+function setRunning(v: boolean): void {
+  if (running === v) return;
+  running = v;
+  if (v) error = null;
+  else stopTranscriber();
+  broadcast();
+}
+function setHoldState(v: boolean): void {
+  if (hold === v) return;
+  hold = v;
+  broadcast();
+}
+function doClear(): void {
+  lines = [];
+  broadcast();
+}
+
+function startNdi(name: string): void {
+  if (!mainWindow) return;
+  startSender(mainWindow, name || config.ndiName, (connections) => {
+    status.connections = connections;
+    broadcast();
+  });
+  status.ndiActive = true;
+  status.connections = 0;
+  broadcast();
+}
+
+function stopNdi(): void {
+  stopSender();
+  status.ndiActive = false;
+  status.connections = 0;
+  broadcast();
 }
 
 initTranscriber({
@@ -87,25 +174,19 @@ function registerIpc(): void {
     return buildState();
   });
   ipcMain.handle('caption:start', () => {
-    running = true;
-    error = null;
-    broadcast();
+    setRunning(true);
     return buildState();
   });
   ipcMain.handle('caption:stop', () => {
-    running = false;
-    stopTranscriber();
-    broadcast();
+    setRunning(false);
     return buildState();
   });
   ipcMain.handle('caption:setHold', (_e, h: boolean) => {
-    hold = h;
-    broadcast();
+    setHoldState(h);
     return buildState();
   });
   ipcMain.handle('caption:clear', () => {
-    lines = [];
-    broadcast();
+    doClear();
     return buildState();
   });
   ipcMain.handle('caption:correctLast', (_e, text: string) => {
@@ -119,6 +200,19 @@ function registerIpc(): void {
   // Fire-and-forget: erkannte Äußerung vom Renderer → Transkriptions-Queue.
   ipcMain.on('caption:utterance', (_e, pcm: Float32Array, sampleRate: number) => {
     if (running) enqueueUtterance(pcm instanceof Float32Array ? pcm : new Float32Array(pcm), sampleRate);
+  });
+  // Transparente NDI-Untertitel-Quelle (Frames zeichnet der Renderer).
+  ipcMain.handle('caption:ndi-start', (_e, name: string) => {
+    startNdi(name || config.ndiName);
+    return status;
+  });
+  ipcMain.handle('caption:ndi-stop', () => {
+    stopNdi();
+    return status;
+  });
+  ipcMain.handle('caption:ndi-status', () => {
+    status.ndiActive = senderActive();
+    return status;
   });
 }
 
@@ -159,6 +253,9 @@ function createMainWindow(): BrowserWindow {
     return { action: 'deny' };
   });
   win.on('closed', () => {
+    stopSender();
+    status.ndiActive = false;
+    status.connections = 0;
     mainWindow = null;
   });
   const url = rendererUrl();
@@ -192,9 +289,15 @@ if (!gotLock) {
     session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media');
     registerIpc();
     createMainWindow();
+    // Eigener Steuerserver: Caption per Companion fernsteuerbar (Port 8732).
+    void startControlServer({ getState: buildSuiteState, onCommand: handleSuiteCommand });
   });
 
-  app.on('before-quit', () => stopTranscriber());
+  app.on('before-quit', () => {
+    stopTranscriber();
+    stopSender();
+    stopControlServer();
+  });
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

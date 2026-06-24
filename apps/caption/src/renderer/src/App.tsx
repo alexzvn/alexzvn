@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCaption } from '@/store/useCaption';
 import { startCapture, type Capture } from '@/lib/capture';
-import type { WhisperModelId } from '@shared/types';
+import { useCaptionNdiEngine } from '@/lib/ndi-engine';
+import type { CaptionConfig, WhisperModelId } from '@shared/types';
 
 const MODELS: { id: WhisperModelId; label: string }[] = [
   { id: 'tiny', label: 'Tiny (schnell)' },
@@ -15,11 +16,35 @@ const LANGS = [
   { id: 'en', label: 'Englisch' },
   { id: 'auto', label: 'Auto-Erkennung' },
 ];
+const RES = [
+  { id: '1920x1080', label: '1080p', w: 1920, h: 1080 },
+  { id: '1280x720', label: '720p', w: 1280, h: 720 },
+  { id: '3840x2160', label: '2160p', w: 3840, h: 2160 },
+];
 const sel = 'rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-100';
 
+// Nur als Platzhalter, bis der echte State (mit config) vom Main geladen ist —
+// die Engine-Hooks laufen unbedingt, brauchen aber eine vollständige Config.
+const FALLBACK_CFG: CaptionConfig = {
+  model: 'base',
+  language: 'de',
+  maxUtteranceSec: 8,
+  silenceMs: 700,
+  silenceThreshold: 0.012,
+  ndiName: 'JM Caption',
+  ndiWidth: 1920,
+  ndiHeight: 1080,
+  ndiFps: 30,
+  ndiFontSize: 54,
+  ndiLines: 2,
+  ndiBand: true,
+};
+
 export function App() {
-  const { state, level, load, setLevel, setConfig, start, stop, setHold, clear, correctLast } = useCaption();
+  const { state, level, load, setLevel, setConfig, start, stop, setHold, clear, correctLast, ndiStart, ndiStop } =
+    useCaption();
   const captureRef = useRef<Capture | null>(null);
+  const previewRef = useRef<HTMLCanvasElement | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
 
@@ -27,9 +52,16 @@ export function App() {
     void load();
   }, [load]);
 
-  // Aufnahme-Lebenszyklus an das running-Flag koppeln.
   const running = state?.running ?? false;
   const cfg = state?.config;
+  const hold = state?.hold ?? false;
+  const ndiActive = state?.status.ndiActive ?? false;
+
+  // NDI-/Render-Engine (zeichnet Untertitel → Vorschau + NDI-Frames). Läuft immer;
+  // sendet nur bei aktivem NDI. Hold friert die Ausgabe ein.
+  useCaptionNdiEngine(cfg ?? FALLBACK_CFG, state?.lines ?? [], hold, ndiActive, previewRef);
+
+  // Aufnahme-Lebenszyklus an das running-Flag koppeln.
   useEffect(() => {
     if (running && !captureRef.current && cfg) {
       let cancelled = false;
@@ -69,16 +101,18 @@ export function App() {
     return <div className="grid h-full place-items-center text-neutral-500">Lädt …</div>;
   }
 
+  const c = state.config;
   const lines = state.lines;
   const last = lines.length ? lines[lines.length - 1] : null;
   const levelPct = Math.min(100, Math.round((level / 0.15) * 100));
+  const resId = `${c.ndiWidth}x${c.ndiHeight}`;
 
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center gap-3 border-b border-neutral-800 px-4 py-2">
         <span className="font-bold">JM Caption</span>
         <select
-          value={state.config.model}
+          value={c.model}
           onChange={(e) => void setConfig({ model: e.target.value as WhisperModelId })}
           className={sel}
         >
@@ -88,11 +122,7 @@ export function App() {
             </option>
           ))}
         </select>
-        <select
-          value={state.config.language}
-          onChange={(e) => void setConfig({ language: e.target.value })}
-          className={sel}
-        >
+        <select value={c.language} onChange={(e) => void setConfig({ language: e.target.value })} className={sel}>
           {LANGS.map((l) => (
             <option key={l.id} value={l.id}>
               {l.label}
@@ -125,24 +155,110 @@ export function App() {
         </div>
       </header>
 
+      {/* NDI-Leiste */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 bg-neutral-900/40 px-4 py-2">
+        <button
+          onClick={() => void (ndiActive ? ndiStop() : ndiStart(c.ndiName))}
+          className={`rounded-md border px-3 py-1.5 text-sm font-semibold ${
+            ndiActive ? 'border-green-500 bg-green-600/20 text-green-300' : 'border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+          }`}
+        >
+          {ndiActive ? '◉ NDI an' : '○ NDI starten'}
+        </button>
+        <input
+          value={c.ndiName}
+          onChange={(e) => void setConfig({ ndiName: e.target.value })}
+          placeholder="NDI-Quellname"
+          className={`${sel} w-44`}
+        />
+        <label className="text-xs text-neutral-500">Auflösung</label>
+        <select
+          value={resId}
+          onChange={(e) => {
+            const r = RES.find((x) => x.id === e.target.value);
+            if (r) void setConfig({ ndiWidth: r.w, ndiHeight: r.h });
+          }}
+          className={sel}
+        >
+          {RES.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+        <label className="text-xs text-neutral-500">fps</label>
+        <select value={c.ndiFps} onChange={(e) => void setConfig({ ndiFps: Number(e.target.value) })} className={sel}>
+          {[25, 30, 50, 60].map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+        <label className="text-xs text-neutral-500">Schrift</label>
+        <input
+          type="number"
+          min={16}
+          max={160}
+          value={c.ndiFontSize}
+          onChange={(e) => void setConfig({ ndiFontSize: Number(e.target.value) })}
+          className={`${sel} w-16`}
+        />
+        <label className="text-xs text-neutral-500">Zeilen</label>
+        <select value={c.ndiLines} onChange={(e) => void setConfig({ ndiLines: Number(e.target.value) })} className={sel}>
+          {[1, 2, 3].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <label className="flex items-center gap-1.5 text-sm text-neutral-300">
+          <input
+            type="checkbox"
+            checked={c.ndiBand}
+            onChange={(e) => void setConfig({ ndiBand: e.target.checked })}
+          />
+          Band
+        </label>
+        {ndiActive && (
+          <span className="ml-auto text-xs text-neutral-400">
+            {state.status.connections} Empfänger
+          </span>
+        )}
+      </div>
+
       {/* Warnungen */}
       {!state.whisperAvailable && (
         <div className="bg-yellow-500/10 px-4 py-1.5 text-xs text-yellow-300">
           whisper.cpp ist hier nicht gebündelt — Transkription läuft erst nach dem Office-Build (Binary + Modell).
         </div>
       )}
-      {micError && (
-        <div className="bg-red-500/10 px-4 py-1.5 text-xs text-red-300">Mikrofon: {micError}</div>
-      )}
-      {state.error && (
-        <div className="bg-red-500/10 px-4 py-1.5 text-xs text-red-300">{state.error}</div>
-      )}
+      {micError && <div className="bg-red-500/10 px-4 py-1.5 text-xs text-red-300">Mikrofon: {micError}</div>}
+      {state.error && <div className="bg-red-500/10 px-4 py-1.5 text-xs text-red-300">{state.error}</div>}
 
-      {/* Live-Untertitel (groß) */}
-      <div className="grid flex-1 place-items-center p-6">
-        <div className="w-full max-w-3xl text-center">
-          <div className="min-h-[3.5rem] text-3xl font-semibold leading-snug">
-            {last ? last.text : <span className="text-neutral-600">— bereit —</span>}
+      {/* Live-Untertitel (groß) + NDI-Vorschau */}
+      <div className="flex flex-1 gap-4 p-6">
+        <div className="grid flex-1 place-items-center">
+          <div className="w-full max-w-3xl text-center">
+            <div className="min-h-[3.5rem] text-3xl font-semibold leading-snug">
+              {last ? last.text : <span className="text-neutral-600">— bereit —</span>}
+            </div>
+          </div>
+        </div>
+        <div className="w-80 shrink-0">
+          <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-neutral-500">
+            <span>NDI-Vorschau</span>
+            {hold && <span className="text-yellow-400">eingefroren</span>}
+          </div>
+          {/* Schachbrett zeigt die Transparenz der Quelle. */}
+          <div
+            className="overflow-hidden rounded-md border border-neutral-800"
+            style={{
+              backgroundImage:
+                'repeating-conic-gradient(#2a2a2a 0% 25%, #1c1c1c 0% 50%)',
+              backgroundSize: '16px 16px',
+            }}
+          >
+            <canvas ref={previewRef} width={320} height={180} className="block w-full" />
           </div>
         </div>
       </div>

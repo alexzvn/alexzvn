@@ -17,6 +17,28 @@ export interface CaptionConfig {
   silenceMs: number;
   /** RMS-Schwelle, ab der ein Block als „Sprache" gilt. */
   silenceThreshold: number;
+
+  // ── NDI-Ausgabe (Slice 2): transparente Untertitel-Quelle ──────────────────
+  /** Sichtbarer NDI-Quellname. */
+  ndiName: string;
+  /** Programmauflösung der NDI-Frames. */
+  ndiWidth: number;
+  ndiHeight: number;
+  /** Sende-Framerate (gedrosselt). */
+  ndiFps: number;
+  /** Schriftgröße der Untertitel in px (bezogen auf ndiHeight). */
+  ndiFontSize: number;
+  /** Wieviele der letzten Zeilen gleichzeitig sichtbar sind (1–3). */
+  ndiLines: number;
+  /** Halbtransparentes Hintergrundband hinter dem Text (für nicht-keyende Ziele). */
+  ndiBand: boolean;
+}
+
+/** Laufzeit-Status der NDI-Ausgabe (nicht persistiert). */
+export interface CaptionStatus {
+  ndiActive: boolean;
+  /** Anzahl verbundener NDI-Empfänger (letzter Sender-Report). */
+  connections: number;
 }
 
 export interface CaptionLine {
@@ -28,7 +50,7 @@ export interface CaptionLine {
 export interface CaptionState {
   /** Aufnahme/Transkription aktiv (Renderer captured, wenn true). */
   running: boolean;
-  /** Anzeige eingefroren (Untertitel werden nicht aktualisiert). */
+  /** Anzeige + NDI-Ausgabe eingefroren (Untertitel werden nicht aktualisiert). */
   hold: boolean;
   /** Ein whisper-Job läuft gerade. */
   busy: boolean;
@@ -36,6 +58,7 @@ export interface CaptionState {
   /** Letzte finalisierte Untertitelzeilen (jüngste zuletzt). */
   lines: CaptionLine[];
   config: CaptionConfig;
+  status: CaptionStatus;
   error: string | null;
 }
 
@@ -52,4 +75,10 @@ export interface JmCaptionApi {
   correctLast: (text: string) => Promise<CaptionState>;
   /** Erkannte Äußerung (Float32-PCM @ sampleRate) zum Transkribieren senden. */
   pushUtterance: (pcm: Float32Array, sampleRate: number) => void;
+  /** Transparente NDI-Untertitel-Quelle starten/stoppen/abfragen. */
+  ndi: {
+    start: (name?: string) => Promise<CaptionStatus>;
+    stop: () => Promise<CaptionStatus>;
+    status: () => Promise<CaptionStatus>;
+  };
 }

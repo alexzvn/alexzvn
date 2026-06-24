@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T06:11:56.188Z",
+  "updatedAt": "2026-06-24T12:30:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -371,6 +371,23 @@
         }
       },
       "app": "rundown"
+    },
+    {
+      "id": "jm-caption",
+      "name": "JM Caption",
+      "tagline": "Live-Untertitel → NDI",
+      "description": "Live-Untertitel offline aus Mikrofon/Ton via whisper.cpp, ausgegeben als transparente NDI-Quelle für TriCaster, vMix oder OBS. Modell- und Sprachwahl, Hold zum Einfrieren und Korrektur der letzten Zeile. Per Bitfocus Companion fernsteuerbar (Transkription an/aus, Hold, NDI). Für Politik-Streams, Pressekonferenzen und Barrierefreiheit (BITV). Windows (nutzt die NDI-Runtime).",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.caption",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "win": {
+          "artifact": "JM Caption-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Caption\\JM Caption.exe"
+        }
+      },
+      "app": "caption"
     }
   ]
 }
