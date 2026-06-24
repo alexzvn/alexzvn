@@ -442,6 +442,497 @@
       "location": "BMUKN Berlin, Stresemannstr. 128-130"
     },
     {
+      "id": "tool-jm-battle",
+      "title": "JM Battle — BattleRap-Voting & Replay",
+      "category": "Tool-Manuals",
+      "difficulty": "mittel",
+      "setupTimeMin": 25,
+      "teamSize": "1-2",
+      "tags": [
+        "battle",
+        "voting",
+        "jury",
+        "qr",
+        "replay",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-battle",
+        "jm-titler",
+        "jm-recorder"
+      ],
+      "prerequisites": [
+        "JM Battle installiert (über den Launcher)",
+        "Netz/WLAN für das Publikums-Voting per QR-Code",
+        "JM Titler im selben LAN (VS-Bauchbinde)",
+        "Eine laufende Aufnahme als Quelle für den Instant-Replay"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Battle-Operator"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "BattleRap-Toolkit: zwei Kontrahenten, Runden mit Jury-Entscheid und Publikums-Voting per QR, VS-Bauchbinde via Titler, Instant-Replay aus der Aufnahme.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Battle (über den Launcher)",
+              "Netz/WLAN für das QR-Voting der Gäste",
+              "JM Titler im selben LAN (VS-Bauchbinde)",
+              "Laufende Aufnahme (Quelle für den Instant-Replay)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Runde starten, VS-Bauchbinde einblenden",
+            "Voting öffnen, dann schließen; Ergebnis anzeigen",
+            "Bei Bedarf Instant-Replay (letzte Sekunden) erzeugen und abspielen"
+          ],
+          "nach": [
+            "Ergebnisse sichern"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "QR-Voting kommt nicht an",
+            "remedy": "Netz und Erreichbarkeit der Voting-Seite prüfen"
+          },
+          {
+            "risk": "VS-Bauchbinde fehlt",
+            "remedy": "JM Titler im selben LAN gestartet?"
+          },
+          {
+            "risk": "Instant-Replay ist leer",
+            "remedy": "Aufnahmequelle und Verbindung prüfen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Kontrahenten und Runden angelegt",
+              "Titler verbunden (VS-Bauchbinde)",
+              "Voting konfiguriert",
+              "Aufnahme für Replay verbunden"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Test-Voting durchgeführt",
+              "Test-Replay erzeugt"
+            ]
+          }
+        ],
+        "tips": [
+          "Voting-Fenster bewusst kurz halten — das hält die Dramaturgie straff.",
+          "Replay-Länge vorab testen, damit der Ausschnitt sitzt."
+        ]
+      }
+    },
+    {
+      "id": "tool-jm-caption",
+      "title": "JM Caption — Live-Untertitel (NDI) einrichten",
+      "category": "Tool-Manuals",
+      "difficulty": "mittel",
+      "setupTimeMin": 20,
+      "teamSize": "1",
+      "tags": [
+        "caption",
+        "untertitel",
+        "ndi",
+        "whisper",
+        "barrierefreiheit",
+        "bitv",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-caption",
+        "jm-switcher",
+        "jm-studio-control"
+      ],
+      "prerequisites": [
+        "Windows mit installierter NDI-Runtime",
+        "JM Caption installiert (über den Launcher)",
+        "Audioeingang (Mikrofon oder Saal-/Stream-Mix)",
+        "Whisper-Modell (Basismodell mitgeliefert, größere nachladbar)"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Media Operator (Untertitel)"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Live-Untertitel offline via whisper.cpp als transparente NDI-Quelle — für Politik-Streams, Pressekonferenzen und Barrierefreiheit (BITV).",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "Windows + NDI-Runtime",
+              "JM Caption (über den Launcher)",
+              "Audioeingang (Mikrofon oder besser ein sauberer Mix)",
+              "Whisper-Modell (Basis mitgeliefert, größere für mehr Genauigkeit nachladbar)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Transkription starten",
+            "Bei Fehlern „Hold\" zum Einfrieren und die letzte Zeile korrigieren",
+            "Lesbarkeit und Timing im Blick behalten"
+          ],
+          "nach": [
+            "Transkription stoppen"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "NDI-Quelle erscheint nicht im Mixer",
+            "remedy": "NDI-Runtime und gleiches Subnetz prüfen"
+          },
+          {
+            "risk": "Untertitel zu spät oder falsch",
+            "remedy": "Modell/Sprache prüfen, Audioqualität verbessern"
+          },
+          {
+            "risk": "Aussetzer / Ruckeln",
+            "remedy": "CPU-Last beobachten, kleineres Modell wählen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Audioquelle gewählt",
+              "Modell und Sprache gesetzt",
+              "NDI-Quelle im Mixer sichtbar",
+              "Companion (optional) verbunden"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Probesatz korrekt erkannt",
+              "Hold getestet",
+              "Lesbarkeit und Position ok"
+            ]
+          }
+        ],
+        "tips": [
+          "Größeres Modell = bessere Genauigkeit, aber mehr CPU-Last — vorab unter Realbedingungen testen.",
+          "Sauberer Ton (Pult-Mix statt Raummikro) verbessert die Erkennung deutlich."
+        ]
+      }
+    },
+    {
+      "id": "tool-jm-qa",
+      "title": "JM Q&A — Wortmeldungen & Saal-Fragen",
+      "category": "Tool-Manuals",
+      "difficulty": "mittel",
+      "setupTimeMin": 20,
+      "teamSize": "1-2",
+      "tags": [
+        "qa",
+        "wortmeldung",
+        "pressekonferenz",
+        "townhall",
+        "qr",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-qa",
+        "jm-timer",
+        "jm-titler"
+      ],
+      "prerequisites": [
+        "JM Q&A installiert (über den Launcher)",
+        "Netz/WLAN für die Saal-Einreichung per QR-Code",
+        "JM Timer und JM Titler im selben LAN (für die Auto-Kopplung)"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Moderations-Operator",
+        "Moderation (Freigabe)"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Wortmeldungs- und Frage-Queue: der Saal reicht per QR vom Handy ein, per Klick kommt jemand ans Wort — steuert dabei Redezeit (Timer) und Bauchbinde (Titler) automatisch.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Q&A (über den Launcher)",
+              "Netz/WLAN, über das die Gäste den QR-Code erreichen",
+              "JM Timer und JM Titler im selben LAN"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Eingehende Fragen moderieren und freigeben",
+            "Per Klick jemanden ans Wort holen — Timer startet, Bauchbinde wird eingeblendet",
+            "Queue abarbeiten"
+          ],
+          "nach": [
+            "Queue/Statistik sichern (falls gewünscht)"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "QR-Einreichung kommt nicht an",
+            "remedy": "Gleiches Netz und Erreichbarkeit der Einreich-Seite prüfen"
+          },
+          {
+            "risk": "Timer/Titler reagieren nicht",
+            "remedy": "Im selben LAN gestartet? mDNS/Firewall prüfen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "QR-Einreichung aktiv",
+              "Moderation/Freigabe gesetzt",
+              "Timer und Titler gekoppelt"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Testfrage eingereicht und sichtbar",
+              "Ans-Wort-holen getestet (Timer + Bauchbinde)"
+            ]
+          }
+        ],
+        "tips": [
+          "Den Moderationsschritt aktiv nutzen, um Doppelungen und Unangemessenes zu filtern.",
+          "Titler-Text ist vorwärtskompatibel (TITLER TEXT) — funktioniert auch mit älteren Titler-Ständen."
+        ]
+      }
+    },
+    {
+      "id": "tool-jm-rundown",
+      "title": "JM Rundown — Ablaufregie einrichten",
+      "category": "Tool-Manuals",
+      "difficulty": "mittel",
+      "setupTimeMin": 30,
+      "teamSize": "1",
+      "tags": [
+        "rundown",
+        "ablauf",
+        "regie",
+        "companion",
+        "mdns",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-rundown",
+        "jm-timer",
+        "jm-prompter",
+        "jm-presenter",
+        "jm-titler",
+        "jm-switcher"
+      ],
+      "prerequisites": [
+        "JM Rundown installiert (über den Launcher)",
+        "Die anzusteuernden Tools im selben LAN (werden per mDNS gefunden)",
+        {
+          "Optional": "Bitfocus Companion für Fern-GO"
+        }
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Regie / Ablaufregie"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Zeilenbasierter Ablaufplan: ein GO startet pro Segment mehrere Tools gleichzeitig (Timer, Prompter, Presenter, Titler, Switcher).",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Rundown installiert (über den Launcher)",
+              "Ziel-Tools im selben LAN gestartet (Timer, Prompter, Presenter, Titler, Switcher)",
+              "Optional: Bitfocus Companion für Fern-GO"
+            ]
+          },
+          {
+            "title": "Was pro Segment gesteuert wird",
+            "items": [
+              "Timer-Block (JM Timer)",
+              "Prompter-Skript (JM Prompter)",
+              "Presenter-Folie (JM Presenter)",
+              "Titler-Bauchbinde (JM Titler)",
+              "Switcher-Szene (JM Switcher)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Pro Segment GO drücken — feuert alle zugeordneten Aktionen gleichzeitig",
+            "Live-Status / Tally im Blick behalten",
+            "Bei Bedarf einzelne Aktionen per Override anpassen"
+          ],
+          "nach": [
+            "`.jmrundown` sichern"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Tool wird nicht gefunden",
+            "remedy": "Gleiches Subnetz prüfen, Tool gestartet?, mDNS/Firewall"
+          },
+          {
+            "risk": "GO feuert nicht alle Aktionen",
+            "remedy": "Zuordnung je Zeile kontrollieren"
+          },
+          {
+            "risk": "Companion-GO ohne Wirkung",
+            "remedy": "Verbindung und gemeinsames LAN prüfen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Ziel-Tools laufen und sind gefunden",
+              "Zeilen und Aktionen angelegt",
+              "Live-Status grün",
+              "Als .jmrundown gespeichert"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Probe-GO je Segment gelaufen",
+              "Companion (optional) getestet"
+            ]
+          }
+        ],
+        "tips": [
+          "Tools vor der Probe starten, damit sie im mDNS auftauchen und zuweisbar sind.",
+          "Pro Zeile nur die wirklich nötigen Aktionen — das hält das GO vorhersehbar."
+        ]
+      }
+    },
+    {
+      "id": "tool-jm-studio-control",
+      "title": "JM Studio Control — Studio & TriCaster steuern",
+      "category": "Tool-Manuals",
+      "difficulty": "anspruchsvoll",
+      "setupTimeMin": 45,
+      "teamSize": "1",
+      "tags": [
+        "studio-control",
+        "tricaster",
+        "atem",
+        "obs",
+        "ptz",
+        "companion",
+        "gateway",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-studio-control",
+        "jm-switcher",
+        "jm-stage-display"
+      ],
+      "prerequisites": [
+        "JM Studio Control installiert (über den Launcher)",
+        "Studiogeräte im Netz erreichbar (TriCaster, ATEM, OBS, PTZ, Audio/Licht)",
+        "Nutzer und Rollen festgelegt",
+        {
+          "Optional": "Bitfocus Companion (Gateway-Rolle \"studio\")"
+        }
+      ],
+      "equipmentOwner": "gemischt",
+      "crewRoles": [
+        "Studio-Operator / Technische Leitung"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Zentrale Studiosteuerung (TriCaster/ATEM/OBS/PTZ/Audio/Licht) mit Nutzerrollen, NDI-PGM-Vorschau und Companion-Gateway.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Studio Control (über den Launcher)",
+              "Erreichbare Studiogeräte: Video-Mischer (TriCaster/ATEM/OBS), PTZ-Kameras, Audio, Licht",
+              "Nutzer und Rollen",
+              "Optional: Bitfocus Companion über die Gateway-Rolle „studio\""
+            ]
+          },
+          {
+            "title": "Gewerke",
+            "items": [
+              "Video-Mischer (TriCaster / ATEM / OBS)",
+              "PTZ-Kameras",
+              "Audio und Licht"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Quellen und Szenen schalten, PTZ steuern, Audio/Licht bedienen",
+            "PGM-Vorschau im Blick behalten",
+            "Aktionen werden zentral protokolliert (auditiert)"
+          ],
+          "nach": [
+            "Session/Logs sichern"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Gerät nicht erreichbar",
+            "remedy": "Netz/IP und Anmeldedaten prüfen"
+          },
+          {
+            "risk": "Verb wirkt nicht",
+            "remedy": "Richtige Primär-Instanz und Typ-Präfix prüfen"
+          },
+          {
+            "risk": "Aktion verweigert",
+            "remedy": "Nutzerrolle/Rechte kontrollieren"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Geräte verbunden (Primär-Instanz je Typ)",
+              "Rollen gesetzt",
+              "PGM-Vorschau läuft",
+              "Companion-Gateway (optional) aktiv"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Schalt-Test je Gewerk gelaufen",
+              "Rechte/Rollen geprüft"
+            ]
+          }
+        ],
+        "tips": [
+          "Pro Gerätetyp genau eine Primär-Instanz festlegen — das vermeidet Mehrdeutigkeit beim Schalten.",
+          "Das Companion-Gateway bündelt alle Gewerke auf einer Rolle, statt jedes Gerät einzeln anzubinden."
+        ]
+      }
+    },
+    {
       "id": "tool-jm-switcher",
       "title": "JM Switcher — Video-Mischer einrichten",
       "category": "Tool-Manuals",
