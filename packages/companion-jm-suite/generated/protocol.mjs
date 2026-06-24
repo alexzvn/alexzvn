@@ -432,6 +432,53 @@ var CAPABILITIES = {
       { id: "live", label: "Sprecher am Wort", stateKey: "live", match: "truthy", bgcolor: GREEN, color: WHITE },
       { id: "remote", label: "Saal-Einreichung an", stateKey: "remote", match: "truthy", bgcolor: YELLOW, color: BLACK }
     ]
+  },
+  // ── Battle (BattleRap-Toolkit) ──────────────────────────────────────────────
+  battle: {
+    role: "battle",
+    label: "JM Battle",
+    port: 8734,
+    actions: [
+      { id: "next", label: "N\xE4chste Runde", verb: "next" },
+      { id: "prev", label: "Vorherige Runde", verb: "prev" },
+      {
+        id: "win",
+        label: "Jury-Entscheid (aktuelle Runde)",
+        verb: "win",
+        args: [
+          {
+            id: "side",
+            label: "Sieger",
+            type: "dropdown",
+            default: "a",
+            choices: [
+              { id: "a", label: "Ecke A" },
+              { id: "b", label: "Ecke B" },
+              { id: "tie", label: "Unentschieden" }
+            ]
+          }
+        ]
+      },
+      { id: "voting", label: "Publikums-Voting", verb: "voting", args: [modeArg], toggleKey: "voting" },
+      { id: "vs", label: "VS-Bauchbinde (Titler)", verb: "vs", args: [modeArg], toggleKey: "live" },
+      { id: "replay", label: "Instant-Replay-Clip", verb: "replay" },
+      { id: "reset", label: "Battle zur\xFCcksetzen", verb: "reset" }
+    ],
+    variables: [
+      { id: "round", label: "Aktuelle Runde" },
+      { id: "total", label: "Runden gesamt" },
+      { id: "wins_a", label: "Rundensiege A" },
+      { id: "wins_b", label: "Rundensiege B" },
+      { id: "votes_a", label: "Stimmen A" },
+      { id: "votes_b", label: "Stimmen B" },
+      { id: "voting", label: "Voting offen (1/0)" },
+      { id: "live", label: "VS on air (1/0)" },
+      { id: "leader", label: "Sieger (A/B/-)" }
+    ],
+    feedbacks: [
+      { id: "live", label: "VS-Bauchbinde on air", stateKey: "live", match: "truthy", bgcolor: RED, color: WHITE },
+      { id: "voting", label: "Voting offen", stateKey: "voting", match: "truthy", bgcolor: YELLOW, color: BLACK }
+    ]
   }
 };
 var KNOWN_ROLES = Object.keys(CAPABILITIES);
