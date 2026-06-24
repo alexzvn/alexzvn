@@ -166,11 +166,21 @@ Timer/Presenter, deren Socket.IO-/SSE-Server es spricht. Details siehe
 [§7](#7-mdns-ctl-marker--disambiguierung). Der Switcher bleibt unverändert
 (sein einziger, ctl-loser Advert IST sein Steuerserver).
 
-**Als Nächstes (Welle 1.7):**
+**Erledigt (Welle 1.7 — Release-Prep, branch-only):** Versions-Bumps der
+8 betroffenen Tools (Timer 0.3.0, Player 0.6.0, Titler 0.3.0, Presenter 0.8.0,
+Prompter 0.5.0, Recorder 0.5.0, DAW 0.8.0, Stage Display 0.4.2; Switcher
+unverändert 0.4.0) in `package.json` + `suite.json` (`latestVersion`/`updatedAt`),
+je Tool ein `changelog.json`-Eintrag. Companion-Modul paketier-bereit (Deps
+installierbar, Selftest grün, im Companion-Developer-Mode nutzbar; das
+Verteilpaket `companion-module-build` baut in einem **standalone**-Checkout).
 
-| Schritt | Inhalt | Datei(en) |
-|---|---|---|
-| 1.7 | Companion-Modul paketieren/verteilen; Versions-Bumps + Manifest/Changelog | packages/companion-jm-suite, packages/suite-manifest/ |
+**Veröffentlichung (Nutzer-Schritt, bewusst offen):** Der Katalog wird erst
+aktiv, wenn (1) der **2-Rechner-mDNS-Smoke-Test** bestanden ist, (2) die
+Installer gebaut/hochgeladen sind (inkl. der **nativen** Tools Titler/Recorder/
+DAW, die nicht in CI baubar sind) und (3) `feat/suite-control-plane` nach `main`
+gemergt ist (der Proxy liest den Katalog vom `MANIFEST_REF=main`-Branch).
+⚠️ Stage Display 0.4.2 muss **mit oder vor** den Tool-Releases ausgeliefert
+werden — sonst greift ein altes Stage Display nach den neuen `ctl=1`-Endpunkten.
 
 **Bewusst (noch) nicht gemacht:**
 
