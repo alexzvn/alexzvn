@@ -1,0 +1,62 @@
+/* JM-Branding für Starlight: Marken-Tokens aus @jm/ui (Brand-Gelb + Dark),
+   Manrope als Schrift, plus Print-Stylesheet für sauberen Ein-Rezept-PDF-Export. */
+@import '@fontsource-variable/manrope';
+
+:root {
+  --sl-font: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Akzent = JM Brand-Gelb (oklch aus packages/ui/src/tokens/colors.css) */
+  --sl-color-accent-low: oklch(0.922 0.187 99.5 / 0.18);
+  --sl-color-accent: oklch(0.922 0.187 99.5);
+  --sl-color-accent-high: oklch(0.96 0.12 99.5);
+  --sl-color-text-accent: oklch(0.922 0.187 99.5);
+}
+
+/* Helles Theme: dunkler Akzent (wie der Launcher im Light-Mode) */
+:root[data-theme='light'] {
+  --sl-color-accent-low: oklch(0.922 0.187 99.5 / 0.25);
+  --sl-color-accent: oklch(0.178 0 0);
+  --sl-color-accent-high: oklch(0.27 0 0);
+  --sl-color-text-accent: oklch(0.30 0 0);
+}
+
+/* Pannenhilfe-Tabellen etwas ruhiger */
+.sl-markdown-content table {
+  font-size: 0.9rem;
+}
+
+/* --- Print / PDF: nur das Rezept, ohne Navigationsrahmen --- */
+@media print {
+  header.header,
+  .sidebar,
+  .sidebar-pane,
+  nav.sidebar,
+  .right-sidebar,
+  mobile-starlight-toc,
+  starlight-menu-button,
+  .pagination-links,
+  site-search,
+  .sl-flex.social-icons,
+  footer {
+    display: none !important;
+  }
+
+  .main-frame {
+    padding-top: 0 !important;
+    padding-inline-start: 0 !important;
+  }
+  .main-pane,
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* URLs nicht hinter Links drucken */
+  .sl-markdown-content a[href]::after {
+    content: '' !important;
+  }
+
+  @page {
+    margin: 1.4cm;
+  }
+}
