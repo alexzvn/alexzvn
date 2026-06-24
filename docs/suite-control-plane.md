@@ -174,11 +174,15 @@ je Tool ein `changelog.json`-Eintrag. Companion-Modul paketier-bereit (Deps
 installierbar, Selftest grün, im Companion-Developer-Mode nutzbar; das
 Verteilpaket `companion-module-build` baut in einem **standalone**-Checkout).
 
-**Veröffentlichung (Nutzer-Schritt, bewusst offen):** Der Katalog wird erst
-aktiv, wenn (1) der **2-Rechner-mDNS-Smoke-Test** bestanden ist, (2) die
-Installer gebaut/hochgeladen sind (inkl. der **nativen** Tools Titler/Recorder/
-DAW, die nicht in CI baubar sind) und (3) `feat/suite-control-plane` nach `main`
-gemergt ist (der Proxy liest den Katalog vom `MANIFEST_REF=main`-Branch).
+**Veröffentlichung (Nutzer-Schritt, bewusst offen):** Schritt-für-Schritt in der
+[Welle-1-Release-Checkliste](release-welle-1.md). Kurz: Der Katalog wird erst
+aktiv, wenn (1) der **2-Rechner-mDNS-Smoke-Test** bestanden ist (Diagnose:
+`node scripts/mdns-scan.mjs` auf beiden Rechnern), (2) die Installer gebaut/
+hochgeladen sind (inkl. der **nativen** Tools Titler/Recorder/DAW, die nicht in
+CI baubar sind) und (3) `feat/suite-control-plane` nach `main` gemergt ist (der
+Proxy liest den Katalog vom `MANIFEST_REF=main`-Branch). `suite.json
+latestVersion` wird **nicht** vorab gebumpt — das setzt der Release-Prozess nach
+dem Build (CI automatisch, native Tools via `scripts/bump-manifest.mjs`).
 ⚠️ Stage Display 0.4.2 muss **mit oder vor** den Tool-Releases ausgeliefert
 werden — sonst greift ein altes Stage Display nach den neuen `ctl=1`-Endpunkten.
 
