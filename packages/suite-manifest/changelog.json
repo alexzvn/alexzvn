@@ -435,6 +435,14 @@
     "name": "JM Studio Control",
     "entries": [
       {
+        "version": "0.6.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Neue Geräte: Blackmagic ATEM (Program/Preview/Cut/Auto/Fade-to-Black/Aufnahme/Stream) und OBS via WebSocket (Szene, Aufnahme, Stream) — direkt aus Studio Control steuerbar.",
+          "Companion-Gateway: der ganze Studio-Hub (ATEM, OBS, TriCaster, PTZ, Audio, Licht) ist jetzt zentral per Bitfocus Companion fernsteuerbar; jeder Befehl landet im Audit-Log."
+        ]
+      },
+      {
         "version": "0.5.0",
         "date": "2026-06-23",
         "notes": [
@@ -895,6 +903,13 @@
     "app": "caption",
     "name": "JM Caption",
     "entries": [
+      {
+        "version": "0.2.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Show-Teilnahme: Beim koordinierten Start über eine .jmshow übernimmt Caption automatisch Modell, Sprache und NDI-Name aus der Show."
+        ]
+      },
       {
         "version": "0.1.0",
         "date": "2026-06-24",
