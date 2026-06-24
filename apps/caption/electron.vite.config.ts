@@ -8,7 +8,7 @@ const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 // @jm/app-runtime + @jm/media + @jm/suite-control-protocol (TCP-Fernsteuerung)
 // als Quelle inline bündeln; @jm/ndi bleibt extern (nativ, Laufzeit-require, wird
 // von bundle-ndi.mjs nach resources/bin/win gestaged).
-const internalPackages = ['@jm/app-runtime', '@jm/media', '@jm/suite-control-protocol'];
+const internalPackages = ['@jm/app-runtime', '@jm/media', '@jm/show', '@jm/suite-control-protocol'];
 
 export default defineConfig({
   main: {

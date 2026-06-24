@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import path, { join } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { initAppRuntime, getLog } from '@jm/app-runtime';
+import { parseShow, parseShowDeepLink } from '@jm/show';
 import { whisperAvailable } from './locate';
 import { enqueueUtterance, initTranscriber, stopTranscriber } from './transcriber';
 import { startSender, stopSender, senderActive } from './ndi/sender-process';
@@ -265,8 +266,38 @@ function createMainWindow(): BrowserWindow {
   return win;
 }
 
-const runtime = initAppRuntime({ appId: 'jm-caption', appName: 'JM Caption' });
-void runtime;
+/**
+ * Show-Integration: Wird Caption über einen Show-Deep-Link gestartet, übernimmt es
+ * aus der Show (ShowToolRef.settings von jm-caption) Modell, Sprache und NDI-Name —
+ * so startet die Untertitelung mit den Produktions-Vorgaben.
+ */
+function applyShowFromDeepLink(url: string): void {
+  const showPath = parseShowDeepLink(url);
+  if (!showPath) return;
+  try {
+    const show = parseShow(readFileSync(showPath, 'utf8'));
+    const s = show.tools.find((t) => t.appId === 'jm-caption')?.settings;
+    if (!s) return;
+    const patch: Partial<CaptionConfig> = {};
+    const MODELS = ['tiny', 'base', 'small', 'medium', 'large-v3'];
+    if (typeof s.model === 'string' && MODELS.includes(s.model)) patch.model = s.model as CaptionConfig['model'];
+    if (typeof s.language === 'string') patch.language = s.language;
+    if (typeof s.ndiName === 'string' && s.ndiName.trim()) patch.ndiName = s.ndiName.trim();
+    if (Object.keys(patch).length) {
+      config = { ...config, ...patch };
+      saveConfig();
+      broadcast();
+    }
+  } catch (err) {
+    getLog().error(`Show-Deep-Link konnte nicht geladen werden: ${(err as Error).message}`);
+  }
+}
+
+const runtime = initAppRuntime({
+  appId: 'jm-caption',
+  appName: 'JM Caption',
+  onDeepLink: (url) => applyShowFromDeepLink(url),
+});
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -289,6 +320,7 @@ if (!gotLock) {
     session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media');
     registerIpc();
     createMainWindow();
+    if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
     // Eigener Steuerserver: Caption per Companion fernsteuerbar (Port 8732).
     void startControlServer({ getState: buildSuiteState, onCommand: handleSuiteCommand });
   });
