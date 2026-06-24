@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T04:32:22.277Z",
+  "updatedAt": "2026-06-23T20:13:59.870Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -94,7 +94,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.player",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.6.0",
+      "latestVersion": "0.5.0",
       "platforms": {
         "mac": {
           "artifact": "JM Player-${version}-mac-${arch}.dmg",
@@ -115,7 +115,7 @@
       "category": "Ingest",
       "appId": "gmbh.jakobs.recorder",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.5.0",
+      "latestVersion": "0.4.0",
       "platforms": {
         "mac": {
           "artifact": "JM Audio Recorder-${version}-mac-${arch}.dmg",
@@ -178,7 +178,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.timer",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.3.0",
+      "latestVersion": "0.2.1",
       "platforms": {
         "mac": {
           "artifact": "JM Timer-${version}-mac-${arch}.dmg",
@@ -199,7 +199,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.presenter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.8.0",
+      "latestVersion": "0.7.1",
       "platforms": {
         "mac": {
           "artifact": "JM Presenter-${version}-mac-${arch}.dmg",
@@ -241,7 +241,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.stage-display",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.4.2",
+      "latestVersion": "0.4.1",
       "platforms": {
         "mac": {
           "artifact": "JM Stage Display-${version}-mac-${arch}.dmg",
@@ -262,7 +262,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.prompter",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.5.0",
+      "latestVersion": "0.4.1",
       "platforms": {
         "mac": {
           "artifact": "JM Prompter-${version}-mac-${arch}.dmg",
@@ -283,7 +283,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.titler",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.3.0",
+      "latestVersion": "0.2.0",
       "platforms": {
         "win": {
           "artifact": "JM Titler-${version}-win-x64.exe",
@@ -338,7 +338,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.daw",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.8.0",
+      "latestVersion": "0.7.1",
       "platforms": {
         "mac": {
           "artifact": "JM DAW-${version}-mac-${arch}.dmg",
