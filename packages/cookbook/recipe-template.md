@@ -1,5 +1,7 @@
 ---
 # Pflichtfelder — englische Keys, deutsche Werte. id == Dateiname (kebab-case).
+# YAML-Falle: Listeneinträge (prerequisites/crewRoles) mit ": " in "..." setzen
+# oder umformulieren, sonst werden sie als Objekt statt Text gelesen.
 id: mein-rezept
 title: Titel des Rezepts
 category: Veranstaltungsformate        # Veranstaltungsformate | Technik-Setups | Kunden-/Location-Setups | Tool-Manuals
