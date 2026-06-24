@@ -19,10 +19,14 @@ extraResources:
 
 asar: true
 
-# better-sqlite3 ships a prebuilt native .node binary that cannot be loaded from
-# inside the asar archive, so it is unpacked. socket.io et al. are pure JS.
+# Native .node binaries cannot be loaded from inside the asar archive → unpack.
+#   better-sqlite3 → audit/users DB.
+#   @julusian/freetype2 → transitive native dep of atem-connection (ATEM driver);
+#   muss für die Electron-ABI vorliegen (postinstall electron-rebuild / Prebuild).
+# socket.io, obs-websocket-js (ws) et al. sind reines JS.
 asarUnpack:
   - "**/node_modules/better-sqlite3/**"
+  - "**/node_modules/@julusian/**"
 
 mac:
   target:

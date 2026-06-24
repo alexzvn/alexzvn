@@ -4,8 +4,10 @@ import { useSession } from '@/store/session';
 import { useApp } from '@/store/app';
 import { EVENTS } from '@shared/protocol';
 import type {
+  AtemStatusEvent,
   AudioStatusEvent,
   AuditEntry,
+  ObsStatusEvent,
   PtzStatusEvent,
   TricasterStatusEvent,
 } from '@shared/protocol';
@@ -14,6 +16,8 @@ import type { TricasterConfig } from '@shared/tricaster';
 import type { PtzCameraConfig } from '@shared/ptz';
 import type { LightingConfig } from '@shared/lighting';
 import type { AudioConsoleConfig } from '@shared/audio';
+import type { AtemConfig } from '@shared/atem';
+import type { ObsConfig } from '@shared/obs';
 import type { UserRow } from '@/types/admin';
 import { AppShell } from '@/components/AppShell';
 import { LoginView } from '@/views/Login';
@@ -84,6 +88,16 @@ export function App() {
           case EVENTS.AUDIO_STATUS:
             s.setAudioStatus(payload as AudioStatusEvent);
             break;
+          case EVENTS.ATEM_STATE: {
+            const p = payload as { atem: AtemConfig[]; statuses: AtemStatusEvent[] };
+            s.setAtem(p.atem, p.statuses);
+            break;
+          }
+          case EVENTS.OBS_STATE: {
+            const p = payload as { obs: ObsConfig[]; statuses: ObsStatusEvent[] };
+            s.setObs(p.obs, p.statuses);
+            break;
+          }
           case EVENTS.DISCOVERY_START:
             s.setDiscoveryRunning(true);
             break;

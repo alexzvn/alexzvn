@@ -5,8 +5,15 @@ import { resolve } from 'node:path';
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };
 
-// @jm/app-runtime ist reines TS und wird in den Main-Bundle gebündelt.
-const internalPackages = ['@jm/app-runtime'];
+// Reine-TS-Workspace-Pakete in den Main-Bundle nehmen (gepackte Apps liefern kein
+// node_modules → nichts darf zur Laufzeit `require`d werden). @jm/discovery +
+// bonjour-service (dessen Transitiv-Dep) müssen für das Companion-Gateway mit.
+const internalPackages = [
+  '@jm/app-runtime',
+  '@jm/discovery',
+  '@jm/suite-control-protocol',
+  'bonjour-service',
+];
 
 export default defineConfig({
   main: {

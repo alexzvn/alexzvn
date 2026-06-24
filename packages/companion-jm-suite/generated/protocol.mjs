@@ -165,6 +165,7 @@ var YELLOW = [251, 231, 59];
 var WHITE = [255, 255, 255];
 var BLACK = [0, 0, 0];
 var sceneArg = { id: "scene", label: "Szene (Nr.)", type: "number", default: 1, min: 1, max: 64 };
+var atemInputArg = { id: "input", label: "Eingang (Nr.)", type: "number", default: 1, min: 0, max: 40 };
 var modeArg = {
   id: "mode",
   label: "Modus",
@@ -502,6 +503,73 @@ var CAPABILITIES = {
       { id: "running", label: "Transkription l\xE4uft", stateKey: "running", match: "truthy", bgcolor: GREEN, color: WHITE },
       { id: "hold", label: "Hold aktiv", stateKey: "hold", match: "truthy", bgcolor: YELLOW, color: BLACK },
       { id: "ndi", label: "NDI l\xE4uft", stateKey: "ndi", match: "truthy", bgcolor: GREEN, color: WHITE }
+    ]
+  },
+  // ── Studio Control Gateway (zentral-auditiert: ATEM / OBS / TriCaster) ───────
+  // studio-control ist ein Geräte-Hub. Das Gateway exponiert die PRIMÄR-Instanz
+  // je Gerätetyp (erste konfigurierte) an Companion; jeder Befehl läuft durch das
+  // Audit-Log. Verben sind typ-präfixiert (atem_/obs_/tricaster_), da eine Rolle
+  // mehrere Gerätetypen bündelt. Abgedeckt: ATEM, OBS, TriCaster, PTZ, Audio, Licht.
+  studio: {
+    role: "studio",
+    label: "JM Studio Control",
+    port: 8735,
+    actions: [
+      // ATEM (Hardware-Mischer, M/E 1)
+      { id: "atem_program", label: "ATEM: Program-Eingang", verb: "atem_program", args: [atemInputArg] },
+      { id: "atem_preview", label: "ATEM: Preview-Eingang", verb: "atem_preview", args: [atemInputArg] },
+      { id: "atem_cut", label: "ATEM: Cut", verb: "atem_cut" },
+      { id: "atem_auto", label: "ATEM: Auto (\xDCbergang)", verb: "atem_auto" },
+      { id: "atem_ftb", label: "ATEM: Fade to Black", verb: "atem_ftb" },
+      { id: "atem_record", label: "ATEM: Aufnahme", verb: "atem_record", args: [modeArg], toggleKey: "atem_rec" },
+      { id: "atem_stream", label: "ATEM: Stream", verb: "atem_stream", args: [modeArg], toggleKey: "atem_stream" },
+      // OBS (WebSocket-Bridge)
+      { id: "obs_scene", label: "OBS: Szene w\xE4hlen (Nr.)", verb: "obs_scene", args: [sceneArg] },
+      { id: "obs_record", label: "OBS: Aufnahme", verb: "obs_record", args: [modeArg], toggleKey: "obs_rec" },
+      { id: "obs_stream", label: "OBS: Stream", verb: "obs_stream", args: [modeArg], toggleKey: "obs_stream" },
+      // TriCaster (LiveControl-Shortcut/Makro; Name muss ein einzelnes Token sein)
+      { id: "tricaster_shortcut", label: "TriCaster: Shortcut/Makro", verb: "tricaster_shortcut", args: [{ id: "name", label: "Shortcut-Name (z. B. main_take)", type: "string", default: "main_take" }] },
+      // PTZ (Panasonic AW)
+      { id: "ptz_preset", label: "PTZ: Preset abrufen", verb: "ptz_preset", args: [{ id: "preset", label: "Preset (Nr.)", type: "number", default: 1, min: 0, max: 99 }] },
+      { id: "ptz_power", label: "PTZ: Power", verb: "ptz_power", args: [modeArg], toggleKey: "ptz_power" },
+      // Audio (Mischpult)
+      { id: "audio_mute", label: "Audio: Kanal stumm", verb: "audio_mute", args: [{ id: "channel", label: "Kanal (Nr.)", type: "number", default: 1, min: 1, max: 64 }, { id: "state", label: "Zustand", type: "dropdown", default: "on", choices: [{ id: "on", label: "Mute an" }, { id: "off", label: "Mute aus" }] }] },
+      { id: "audio_fader", label: "Audio: Fader (dB)", verb: "audio_fader", args: [{ id: "channel", label: "Kanal (Nr.)", type: "number", default: 1, min: 1, max: 64 }, { id: "db", label: "Pegel (dB)", type: "number", default: 0, min: -60, max: 10 }] },
+      // Licht (Art-Net)
+      { id: "lighting_blackout", label: "Licht: Blackout", verb: "lighting_blackout", args: [modeArg], toggleKey: "lighting_blackout" }
+    ],
+    variables: [
+      { id: "atem", label: "ATEM verbunden (1/0)" },
+      { id: "atem_name", label: "ATEM-Modell" },
+      { id: "atem_pgm", label: "ATEM Program (Nr.)" },
+      { id: "atem_pvw", label: "ATEM Preview (Nr.)" },
+      { id: "atem_rec", label: "ATEM Aufnahme (1/0)" },
+      { id: "atem_stream", label: "ATEM Stream (1/0)" },
+      { id: "obs", label: "OBS verbunden (1/0)" },
+      { id: "obs_scene", label: "OBS Szene (Nr.)" },
+      { id: "obs_scene_name", label: "OBS Szene (Name)" },
+      { id: "obs_rec", label: "OBS Aufnahme (1/0)" },
+      { id: "obs_stream", label: "OBS Stream (1/0)" },
+      { id: "tricaster", label: "TriCaster verbunden (1/0)" },
+      { id: "tricaster_name", label: "TriCaster" },
+      { id: "ptz", label: "PTZ verbunden (1/0)" },
+      { id: "ptz_name", label: "PTZ-Kamera" },
+      { id: "ptz_power", label: "PTZ Power (1/0)" },
+      { id: "audio", label: "Audio verbunden (1/0)" },
+      { id: "audio_name", label: "Audiopult" },
+      { id: "lighting", label: "Licht konfiguriert (1/0)" },
+      { id: "lighting_blackout", label: "Blackout aktiv (1/0)" }
+    ],
+    feedbacks: [
+      { id: "atem_pgm", label: "ATEM: Eingang auf Program", stateKey: "atem_pgm", match: "equalsArg", arg: atemInputArg, bgcolor: RED, color: WHITE },
+      { id: "atem_pvw", label: "ATEM: Eingang auf Preview", stateKey: "atem_pvw", match: "equalsArg", arg: atemInputArg, bgcolor: GREEN, color: WHITE },
+      { id: "atem_rec", label: "ATEM: Aufnahme l\xE4uft", stateKey: "atem_rec", match: "truthy", bgcolor: RED, color: WHITE },
+      { id: "atem_stream", label: "ATEM: Stream l\xE4uft", stateKey: "atem_stream", match: "truthy", bgcolor: YELLOW, color: BLACK },
+      { id: "obs_scene", label: "OBS: Szene aktiv", stateKey: "obs_scene", match: "equalsArg", arg: sceneArg, bgcolor: GREEN, color: WHITE },
+      { id: "obs_rec", label: "OBS: Aufnahme l\xE4uft", stateKey: "obs_rec", match: "truthy", bgcolor: RED, color: WHITE },
+      { id: "obs_stream", label: "OBS: Stream l\xE4uft", stateKey: "obs_stream", match: "truthy", bgcolor: YELLOW, color: BLACK },
+      { id: "ptz_power", label: "PTZ: Power an", stateKey: "ptz_power", match: "truthy", bgcolor: GREEN, color: WHITE },
+      { id: "lighting_blackout", label: "Licht: Blackout aktiv", stateKey: "lighting_blackout", match: "truthy", bgcolor: RED, color: WHITE }
     ]
   }
 };

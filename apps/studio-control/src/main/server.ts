@@ -49,6 +49,7 @@ import {
   upsertPtzCamera,
 } from './config/ptz';
 import { logAction, listRecent, onAudit } from './db/audit';
+import { startControlGateway, stopControlGateway } from './gateway/control-gateway';
 import { runAll, isScanning } from './discovery';
 import {
   getAllStatuses,
@@ -88,21 +89,39 @@ import {
   sendAudio,
   syncAudioFromConfig,
 } from './audio/manager';
+import { getAtemInstances, loadAtem, removeAtem, upsertAtem } from './config/atem';
+import {
+  getAtemClient,
+  getAtemStatuses,
+  onAtemStatusChange,
+  syncAtemFromConfig,
+} from './drivers/atem/pool';
+import { getObsInstances, loadObs, removeObs, upsertObs } from './config/obs';
+import {
+  getObsClient,
+  getObsStatuses,
+  onObsStatusChange,
+  syncObsFromConfig,
+} from './drivers/obs/pool';
 import {
   ArtnetNodeSchema,
+  AtemConfigSchema,
   AudioConsoleConfigSchema,
   DeviceSchema,
   FixtureSchema,
+  ObsConfigSchema,
   PtzCameraConfigSchema,
   TricasterConfigSchema,
 } from '@shared/protocol';
 import {
+  AtemExecSchema,
   AudioExecSchema,
   CreateUserRequestSchema,
   EVENTS,
   LightingBlackoutSchema,
   LightingSetSchema,
   LoginRequestSchema,
+  ObsExecSchema,
   PtzExecSchema,
   TricasterExecSchema,
   UpdateUserRequestSchema,
@@ -359,6 +378,68 @@ async function handleApi(
     return true;
   }
 
+  // ── ATEM (Blackmagic-Mischer) ──────────────────────────────────────────────
+  if (pathname === '/api/atem' && method === 'GET') {
+    if (!requireHttpRole(req, res, 'atem:read')) return true;
+    sendJson(res, 200, { atem: getAtemInstances(), statuses: getAtemStatuses() });
+    return true;
+  }
+  if (pathname === '/api/atem' && method === 'POST') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    try {
+      const cfg = AtemConfigSchema.parse(await readJson(req));
+      upsertAtem(cfg);
+      syncAtemFromConfig();
+      logAction({ userId: actor.id || null, username: actor.username, action: 'atem:upsert', target: cfg.id });
+      sendJson(res, 200, { atem: getAtemInstances() });
+    } catch (err) {
+      sendJson(res, 400, { error: 'bad_request', detail: String(err) });
+    }
+    return true;
+  }
+  const atemDel = pathname.match(/^\/api\/atem\/([^/]+)$/);
+  if (atemDel && method === 'DELETE') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    removeAtem(atemDel[1]!);
+    syncAtemFromConfig();
+    logAction({ userId: actor.id || null, username: actor.username, action: 'atem:remove', target: atemDel[1] });
+    sendJson(res, 200, { atem: getAtemInstances() });
+    return true;
+  }
+
+  // ── OBS (WebSocket-Bridge) ─────────────────────────────────────────────────
+  if (pathname === '/api/obs' && method === 'GET') {
+    if (!requireHttpRole(req, res, 'obs:read')) return true;
+    sendJson(res, 200, { obs: getObsInstances(), statuses: getObsStatuses() });
+    return true;
+  }
+  if (pathname === '/api/obs' && method === 'POST') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    try {
+      const cfg = ObsConfigSchema.parse(await readJson(req));
+      upsertObs(cfg);
+      syncObsFromConfig();
+      logAction({ userId: actor.id || null, username: actor.username, action: 'obs:upsert', target: cfg.id });
+      sendJson(res, 200, { obs: getObsInstances() });
+    } catch (err) {
+      sendJson(res, 400, { error: 'bad_request', detail: String(err) });
+    }
+    return true;
+  }
+  const obsDel = pathname.match(/^\/api\/obs\/([^/]+)$/);
+  if (obsDel && method === 'DELETE') {
+    const actor = requireHttpRole(req, res, 'inventory:write');
+    if (!actor) return true;
+    removeObs(obsDel[1]!);
+    syncObsFromConfig();
+    logAction({ userId: actor.id || null, username: actor.username, action: 'obs:remove', target: obsDel[1] });
+    sendJson(res, 200, { obs: getObsInstances() });
+    return true;
+  }
+
   if (pathname === '/api/ptz' && method === 'GET') {
     if (!requireHttpRole(req, res, 'ptz:read')) return true;
     sendJson(res, 200, {
@@ -573,6 +654,14 @@ function emitAudioState(): void {
   });
 }
 
+function emitAtemState(): void {
+  io?.emit(EVENTS.ATEM_STATE, { atem: getAtemInstances(), statuses: getAtemStatuses() });
+}
+
+function emitObsState(): void {
+  io?.emit(EVENTS.OBS_STATE, { obs: getObsInstances(), statuses: getObsStatuses() });
+}
+
 function attachSocketHandlers(socket: Socket): void {
   socket.emit(EVENTS.INVENTORY_STATE, { devices: getDevices() });
   socket.emit(EVENTS.TRICASTER_STATE, {
@@ -588,6 +677,8 @@ function attachSocketHandlers(socket: Socket): void {
     consoles: getAudioConsoles(),
     statuses: getAudioStatuses(),
   });
+  socket.emit(EVENTS.ATEM_STATE, { atem: getAtemInstances(), statuses: getAtemStatuses() });
+  socket.emit(EVENTS.OBS_STATE, { obs: getObsInstances(), statuses: getObsStatuses() });
   if (socketCan(socket, 'audit:read')) {
     socket.emit('audit:state', { entries: listRecent(100) });
   }
@@ -696,6 +787,82 @@ function attachSocketHandlers(socket: Socket): void {
         action: 'tricaster:exec:failed',
         target: parsed.data.tricasterId,
         payload: { shortcut: parsed.data.shortcut, error: String(err) },
+      });
+      ack?.({ ok: false, error: String(err) });
+    }
+  });
+
+  socket.on(EVENTS.ATEM_EXEC, async (payload, ack?: (r: unknown) => void) => {
+    if (!socketCan(socket, 'atem:exec')) {
+      ack?.({ ok: false, error: 'forbidden' });
+      return;
+    }
+    const parsed = AtemExecSchema.safeParse(payload);
+    if (!parsed.success) {
+      ack?.({ ok: false, error: 'bad_payload' });
+      return;
+    }
+    const client = getAtemClient(parsed.data.atemId);
+    if (!client) {
+      ack?.({ ok: false, error: 'unknown_atem' });
+      return;
+    }
+    const user = socketUser(socket);
+    try {
+      await client.execute(parsed.data.command);
+      logAction({
+        userId: user.id || null,
+        username: user.username,
+        action: 'atem:exec',
+        target: parsed.data.atemId,
+        payload: parsed.data.command,
+      });
+      ack?.({ ok: true });
+    } catch (err) {
+      logAction({
+        userId: user.id || null,
+        username: user.username,
+        action: 'atem:exec:failed',
+        target: parsed.data.atemId,
+        payload: { command: parsed.data.command, error: String(err) },
+      });
+      ack?.({ ok: false, error: String(err) });
+    }
+  });
+
+  socket.on(EVENTS.OBS_EXEC, async (payload, ack?: (r: unknown) => void) => {
+    if (!socketCan(socket, 'obs:exec')) {
+      ack?.({ ok: false, error: 'forbidden' });
+      return;
+    }
+    const parsed = ObsExecSchema.safeParse(payload);
+    if (!parsed.success) {
+      ack?.({ ok: false, error: 'bad_payload' });
+      return;
+    }
+    const client = getObsClient(parsed.data.obsId);
+    if (!client) {
+      ack?.({ ok: false, error: 'unknown_obs' });
+      return;
+    }
+    const user = socketUser(socket);
+    try {
+      await client.execute(parsed.data.command);
+      logAction({
+        userId: user.id || null,
+        username: user.username,
+        action: 'obs:exec',
+        target: parsed.data.obsId,
+        payload: parsed.data.command,
+      });
+      ack?.({ ok: true });
+    } catch (err) {
+      logAction({
+        userId: user.id || null,
+        username: user.username,
+        action: 'obs:exec:failed',
+        target: parsed.data.obsId,
+        payload: { command: parsed.data.command, error: String(err) },
       });
       ack?.({ ok: false, error: String(err) });
     }
@@ -823,10 +990,14 @@ export function startServer(): Promise<void> {
     loadPtzCameras();
     loadLighting();
     loadAudioConsoles();
+    loadAtem();
+    loadObs();
     syncFromConfig();
     syncPtzFromConfig();
     initLighting();
     syncAudioFromConfig();
+    syncAtemFromConfig();
+    syncObsFromConfig();
     startPolling();
     startPtzPolling();
 
@@ -873,6 +1044,8 @@ export function startServer(): Promise<void> {
     onPtzStatusChange(() => emitPtzState());
     onLightingChange(() => emitLightingState());
     onAudioStatusChange(() => emitAudioState());
+    onAtemStatusChange(() => emitAtemState());
+    onObsStatusChange(() => emitObsState());
     onAudit((entry) => {
       if (!io) return;
       for (const [, socket] of io.sockets.sockets) {
@@ -887,12 +1060,25 @@ export function startServer(): Promise<void> {
       console.log(
         `[jm-studio-control] http + socket.io listening on http://${SERVER_HOST}:${SERVER_PORT}`,
       );
+      // Companion-Gateway (TCP-Steuerprotokoll, Port 8735) zusätzlich starten —
+      // fehlertolerant: ein belegter Port darf den HTTP-/Socket.IO-Server nicht
+      // verhindern.
+      startControlGateway()
+        .then((r) => {
+          if (r.ok) {
+            console.log(`[jm-studio-control] companion gateway listening on tcp://0.0.0.0:${r.port}`);
+          } else {
+            console.warn(`[jm-studio-control] companion gateway not started: ${r.error}`);
+          }
+        })
+        .catch((e) => console.warn('[jm-studio-control] companion gateway error', e));
       resolve();
     });
   });
 }
 
 export function stopServer(): void {
+  stopControlGateway();
   io?.close();
   http?.close();
   io = null;

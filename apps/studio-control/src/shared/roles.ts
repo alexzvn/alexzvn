@@ -20,6 +20,10 @@ export type Action =
   | 'lighting:exec'
   | 'audio:read'
   | 'audio:exec'
+  | 'atem:read'
+  | 'atem:exec'
+  | 'obs:read'
+  | 'obs:exec'
   | 'users:read'
   | 'users:write'
   | 'audit:read';
@@ -36,6 +40,10 @@ const ACTION_MIN: Record<Action, Role> = {
   'lighting:exec': 'operator',
   'audio:read': 'viewer',
   'audio:exec': 'operator',
+  'atem:read': 'viewer',
+  'atem:exec': 'operator',
+  'obs:read': 'viewer',
+  'obs:exec': 'operator',
   'users:read': 'admin',
   'users:write': 'admin',
   'audit:read': 'operator',
