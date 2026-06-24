@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T04:59:15.416Z",
+  "updatedAt": "2026-06-24T05:00:29.887Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -94,7 +94,7 @@
       "category": "Utilities",
       "appId": "gmbh.jakobs.player",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.5.0",
+      "latestVersion": "0.6.0",
       "platforms": {
         "mac": {
           "artifact": "JM Player-${version}-mac-${arch}.dmg",
