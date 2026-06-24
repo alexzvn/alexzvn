@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T11:34:05.079Z",
+  "updatedAt": "2026-06-24T11:49:50.054Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -52,7 +52,7 @@
       "category": "Studio",
       "appId": "gmbh.jakobs.studio-control",
       "repo": "AlexmachtCode/alexzvn",
-      "latestVersion": "0.5.0",
+      "latestVersion": "0.6.0",
       "platforms": {
         "mac": {
           "artifact": "JM Studio Control-${version}-mac-${arch}.dmg",
