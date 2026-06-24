@@ -1,5 +1,8 @@
 appId: gmbh.jakobs.qa
-productName: JM Q&A
+# productName ohne '&'/Sonderzeichen → saubere Datei-/Ordnernamen (electron-builder
+# ersetzt '&' und Leerzeichen sonst durch '.'). Anzeigename im Launcher-Katalog ist
+# „JM Q&A" (suite.json name), der Fenstertitel ebenfalls.
+productName: JM QA
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 copyright: "© Jakobs Medien GmbH"
 
@@ -49,7 +52,7 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
-  shortcutName: JM Q&A
+  shortcutName: JM QA
   createDesktopShortcut: false
 
 publish:
