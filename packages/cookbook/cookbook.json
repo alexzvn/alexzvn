@@ -440,6 +440,213 @@
         ]
       },
       "location": "BMUKN Berlin, Stresemannstr. 128-130"
+    },
+    {
+      "id": "tool-jm-switcher",
+      "title": "JM Switcher — Video-Mischer einrichten",
+      "category": "Tool-Manuals",
+      "difficulty": "mittel",
+      "setupTimeMin": 30,
+      "teamSize": "1",
+      "tags": [
+        "switcher",
+        "ndi",
+        "streaming",
+        "rtmp",
+        "companion",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-ndi-screen-capture",
+        "jm-titler",
+        "jm-stage-display"
+      ],
+      "prerequisites": [
+        "JM Switcher installiert (über den Launcher)",
+        "NDI-Runtime, falls NDI-Quellen genutzt werden",
+        "Capture-Karte inkl. Treiber, falls SDI/HDMI-Quellen",
+        {
+          "Für Streaming": "RTMP-Ziel (Stream-Key) + stabile Upload-Leitung"
+        },
+        {
+          "Optional": "Bitfocus Companion für die Fernsteuerung"
+        }
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Media Operator (Bildregie)"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Softwarebasierter Video-Mischer mit Program/Preview, NDI-/Capture-/Bildschirm-Quellen, Aufnahme und RTMP-Ausgang — Einrichtung und Live-Bedienung.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Switcher installiert (über den Launcher)",
+              "NDI-Runtime (für NDI-Quellen) bzw. Capture-Karten-Treiber (für SDI/HDMI)",
+              "RTMP-Ziel + Upload-Leitung (nur fürs Streaming)"
+            ]
+          },
+          {
+            "title": "Quellen",
+            "items": [
+              "Bildschirm oder einzelnes Fenster",
+              "NDI-Quellen aus dem LAN (z. B. JM NDI Screen Capture, JM Titler)",
+              "Capture-Karte (SDI/HDMI)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Quelle in Preview wählen",
+            "Mit Cut hart oder mit Auto-Dissolve weich auf Program schalten",
+            "Aufnahme und/oder Stream starten",
+            "Stream-Status (Bitrate, Drops) und Audiopegel beobachten"
+          ],
+          "nach": [
+            "Stream beenden, Aufnahme stoppen",
+            "Aufnahme sichern und übergeben"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "NDI-Quelle erscheint nicht",
+            "remedy": "Gleiches Subnetz prüfen, Firewall/mDNS freigeben"
+          },
+          {
+            "risk": "Kein Bild von der Capture-Karte",
+            "remedy": "Treiber prüfen, Gerät nicht von anderem Programm belegt"
+          },
+          {
+            "risk": "Stream bricht ab",
+            "remedy": "Bitrate senken, Upload prüfen, Backup-Uplink bereithalten"
+          },
+          {
+            "risk": "Kein Ton im Stream",
+            "remedy": "Audioquelle zugeordnet? Pegel/Mute prüfen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Quellen hinzugefügt",
+              "Audio zugeordnet und gepegelt",
+              "Aufnahme-Zielordner gesetzt",
+              "RTMP-Verbindung getestet",
+              "Companion (optional) verbunden"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Program/Preview korrekt",
+              "Cut und Dissolve getestet",
+              "Aufnahme armiert",
+              "Pegel ok"
+            ]
+          }
+        ],
+        "tips": [
+          "NDI-Quellen tauchen automatisch im LAN auf (mDNS) — alle Geräte ins gleiche Subnetz.",
+          "JM Titler als eigene, transparente NDI-Quelle über das Programmbild legen.",
+          "Vor Live einmal Cut und Auto-Dissolve durchspielen."
+        ]
+      }
+    },
+    {
+      "id": "tool-jm-timer",
+      "title": "JM Timer — Countdown & Sprecher-Timer",
+      "category": "Tool-Manuals",
+      "difficulty": "einfach",
+      "setupTimeMin": 10,
+      "teamSize": "1",
+      "tags": [
+        "timer",
+        "countdown",
+        "sprecher",
+        "companion",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-timer",
+        "jm-stage-display",
+        "jm-rundown"
+      ],
+      "prerequisites": [
+        "JM Timer installiert (über den Launcher)",
+        {
+          "Optional": "zweiter Bildschirm / Sprecher-Monitor"
+        },
+        {
+          "Optional": "Netzwerk / Bitfocus Companion für die Fernsteuerung"
+        }
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Regie / Media Operator"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Countdown- und Produktions-Timer mit Sprecherfenster und Fernsteuerung — Einrichtung und Bedienung im Live-Betrieb.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Timer installiert (über den Launcher)",
+              "Optional: zweiter Monitor für das Sprecherfenster",
+              "Optional: Netzwerk / Bitfocus Companion für die Fernsteuerung"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Timer starten / stoppen / zurücksetzen",
+            "Bei Bedarf eine Kurznachricht für die Bühne einblenden",
+            "Over-Time (Rotphase) im Blick behalten"
+          ],
+          "nach": [
+            "Timer für das nächste Segment zurücksetzen"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Sprecherfenster auf falschem Monitor",
+            "remedy": "Fenster auf den Talent-Monitor ziehen, Vollbild setzen"
+          },
+          {
+            "risk": "Fernsteuerung reagiert nicht",
+            "remedy": "Gleiches LAN prüfen, Companion-Verbindung kontrollieren"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Presets je Segment angelegt",
+              "Sprecherfenster auf Talent-Monitor",
+              "Fernsteuerung (optional) verbunden"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Test-Start gelaufen",
+              "Auf Stage Display sichtbar"
+            ]
+          }
+        ],
+        "tips": [
+          "Mit JM Rundown koppeln: pro Segment startet der Timer automatisch.",
+          "Den Countdown zusätzlich auf JM Stage Display für die Crew anzeigen."
+        ]
+      }
     }
   ]
 }
