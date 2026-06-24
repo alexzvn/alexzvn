@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T09:05:00.000Z",
+  "updatedAt": "2026-06-24T09:35:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -392,6 +392,27 @@
         }
       },
       "app": "qa"
+    },
+    {
+      "id": "jm-battle",
+      "name": "JM Battle",
+      "tagline": "BattleRap · Voting & Replay",
+      "description": "BattleRap-Toolkit für Live-Events: zwei Kontrahenten, Runden mit Jury-Entscheid und Publikums-Voting per QR-Code vom Handy. Blendet die VS-Bauchbinde mit den Namen über den JM Titler ein und schneidet den Instant-Replay (letzte Sekunden) aus einer Aufnahme. Selbst per Bitfocus Companion fernsteuerbar.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.battle",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Battle-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Battle.app"
+        },
+        "win": {
+          "artifact": "JM Battle-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Battle\\JM Battle.exe"
+        }
+      },
+      "app": "battle"
     }
   ]
 }

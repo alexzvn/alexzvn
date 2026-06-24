@@ -854,5 +854,19 @@
         ]
       }
     ]
+  },
+  {
+    "app": "battle",
+    "name": "JM Battle",
+    "entries": [
+      {
+        "version": "0.1.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Neu im Werkzeugkasten: JM Battle — das BattleRap-Toolkit. Zwei Kontrahenten, Runden mit Jury-Entscheid und Publikums-Voting per QR-Code vom Handy (eine Stimme pro Runde).",
+          "Blendet die VS-Bauchbinde mit den Namen über den JM Titler ein und schneidet den Instant-Replay (letzte Sekunden) aus einer Aufnahme. Selbst per Bitfocus Companion fernsteuerbar (Runde/Jury/Voting/Replay)."
+        ]
+      }
+    ]
   }
 ]
