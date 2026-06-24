@@ -3,6 +3,141 @@
   "updatedAt": "2026-06-24T00:00:00.000Z",
   "recipes": [
     {
+      "id": "award-gala",
+      "title": "Award-Show / Gala",
+      "category": "Veranstaltungsformate",
+      "difficulty": "anspruchsvoll",
+      "setupTimeMin": 720,
+      "teamSize": "5-8",
+      "tags": [
+        "award",
+        "gala",
+        "show",
+        "einspieler",
+        "buehne",
+        "streaming"
+      ],
+      "relatedTools": [
+        "jm-rundown",
+        "jm-switcher",
+        "jm-titler",
+        "jm-player",
+        "jm-timer",
+        "jm-recorder"
+      ],
+      "prerequisites": [
+        "Bühne mit kameragerechter Ausleuchtung",
+        "Mehrere Kameras (Totale + Nah + Bühne)",
+        "Einspieler/Trailer und Musik-Cues bereit",
+        "Regieplan/Rundown und Moderation"
+      ],
+      "equipmentOwner": "gemischt",
+      "crewRoles": [
+        "Regie",
+        "Bildmischung",
+        "Audio",
+        "Grafik / Titler",
+        "Zuspielung / Einspieler",
+        "Licht"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Preisverleihung/Gala mit Show-Charakter — Einspieler, Gewinner-Reveals, Laudationes, Live-Bauchbinden und saubere Ablaufregie.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Bühne & Licht",
+            "items": [
+              "Kameragerechte Ausleuchtung",
+              "Bühnenvorschau"
+            ]
+          },
+          {
+            "title": "Video",
+            "items": [
+              "Multicam (Totale + Nah + Bühne)",
+              "Bildmischer + Aufzeichnung (JM Recorder/Switcher)"
+            ]
+          },
+          {
+            "title": "Grafik",
+            "items": [
+              "Lower Thirds / VS-Bauchbinden (JM Titler)",
+              "Nominierten- und Gewinner-Grafiken"
+            ]
+          },
+          {
+            "title": "Zuspielung & Ablauf",
+            "items": [
+              "Einspieler/Trailer (JM Player), Musik-Cues",
+              "Rundown (JM Rundown) für Segmente und GO"
+            ]
+          },
+          {
+            "title": "Rollen",
+            "items": [
+              "Regie, Bildmischung, Audio, Grafik, Zuspielung, Licht"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Rundown je Programmpunkt anlegen (Einspieler, Titler, Szene)",
+            "Einspieler in JM Player laden, Reihenfolge prüfen",
+            "Bauchbinden/Reveal-Grafiken vorbereiten",
+            "Generalprobe mit dem kompletten Ablauf"
+          ],
+          "waehrend": [
+            "Regie folgt dem Rundown (GO pro Segment)",
+            "Gewinner-Reveals sauber timen (Musik + Titler + Schnitt)",
+            "Bauchbinden takten, Einspieler/Musik cuen",
+            "Aufzeichnung mitlaufen lassen"
+          ],
+          "nach": [
+            "Aufzeichnung sichern",
+            "Highlight-Schnitt vorbereiten, Material übergeben"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Einspieler startet nicht",
+            "remedy": "Backup-Kopie + zweiter Player bereit"
+          },
+          {
+            "risk": "Falsche/keine Bauchbinde",
+            "remedy": "Im Rundown gepflegt? Titler im LAN?"
+          },
+          {
+            "risk": "Ablauf verrutscht",
+            "remedy": "Puffer im Rundown, Segmente kürzbar planen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Vorbereitung",
+            "items": [
+              "Rundown je Segment angelegt",
+              "Einspieler geladen und sortiert",
+              "Bauchbinden/Reveal-Grafiken bereit",
+              "Generalprobe gelaufen"
+            ]
+          },
+          {
+            "title": "Show",
+            "items": [
+              "GO je Segment getestet",
+              "Aufzeichnung armiert",
+              "Musik/Cues bereit"
+            ]
+          }
+        ],
+        "tips": [
+          "Reveal-Momente proben — das Zusammenspiel von Musik, Bauchbinde und Schnitt macht den Effekt.",
+          "Reihenfolge der Bauchbinden vorab in den Rundown legen, nicht live suchen."
+        ]
+      }
+    },
+    {
       "id": "hybrid-konferenz",
       "title": "Hybrid-Konferenz",
       "category": "Veranstaltungsformate",
@@ -155,6 +290,244 @@
       }
     },
     {
+      "id": "townhall",
+      "title": "Townhall / Mitarbeiterversammlung (hybrid)",
+      "category": "Veranstaltungsformate",
+      "difficulty": "mittel",
+      "setupTimeMin": 300,
+      "teamSize": "3-4",
+      "tags": [
+        "townhall",
+        "hybrid",
+        "intern",
+        "qa",
+        "streaming"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-qa",
+        "jm-caption",
+        "jm-timer",
+        "jm-presenter"
+      ],
+      "prerequisites": [
+        "Stabile Upload-Leitung + Backup",
+        "Interne Stream-Plattform/Zugang (DSGVO-konform)",
+        "Saalmikrofonierung für Fragen",
+        "Q&A-Kanal (QR fürs Handy)"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Regie",
+        "Streaming-Operator",
+        "Q&A-/Moderations-Betreuung",
+        "Audio"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Interne Mitarbeiterversammlung, hybrid: Führungsteam auf der Bühne, Belegschaft vor Ort und im Stream, mit moderierter Fragerunde.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Audio",
+            "items": [
+              "Headsets/Handmikros fürs Panel",
+              "Saalmikrofon(e) für Publikumsfragen",
+              "Getrennter Saal- und Stream-Mix"
+            ]
+          },
+          {
+            "title": "Video",
+            "items": [
+              "1–2 Kameras (Totale/Bühne)",
+              "Folien als sauberer Bildanteil (JM Presenter)"
+            ]
+          },
+          {
+            "title": "Streaming & Interaktion",
+            "items": [
+              "Interne Plattform (DSGVO), stabiler Upload, Backup",
+              "Moderierte Fragen via JM Q&A (QR fürs Handy)",
+              "Optional Untertitel (JM Caption) für Barrierefreiheit"
+            ]
+          },
+          {
+            "title": "Rollen",
+            "items": [
+              "Regie, Streaming-Operator, Q&A-Moderation, Audio"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Plattform und Zugänge testen",
+            "Folien (JM Presenter) prüfen",
+            "Q&A + QR vorbereiten, Moderationsschritt einstellen",
+            "Soundcheck Panel + Saalmikro",
+            "Probe der Fragerunde"
+          ],
+          "waehrend": [
+            "Regie schaltet Bühne und Folien",
+            "Q&A-Moderation filtert Fragen, holt per Klick ans Wort (Timer + Bauchbinde)",
+            "Stream-Gesundheit beobachten"
+          ],
+          "nach": [
+            "Aufzeichnung intern bereitstellen",
+            "Offene Fragen / Backlog dokumentieren"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Zu wenige Fragen",
+            "remedy": "Vorab-Sammelphase + vorbereitete Moderationsfragen"
+          },
+          {
+            "risk": "Feedback am Saalmikro",
+            "remedy": "Pegel/Position prüfen, Richtung PA meiden"
+          },
+          {
+            "risk": "Interner Stream nicht erreichbar",
+            "remedy": "Zugang/VPN prüfen, Backup-Pfad bereithalten"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Vorbereitung",
+            "items": [
+              "Plattform und Zugänge getestet",
+              "Folien geprüft",
+              "Q&A/QR bereit, Moderation gesetzt",
+              "Soundcheck Panel + Saalmikro"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Fragerunde geprobt",
+              "Stream getestet",
+              "Backup bereit"
+            ]
+          }
+        ],
+        "tips": [
+          "Fragen vorab sammeln lassen — hält die Runde fokussiert und füllt Leerlauf.",
+          "Untertitel erhöhen Reichweite und Barrierefreiheit, besonders bei großen Belegschaften."
+        ]
+      }
+    },
+    {
+      "id": "audio-grundsetup",
+      "title": "Audio-Grundsetup für Events",
+      "category": "Technik-Setups",
+      "difficulty": "mittel",
+      "setupTimeMin": 90,
+      "teamSize": "1",
+      "tags": [
+        "audio",
+        "mischpult",
+        "funkstrecken",
+        "monitoring",
+        "feedback"
+      ],
+      "relatedTools": [
+        "jm-recorder",
+        "jm-switcher"
+      ],
+      "prerequisites": [
+        "Mischpult mit ausreichend Kanälen (ggf. Stagebox)",
+        "Funkstrecken/Mikrofone inkl. Reserve-Set",
+        "Monitoring (Kopfhörer/Abhöre, ggf. Bühnenmonitor)",
+        "Abgesicherte Stromversorgung"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Media Operator Audio"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Sauberes Audio-Grundsetup für Events — Mikrofonierung, getrennter Saal-/Stream-Mix, Monitoring und Feedback-Vermeidung. Modularer Baustein für Konferenz, Townhall, Gala.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Pult & Wandlung",
+            "items": [
+              "Mischpult mit ausreichend Kanälen, ggf. Stagebox",
+              "Saubere Stromversorgung"
+            ]
+          },
+          {
+            "title": "Mikrofone",
+            "items": [
+              "Funkstrecken (Headset/Handheld) + Reserve-Set",
+              "Frequenzplanung/Koordination"
+            ]
+          },
+          {
+            "title": "Mixe & Monitoring",
+            "items": [
+              "Getrennter Saal-PA-Mix und Stream-/Aufnahme-Mix",
+              "Operator-Abhöre, optional Bühnenmonitoring"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Kanäle anlegen und beschriften",
+            "Funkstrecken einmessen (Frequenzen koordinieren)",
+            "Gain/Pegel einstellen",
+            "Saal- und Stream-Mix sauber trennen",
+            "Feedback-Punkte vorab ausreizen"
+          ],
+          "waehrend": [
+            "Pegel fahren, diszipliniert muten",
+            "Funkbatterien und Empfang im Blick",
+            "Stream-Pegel stabil halten"
+          ],
+          "nach": [
+            "Aufnahme sichern",
+            "Funkstrecken laden"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Feedback / Rückkopplung",
+            "remedy": "Pegel/Position/EQ, Mikro nicht Richtung PA"
+          },
+          {
+            "risk": "Funkaussetzer",
+            "remedy": "Frequenz/Antenne prüfen, Batterie tauschen"
+          },
+          {
+            "risk": "Brummen",
+            "remedy": "Masseschleife prüfen, DI-Box einsetzen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Aufbau",
+            "items": [
+              "Kanäle beschriftet",
+              "Funkstrecken eingemessen",
+              "Saal- und Stream-Mix getrennt",
+              "Monitoring steht"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Soundcheck aller Mikros",
+              "Batterien frisch",
+              "Stream-Pegel ok"
+            ]
+          }
+        ],
+        "tips": [
+          "Saal- und Stream-Mix immer trennen — der Saal braucht etwas anderes als der Stream.",
+          "Reserve-Funkstrecke und Ersatzbatterien gehören immer ins Setup."
+        ]
+      }
+    },
+    {
       "id": "livestream-tricaster-ptz",
       "title": "Livestream-Setup: TriCaster + PTZ-Kameras",
       "category": "Technik-Setups",
@@ -288,6 +661,116 @@
         "tips": [
           "Mehr Kamerabewegung und Inserts halten den Stream dynamisch — statische Totalen wirken schnell langweilig.",
           "Vorhandene Haustechnik (Licht, LED-Wand, Audiopult) vorab auf Verfügbarkeit und Funktion prüfen — nicht blind aufs Inventar verlassen."
+        ]
+      }
+    },
+    {
+      "id": "ndi-workflow",
+      "title": "NDI-Workflow im Studio-LAN",
+      "category": "Technik-Setups",
+      "difficulty": "mittel",
+      "setupTimeMin": 60,
+      "teamSize": "1",
+      "tags": [
+        "ndi",
+        "netzwerk",
+        "studio",
+        "mdns",
+        "bandbreite"
+      ],
+      "relatedTools": [
+        "jm-ndi-screen-capture",
+        "jm-switcher",
+        "jm-titler",
+        "jm-caption",
+        "jm-studio-control"
+      ],
+      "prerequisites": [
+        "Gigabit-LAN (möglichst dediziertes Produktions-Netz/VLAN)",
+        "NDI-Runtime auf den beteiligten Rechnern",
+        "Gleiche Subnetze für die Discovery"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Media Operator / Netzwerk"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "NDI-Quellen sauber im Studio-LAN bereitstellen und einbinden — Benennung, Bandbreite, Discovery und typische Fallstricke.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Netzwerk",
+            "items": [
+              "Gigabit-Switch, möglichst dediziertes NDI-/Produktions-VLAN",
+              "Gleiche Subnetze für mDNS-Discovery"
+            ]
+          },
+          {
+            "title": "Quellen",
+            "items": [
+              "JM NDI Screen Capture (Bildschirm/Fenster)",
+              "JM Titler (transparente Grafik), JM Caption (Untertitel)",
+              "Kameras/Encoder mit NDI"
+            ]
+          },
+          {
+            "title": "Senken",
+            "items": [
+              "Bildmischer (TriCaster / vMix / OBS / JM Switcher)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Geräte ins gleiche Subnetz bringen, NDI-Runtime sicherstellen",
+            "Quellen klar benennen (Gerät + Inhalt)",
+            "Bandbreite grob kalkulieren (Full-NDI vs. NDI-HX)"
+          ],
+          "waehrend": [
+            "Quellen im Mixer einbinden",
+            "Auf Latenz und Framedrops achten",
+            "Netzwerklast beobachten"
+          ],
+          "nach": [
+            "Benennungs-/Portplan für die nächste Show dokumentieren"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Quelle nicht sichtbar",
+            "remedy": "Gleiches Subnetz/mDNS, Firewall, NDI-Runtime prüfen"
+          },
+          {
+            "risk": "Ruckler / Drops",
+            "remedy": "Bandbreite/Switch prüfen, NDI-HX erwägen"
+          },
+          {
+            "risk": "Hohe Latenz",
+            "remedy": "Netzlast und CPU der Quelle prüfen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Aufbau",
+            "items": [
+              "Gleiches Subnetz",
+              "NDI-Runtime vorhanden",
+              "Quellen sprechend benannt",
+              "Bandbreite geprüft"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Alle Quellen im Mixer sichtbar",
+              "Keine Drops/Latenzprobleme"
+            ]
+          }
+        ],
+        "tips": [
+          "Eindeutige, sprechende NDI-Namen sparen im Live-Betrieb viel Zeit.",
+          "Für viele Full-NDI-Streams das Netz dimensionieren oder gezielt NDI-HX nutzen."
         ]
       }
     },
