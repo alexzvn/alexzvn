@@ -1,0 +1,11 @@
+{
+  "name": "@jm/cookbook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "JM Kochbuch: internes Nachschlagewerk (Rezepte) — Typen + cookbook.json",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cookbook.json": "./cookbook.json"
+  }
+}

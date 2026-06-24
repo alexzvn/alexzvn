@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-24T12:00:00.000Z",
+  "recipes": [
+    {
+      "id": "hybrid-konferenz",
+      "title": "Hybrid-Konferenz",
+      "category": "Veranstaltungsformate",
+      "difficulty": "anspruchsvoll",
+      "setupTimeMin": 480,
+      "teamSize": "4-6",
+      "tags": ["hybrid", "streaming", "konferenz", "regie"],
+      "relatedTools": ["jm-rundown", "jm-switcher", "jm-caption", "jm-timer", "jm-prompter"],
+      "prerequisites": [
+        "Stabile Upload-Leitung (mind. 10 Mbit/s)",
+        "Backup-Internet (Mobile-Hotspot)",
+        "Separate Mischpulte für Saal und Stream"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Eventleitung",
+        "Technische Leitung",
+        "Regie",
+        "Moderator / Host",
+        "Streaming-Operator",
+        "Chat- / Remote-Betreuung"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Physische und digitale Teilnehmende in einem gemeinsamen Event-Erlebnis — gleichwertig, professionell, technisch redundant.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Audio",
+            "items": [
+              "Saubere Mikrofonierung (Headsets bevorzugt)",
+              "Separate Mischpulte für Saal und Stream",
+              "Echo- und Feedback-Vermeidung"
+            ]
+          },
+          {
+            "title": "Video",
+            "items": [
+              "Mindestens 2 Kameras (Totale + Close-Up)",
+              "Saubere Ausleuchtung",
+              "Klare Bildkomposition"
+            ]
+          },
+          {
+            "title": "Streaming",
+            "items": [
+              "OBS, vMix oder Hardware-Encoder",
+              "Stabile Upload-Leitung (mind. 10 Mbit/s)",
+              "Backup-Stream"
+            ]
+          },
+          {
+            "title": "Backup-Systeme",
+            "items": [
+              "Ersatzmikrofone",
+              "Zweiter Laptop für Präsentationen",
+              "Redundante Internetverbindung"
+            ]
+          },
+          {
+            "title": "Rollen / Personal",
+            "items": [
+              "Eventleitung (Gesamtverantwortung, Freigaben)",
+              "Technische Leitung (koordiniert alle Gewerke)",
+              "Regie (Ablaufsteuerung, Kommunikation Bühne/Technik/Remote)",
+              "Moderator / Host (führt durchs Programm, bindet Remote ein)",
+              "Streaming-Operator (Szenenwechsel, Einspieler, Overlays)",
+              "Chat- / Remote-Betreuung (filtert und leitet Fragen weiter)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Technik-Check aller Gewerke",
+            "Soundcheck (Saal und Stream getrennt)",
+            "Kamerapositionen festlegen",
+            "Präsentationen testen",
+            "Teilnehmerzugänge testen",
+            "Moderator briefen, Regieplan verteilen, Chat-Team einweisen"
+          ],
+          "waehrend": [
+            "Regie steuert Szenenwechsel",
+            "Moderator interagiert aktiv mit Remote-Teilnehmenden",
+            "Chat-Team filtert Fragen und leitet sie an die Bühne weiter"
+          ],
+          "nach": [
+            "Aufzeichnung sichern",
+            "Feedback einholen",
+            "Material an Kunden senden"
+          ]
+        },
+        "tips": [
+          "Gleichwertiges Erlebnis für beide Gruppen aktiv mitdenken — Remote nicht als Publikum zweiter Klasse behandeln.",
+          "Regieplan mit Puffern bauen, um Verzögerungen abzufangen."
+        ],
+        "troubleshooting": [
+          { "risk": "Internet bricht ab", "remedy": "Mobile-Hotspot als Backup, Backup-Stream vorbereitet halten" },
+          { "risk": "Mikrofon fällt aus", "remedy": "Ersatzmikrofon griffbereit bereitstellen" },
+          { "risk": "Präsentation startet nicht", "remedy": "Zweiter Laptop mit gespiegelten Folien" },
+          { "risk": "Kameraausfall", "remedy": "Ersatzkamera oder kurzfristig auf Totale umschalten" },
+          { "risk": "Verzögerungen im Ablauf", "remedy": "Regieplan mit Puffern, Segmente kürzbar planen" }
+        ],
+        "checklists": [
+          {
+            "title": "Technik-Checkliste",
+            "items": [
+              "Mikrofone geladen",
+              "Kameras eingerichtet",
+              "Streaming getestet",
+              "Präsentationen geprüft",
+              "Backup-Systeme bereit"
+            ]
+          },
+          {
+            "title": "Ablauf-Checkliste",
+            "items": [
+              "Moderator gebrieft",
+              "Regieplan verteilt",
+              "Teilnehmerzugänge getestet",
+              "Chat-Team eingewiesen"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "livestream-tricaster-ptz",
+      "title": "Livestream-Setup: TriCaster + PTZ-Kameras",
+      "category": "Technik-Setups",
+      "difficulty": "mittel",
+      "setupTimeMin": 240,
+      "teamSize": "2-3",
+      "tags": ["livestream", "tricaster", "ptz", "ndi", "regie"],
+      "relatedTools": ["jm-switcher", "jm-caption", "jm-titler", "jm-stage-display"],
+      "prerequisites": [
+        "Strom 230 V / 10 A, einzeln abgesichert",
+        "DSL-/Upload-Zugang vom Kunden",
+        "Raumzugang am Aufbau- und am Showtag"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Regie",
+        "Media Operator Video (TriCaster)",
+        "Media Operator Audio"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Kompaktes, mehrkamerataugliches Livestream-Setup mit TriCaster-Regie, PTZ-Kameras und DSGVO-konformem Stream — Basis für hybride Veranstaltungen.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Regie & Zuspielung",
+            "items": [
+              "NewTek TriCaster TC2 Elite (Broadcasting-System)",
+              "2x Regie-Laptop (Programm-Feeds und Layouts)",
+              "2-Wege-Intercom (z. B. GreenGo: Beltpacks, Antenne, Tischstation)"
+            ]
+          },
+          {
+            "title": "Kamera",
+            "items": [
+              "3x PTZ-Kamera (z. B. Panasonic AW-UE150) inkl. Stativ + 20 m Verkabelung",
+              "PTZ-Bedienpanel (z. B. AW-RP150)",
+              "FlexTally für Kamera-Tally",
+              "Kamerapodest"
+            ]
+          },
+          {
+            "title": "Stream & Netzwerk",
+            "items": [
+              "DSGVO-Livestream (Server-Standort Deutschland)",
+              "Livetranscoding (pro Stunde abgerechnet)",
+              "Aufzeichnung → Video-on-Demand"
+            ]
+          },
+          {
+            "title": "Infrastruktur",
+            "items": [
+              "Regieverkleidung (Pipes & Drapes)",
+              "Verkabelungspauschalen Video / Audio / Strom / Netzwerk",
+              "Kabelkanäle (Defender)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Transport und Aufbau am Vortag",
+            "PTZ-Positionen und Bildausschnitte einrichten",
+            "TriCaster-Szenen/Layouts anlegen",
+            "Intercom-Funkstrecken einmessen",
+            "Stream-Endpunkt + Transcoding testen",
+            "Abnahme und Probe mit Programm"
+          ],
+          "waehrend": [
+            "Live-Regie steuert Szenen und Layouts",
+            "Backstage-Kommunikation über 2-Wege-Intercom",
+            "Recording für VOD mitlaufen lassen",
+            "Stream-Gesundheit (Bitrate, Drops) überwachen"
+          ],
+          "nach": [
+            "Aufzeichnung sichern",
+            "VOD bereitstellen",
+            "Abbau und Restabbau",
+            "Material für Postproduktion übergeben"
+          ]
+        },
+        "tips": [
+          "Mehr Kamerabewegung und Inserts halten den Stream dynamisch — statische Totalen wirken schnell langweilig.",
+          "Vorhandene Haustechnik (Licht, LED-Wand, Audiopult) vorab auf Verfügbarkeit und Funktion prüfen — nicht blind aufs Inventar verlassen."
+        ],
+        "troubleshooting": [
+          { "risk": "Kundeninternet instabil / ohne Haftung", "remedy": "Mobiler Backup-Uplink (Bonding/LTE), Stream-Bitrate konservativ wählen" },
+          { "risk": "PTZ-Kamera reagiert nicht", "remedy": "Netzwerk/PoE prüfen, Ersatz-Patch, Kamera am Panel neu zuweisen" },
+          { "risk": "Tally fehlt oder ist falsch", "remedy": "FlexTally-Zuordnung im TriCaster prüfen" },
+          { "risk": "Intercom-Aussetzer", "remedy": "Antennenposition/Frequenz prüfen, Beltpack-Akkus tauschen" }
+        ],
+        "checklists": [
+          {
+            "title": "Aufbau",
+            "items": [
+              "Strom 230 V / 10 A abgesichert",
+              "Netzwerk / Upload steht",
+              "PTZ-Kameras zugewiesen und getallyt",
+              "TriCaster-Layouts angelegt",
+              "Intercom eingemessen"
+            ]
+          },
+          {
+            "title": "Vor Sendung",
+            "items": [
+              "Stream-Endpunkt live getestet",
+              "Recording armiert",
+              "Backup-Uplink bereit",
+              "Probe mit Regie gelaufen"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
