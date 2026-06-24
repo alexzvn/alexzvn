@@ -7,6 +7,7 @@ import { getTool, getTools } from './manifest';
 import { getChangelog } from './changelog';
 import { getAllStates } from './install-state';
 import { getPresence } from './presence';
+import { getHealth } from './health';
 import { checkToolUpdates, checkLauncherUpdate } from './updates';
 import { openTool } from './launch';
 import { openShowDialog, saveShow, pickShowDocument } from './show';
@@ -34,6 +35,8 @@ export function registerIpc(): void {
   ipcMain.handle('suite:state', () => getAllStates(getTools()));
   // Laufzeit-Zustand (welche Tools laufen gerade) für das Health-Dashboard.
   ipcMain.handle('presence:get', () => getPresence());
+  // Live-Zustand der entdeckten Steuer-Endpunkte (REC/On-Air/…) fürs Dashboard.
+  ipcMain.handle('health:get', () => getHealth());
   // Live-Update-Prüfung gegen die Releases (online, sonst unveränderte Zustände).
   ipcMain.handle('suite:check-updates', () => checkToolUpdates(getTools()));
 

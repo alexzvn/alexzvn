@@ -8,6 +8,7 @@ import { registerIpc } from './ipc';
 import { initManifest, refreshManifest } from './manifest';
 import { initChangelog, refreshChangelog } from './changelog';
 import { startPresenceHub } from './presence';
+import { startHealth } from './health';
 import { openShow } from './show';
 
 declare const __dirname: string;
@@ -57,6 +58,9 @@ if (setupSingleInstance(() => createWindow())) {
     // Presence-Hub: empfängt die Heartbeats der Tools und meldet Änderungen an
     // die UI (Health-Dashboard). Best-effort — fällt der Port aus, läuft alles weiter.
     startPresenceHub(() => emitAppEvent({ type: 'presence-changed' }));
+    // Health-Aggregator: browst per mDNS nach Steuer-Endpunkten und liest deren
+    // Live-Zustand (REC/On-Air/…) — auch von Tools auf anderen Rechnern.
+    startHealth(() => emitAppEvent({ type: 'health-changed' }));
     registerIpc();
     createWindow();
 
