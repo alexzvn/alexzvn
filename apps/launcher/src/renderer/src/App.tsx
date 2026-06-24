@@ -8,6 +8,7 @@ import { ToolCard } from '@/components/ToolCard';
 import { SettingsModal } from '@/components/SettingsModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { PatchNotesModal } from '@/components/PatchNotesModal';
+import { CookbookModal } from '@/components/CookbookModal';
 import { SystemStatusModal } from '@/components/SystemStatusModal';
 import { ShowEditorModal } from '@/components/ShowEditorModal';
 import { displayName } from '@/lib/monogram';
@@ -159,6 +160,7 @@ export function App() {
       <SettingsModal />
       <FeedbackModal />
       <PatchNotesModal />
+      <CookbookModal />
       <SystemStatusModal />
       <ShowEditorModal />
     </div>

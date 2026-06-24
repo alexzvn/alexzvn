@@ -1,0 +1,7 @@
+# Astro
+dist/
+.astro/
+node_modules/
+
+# Generiert aus packages/cookbook/cookbook.json via scripts/sync-content.mjs
+src/content/docs/

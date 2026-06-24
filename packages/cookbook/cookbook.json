@@ -1,0 +1,652 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-24T00:00:00.000Z",
+  "recipes": [
+    {
+      "id": "hybrid-konferenz",
+      "title": "Hybrid-Konferenz",
+      "category": "Veranstaltungsformate",
+      "difficulty": "anspruchsvoll",
+      "setupTimeMin": 480,
+      "teamSize": "4-6",
+      "tags": [
+        "hybrid",
+        "streaming",
+        "konferenz",
+        "regie"
+      ],
+      "relatedTools": [
+        "jm-rundown",
+        "jm-switcher",
+        "jm-caption",
+        "jm-timer",
+        "jm-prompter"
+      ],
+      "prerequisites": [
+        "Stabile Upload-Leitung (mind. 10 Mbit/s)",
+        "Backup-Internet (Mobile-Hotspot)",
+        "Separate Mischpulte für Saal und Stream"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Eventleitung",
+        "Technische Leitung",
+        "Regie",
+        "Moderator / Host",
+        "Streaming-Operator",
+        "Chat- / Remote-Betreuung"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Physische und digitale Teilnehmende in einem gemeinsamen Event-Erlebnis — gleichwertig, professionell, technisch redundant.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Audio",
+            "items": [
+              "Saubere Mikrofonierung (Headsets bevorzugt)",
+              "Separate Mischpulte für Saal und Stream",
+              "Echo- und Feedback-Vermeidung"
+            ]
+          },
+          {
+            "title": "Video",
+            "items": [
+              "Mindestens 2 Kameras (Totale + Close-Up)",
+              "Saubere Ausleuchtung",
+              "Klare Bildkomposition"
+            ]
+          },
+          {
+            "title": "Streaming",
+            "items": [
+              "OBS, vMix oder Hardware-Encoder",
+              "Stabile Upload-Leitung (mind. 10 Mbit/s)",
+              "Backup-Stream"
+            ]
+          },
+          {
+            "title": "Backup-Systeme",
+            "items": [
+              "Ersatzmikrofone",
+              "Zweiter Laptop für Präsentationen",
+              "Redundante Internetverbindung"
+            ]
+          },
+          {
+            "title": "Rollen / Personal",
+            "items": [
+              "Eventleitung (Gesamtverantwortung, Freigaben)",
+              "Technische Leitung (koordiniert alle Gewerke)",
+              "Regie (Ablaufsteuerung, Kommunikation Bühne/Technik/Remote)",
+              "Moderator / Host (führt durchs Programm, bindet Remote ein)",
+              "Streaming-Operator (Szenenwechsel, Einspieler, Overlays)",
+              "Chat- / Remote-Betreuung (filtert und leitet Fragen weiter)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Technik-Check aller Gewerke",
+            "Soundcheck (Saal und Stream getrennt)",
+            "Kamerapositionen festlegen",
+            "Präsentationen testen",
+            "Teilnehmerzugänge testen",
+            "Moderator briefen, Regieplan verteilen, Chat-Team einweisen"
+          ],
+          "waehrend": [
+            "Regie steuert Szenenwechsel",
+            "Moderator interagiert aktiv mit Remote-Teilnehmenden",
+            "Chat-Team filtert Fragen und leitet sie an die Bühne weiter"
+          ],
+          "nach": [
+            "Aufzeichnung sichern",
+            "Feedback einholen",
+            "Material an Kunden senden"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Internet bricht ab",
+            "remedy": "Mobile-Hotspot als Backup, Backup-Stream vorbereitet halten"
+          },
+          {
+            "risk": "Mikrofon fällt aus",
+            "remedy": "Ersatzmikrofon griffbereit bereitstellen"
+          },
+          {
+            "risk": "Präsentation startet nicht",
+            "remedy": "Zweiter Laptop mit gespiegelten Folien"
+          },
+          {
+            "risk": "Kameraausfall",
+            "remedy": "Ersatzkamera oder kurzfristig auf Totale umschalten"
+          },
+          {
+            "risk": "Verzögerungen im Ablauf",
+            "remedy": "Regieplan mit Puffern, Segmente kürzbar planen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Technik-Checkliste",
+            "items": [
+              "Mikrofone geladen",
+              "Kameras eingerichtet",
+              "Streaming getestet",
+              "Präsentationen geprüft",
+              "Backup-Systeme bereit"
+            ]
+          },
+          {
+            "title": "Ablauf-Checkliste",
+            "items": [
+              "Moderator gebrieft",
+              "Regieplan verteilt",
+              "Teilnehmerzugänge getestet",
+              "Chat-Team eingewiesen"
+            ]
+          }
+        ],
+        "tips": [
+          "Gleichwertiges Erlebnis für beide Gruppen aktiv mitdenken — Remote nicht als Publikum zweiter Klasse behandeln.",
+          "Regieplan mit Puffern bauen, um Verzögerungen abzufangen."
+        ]
+      }
+    },
+    {
+      "id": "livestream-tricaster-ptz",
+      "title": "Livestream-Setup: TriCaster + PTZ-Kameras",
+      "category": "Technik-Setups",
+      "difficulty": "mittel",
+      "setupTimeMin": 240,
+      "teamSize": "2-3",
+      "tags": [
+        "livestream",
+        "tricaster",
+        "ptz",
+        "ndi",
+        "regie"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-caption",
+        "jm-titler",
+        "jm-stage-display"
+      ],
+      "prerequisites": [
+        "Strom 230 V / 10 A, einzeln abgesichert",
+        "DSL-/Upload-Zugang vom Kunden",
+        "Raumzugang am Aufbau- und am Showtag"
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Regie",
+        "Media Operator Video (TriCaster)",
+        "Media Operator Audio"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Kompaktes, mehrkamerataugliches Livestream-Setup mit TriCaster-Regie, PTZ-Kameras und DSGVO-konformem Stream — Basis für hybride Veranstaltungen.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Regie & Zuspielung",
+            "items": [
+              "NewTek TriCaster TC2 Elite (Broadcasting-System)",
+              "2x Regie-Laptop (Programm-Feeds und Layouts)",
+              "2-Wege-Intercom (z. B. GreenGo: Beltpacks, Antenne, Tischstation)"
+            ]
+          },
+          {
+            "title": "Kamera",
+            "items": [
+              "3x PTZ-Kamera (z. B. Panasonic AW-UE150) inkl. Stativ + 20 m Verkabelung",
+              "PTZ-Bedienpanel (z. B. AW-RP150)",
+              "FlexTally für Kamera-Tally",
+              "Kamerapodest"
+            ]
+          },
+          {
+            "title": "Stream & Netzwerk",
+            "items": [
+              "DSGVO-Livestream (Server-Standort Deutschland)",
+              "Livetranscoding (pro Stunde abgerechnet)",
+              "Aufzeichnung → Video-on-Demand"
+            ]
+          },
+          {
+            "title": "Infrastruktur",
+            "items": [
+              "Regieverkleidung (Pipes & Drapes)",
+              "Verkabelungspauschalen Video / Audio / Strom / Netzwerk",
+              "Kabelkanäle (Defender)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "Transport und Aufbau am Vortag",
+            "PTZ-Positionen und Bildausschnitte einrichten",
+            "TriCaster-Szenen/Layouts anlegen",
+            "Intercom-Funkstrecken einmessen",
+            "Stream-Endpunkt + Transcoding testen",
+            "Abnahme und Probe mit Programm"
+          ],
+          "waehrend": [
+            "Live-Regie steuert Szenen und Layouts",
+            "Backstage-Kommunikation über 2-Wege-Intercom",
+            "Recording für VOD mitlaufen lassen",
+            "Stream-Gesundheit (Bitrate, Drops) überwachen"
+          ],
+          "nach": [
+            "Aufzeichnung sichern",
+            "VOD bereitstellen",
+            "Abbau und Restabbau",
+            "Material für Postproduktion übergeben"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Kundeninternet instabil / ohne Haftung",
+            "remedy": "Mobiler Backup-Uplink (Bonding/LTE), Stream-Bitrate konservativ wählen"
+          },
+          {
+            "risk": "PTZ-Kamera reagiert nicht",
+            "remedy": "Netzwerk/PoE prüfen, Ersatz-Patch, Kamera am Panel neu zuweisen"
+          },
+          {
+            "risk": "Tally fehlt oder ist falsch",
+            "remedy": "FlexTally-Zuordnung im TriCaster prüfen"
+          },
+          {
+            "risk": "Intercom-Aussetzer",
+            "remedy": "Antennenposition/Frequenz prüfen, Beltpack-Akkus tauschen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Aufbau",
+            "items": [
+              "Strom 230 V / 10 A abgesichert",
+              "Netzwerk / Upload steht",
+              "PTZ-Kameras zugewiesen und getallyt",
+              "TriCaster-Layouts angelegt",
+              "Intercom eingemessen"
+            ]
+          },
+          {
+            "title": "Vor Sendung",
+            "items": [
+              "Stream-Endpunkt live getestet",
+              "Recording armiert",
+              "Backup-Uplink bereit",
+              "Probe mit Regie gelaufen"
+            ]
+          }
+        ],
+        "tips": [
+          "Mehr Kamerabewegung und Inserts halten den Stream dynamisch — statische Totalen wirken schnell langweilig.",
+          "Vorhandene Haustechnik (Licht, LED-Wand, Audiopult) vorab auf Verfügbarkeit und Funktion prüfen — nicht blind aufs Inventar verlassen."
+        ]
+      }
+    },
+    {
+      "id": "bmukn-berlin",
+      "title": "BMUKN Berlin — hybride Veranstaltung",
+      "category": "Kunden-/Location-Setups",
+      "difficulty": "anspruchsvoll",
+      "setupTimeMin": 1440,
+      "teamSize": "5",
+      "tags": [
+        "bmukn",
+        "ministerium",
+        "hybrid",
+        "livestream",
+        "location",
+        "rahmenvertrag"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-caption",
+        "jm-titler",
+        "jm-qa",
+        "jm-timer"
+      ],
+      "prerequisites": [
+        "Strom 230 V / 10 A, einzeln abgesichert",
+        "DSL-/Upload-Zugang vom Kunden (keine Haftung für Kundenleitung)",
+        "Raumzugang am Aufbau- und am Produktionstag",
+        "Crew-Anmeldung über Hausbetrieb (BMU/MKT-Rahmenvertrag)"
+      ],
+      "equipmentOwner": "gemischt",
+      "crewRoles": [
+        "Projektplanung",
+        "Regie",
+        "Media Operator Video (TriCaster) — via Hausbetrieb",
+        "Media Operator Audio — via Hausbetrieb",
+        "Media Operator Virtual — via Hausbetrieb"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Location-Profil für hybride Veranstaltungen im Bundesumweltministerium — vorhandene Haustechnik plus mitgebrachte JM-Regie/Kamera, abgeleitet aus der Preisverleihung Blauer Kompass.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Vorhandene Haustechnik (BMUKN-Eigentum)",
+            "items": [
+              "ARRI LED-Scheinwerfer für kameragerechte Ausleuchtung",
+              "Optoma 130\" FHDQ LED-Wand inkl. Glasfaserverbindung und Verkabelung",
+              "Yamaha QL1 Audiopult inkl. drahtloser Mikrofonierung, Monitoring für bis zu 8 Personen",
+              "Bis 8 Funkmikrofone (Headset / Handheld)",
+              "AnalogWay Pulse 2 Videoswitch inkl. Vorschaudisplays und Wandler",
+              "MasterCue PPT-Klicker",
+              "Verfahrbares Rednerpult inkl. 2x Schwanenhals-Mikrofon",
+              "Bühnenvorschau 55\"",
+              "Bühne 10 x 3 m"
+            ]
+          },
+          {
+            "title": "Mitgebrachte JM-Technik",
+            "items": [
+              "NewTek TriCaster TC2 Elite (Live-Regie, Recording)",
+              "3x Panasonic AW-UE150 PTZ-Kamera inkl. Stativ + 20 m Verkabelung",
+              "Panasonic AW-RP150 PTZ-Bedienpanel",
+              "Cerevo FlexTally",
+              "GreenGo-Intercom (Beltpacks, Antenne, Tischstation)",
+              "2x Regie-Laptop"
+            ]
+          },
+          {
+            "title": "Stream & digitale Services",
+            "items": [
+              "DSGVO-Livestream (Server-Standort Deutschland)",
+              "Livetranscoding (pro Stunde)",
+              "Aufzeichnung → Video-on-Demand",
+              "Publikums-Interaktion: Slido optional (oder JM Q&A als JM-eigene Alternative)"
+            ]
+          },
+          {
+            "title": "Infrastruktur",
+            "items": [
+              "Pipes & Drapes Regieverkleidung",
+              "Verkabelungspauschalen Video / Audio / Strom / Netzwerk",
+              "Defender-Kabelkanäle"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "In enger Abstimmung mit dem Veranstaltungsreferat des BMUKN planen",
+            "Verfügbarkeit und Funktion der Haustechnik vorab bestätigen (nicht blind aufs Inventar verlassen)",
+            "Crew über Hausbetrieb / MKT-Rahmenvertrag anmelden",
+            "Transport (3,5 t) und Aufbau am Vortag",
+            "PTZ-Positionen, TriCaster-Layouts, Intercom und Stream-Endpunkt einrichten",
+            "Abnahme und ausführliche Probe am Vortag (ab ca. 15:00)"
+          ],
+          "waehrend": [
+            "Live-Regie koordiniert Bühnenprogramm und Stream",
+            "Standby und Betreuung im vereinbarten Zeitfenster",
+            "Recording für das Highlight-Video mitlaufen lassen"
+          ],
+          "nach": [
+            "Abbau (ab 17:30), Restabbau und Transport am Folgetag",
+            "Postproduktion: 3-Min-Highlight-Film (Sichtung, Schnitt, Grafiken, Korrekturschleife, Color Grading, Rendering)",
+            "Übergabe als Datei bzw. Embed-Code / iFrame"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Kundeninternet ohne Haftung / instabil",
+            "remedy": "Mobiler Backup-Uplink, Stream-Bitrate konservativ wählen"
+          },
+          {
+            "risk": "Haustechnik nicht verfügbar oder defekt",
+            "remedy": "Ersatz aus JM-Bestand einplanen, Funktion früh prüfen"
+          },
+          {
+            "risk": "Raumzugang am Aufbautag fehlt",
+            "remedy": "Zugang vorab mit dem Veranstaltungsreferat verbindlich klären"
+          },
+          {
+            "risk": "Strom nicht separat abgesichert",
+            "remedy": "Eigene Absicherung / Verteilung mitbringen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Vorbereitung",
+            "items": [
+              "Abstimmung mit Veranstaltungsreferat erfolgt",
+              "Haustechnik-Verfügbarkeit bestätigt",
+              "Crew via Hausbetrieb / MKT angemeldet",
+              "Transport (3,5 t) gebucht"
+            ]
+          },
+          {
+            "title": "Showtag",
+            "items": [
+              "Probe am Vortag gelaufen",
+              "Stream-Endpunkt live getestet",
+              "Recording armiert (für Highlight-Film)",
+              "Backup-Uplink bereit"
+            ]
+          }
+        ],
+        "tips": [
+          "Als Rahmenvertragspartner darf JM die Haustechnik einrichten und nutzen — Verfügbarkeit und Funktion trotzdem immer früh prüfen.",
+          "Preisverleihungen dynamischer gestalten: mehr Kamerabewegung, Inserts, Publikumsbeteiligung (Slido oder JM Q&A).",
+          "Personal-Obergrenze von 10 h pro Person (inkl. Pausen und Reisezeiten) einplanen; Mehrkosten gesondert abrechnen."
+        ]
+      },
+      "location": "BMUKN Berlin, Stresemannstr. 128-130"
+    },
+    {
+      "id": "tool-jm-switcher",
+      "title": "JM Switcher — Video-Mischer einrichten",
+      "category": "Tool-Manuals",
+      "difficulty": "mittel",
+      "setupTimeMin": 30,
+      "teamSize": "1",
+      "tags": [
+        "switcher",
+        "ndi",
+        "streaming",
+        "rtmp",
+        "companion",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-ndi-screen-capture",
+        "jm-titler",
+        "jm-stage-display"
+      ],
+      "prerequisites": [
+        "JM Switcher installiert (über den Launcher)",
+        "NDI-Runtime, falls NDI-Quellen genutzt werden",
+        "Capture-Karte inkl. Treiber, falls SDI/HDMI-Quellen",
+        {
+          "Für Streaming": "RTMP-Ziel (Stream-Key) + stabile Upload-Leitung"
+        },
+        {
+          "Optional": "Bitfocus Companion für die Fernsteuerung"
+        }
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Media Operator (Bildregie)"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Softwarebasierter Video-Mischer mit Program/Preview, NDI-/Capture-/Bildschirm-Quellen, Aufnahme und RTMP-Ausgang — Einrichtung und Live-Bedienung.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Switcher installiert (über den Launcher)",
+              "NDI-Runtime (für NDI-Quellen) bzw. Capture-Karten-Treiber (für SDI/HDMI)",
+              "RTMP-Ziel + Upload-Leitung (nur fürs Streaming)"
+            ]
+          },
+          {
+            "title": "Quellen",
+            "items": [
+              "Bildschirm oder einzelnes Fenster",
+              "NDI-Quellen aus dem LAN (z. B. JM NDI Screen Capture, JM Titler)",
+              "Capture-Karte (SDI/HDMI)"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Quelle in Preview wählen",
+            "Mit Cut hart oder mit Auto-Dissolve weich auf Program schalten",
+            "Aufnahme und/oder Stream starten",
+            "Stream-Status (Bitrate, Drops) und Audiopegel beobachten"
+          ],
+          "nach": [
+            "Stream beenden, Aufnahme stoppen",
+            "Aufnahme sichern und übergeben"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "NDI-Quelle erscheint nicht",
+            "remedy": "Gleiches Subnetz prüfen, Firewall/mDNS freigeben"
+          },
+          {
+            "risk": "Kein Bild von der Capture-Karte",
+            "remedy": "Treiber prüfen, Gerät nicht von anderem Programm belegt"
+          },
+          {
+            "risk": "Stream bricht ab",
+            "remedy": "Bitrate senken, Upload prüfen, Backup-Uplink bereithalten"
+          },
+          {
+            "risk": "Kein Ton im Stream",
+            "remedy": "Audioquelle zugeordnet? Pegel/Mute prüfen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Quellen hinzugefügt",
+              "Audio zugeordnet und gepegelt",
+              "Aufnahme-Zielordner gesetzt",
+              "RTMP-Verbindung getestet",
+              "Companion (optional) verbunden"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Program/Preview korrekt",
+              "Cut und Dissolve getestet",
+              "Aufnahme armiert",
+              "Pegel ok"
+            ]
+          }
+        ],
+        "tips": [
+          "NDI-Quellen tauchen automatisch im LAN auf (mDNS) — alle Geräte ins gleiche Subnetz.",
+          "JM Titler als eigene, transparente NDI-Quelle über das Programmbild legen.",
+          "Vor Live einmal Cut und Auto-Dissolve durchspielen."
+        ]
+      }
+    },
+    {
+      "id": "tool-jm-timer",
+      "title": "JM Timer — Countdown & Sprecher-Timer",
+      "category": "Tool-Manuals",
+      "difficulty": "einfach",
+      "setupTimeMin": 10,
+      "teamSize": "1",
+      "tags": [
+        "timer",
+        "countdown",
+        "sprecher",
+        "companion",
+        "manual"
+      ],
+      "relatedTools": [
+        "jm-timer",
+        "jm-stage-display",
+        "jm-rundown"
+      ],
+      "prerequisites": [
+        "JM Timer installiert (über den Launcher)",
+        {
+          "Optional": "zweiter Bildschirm / Sprecher-Monitor"
+        },
+        {
+          "Optional": "Netzwerk / Bitfocus Companion für die Fernsteuerung"
+        }
+      ],
+      "equipmentOwner": "jm",
+      "crewRoles": [
+        "Regie / Media Operator"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Countdown- und Produktions-Timer mit Sprecherfenster und Fernsteuerung — Einrichtung und Bedienung im Live-Betrieb.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Voraussetzungen",
+            "items": [
+              "JM Timer installiert (über den Launcher)",
+              "Optional: zweiter Monitor für das Sprecherfenster",
+              "Optional: Netzwerk / Bitfocus Companion für die Fernsteuerung"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [],
+          "waehrend": [
+            "Timer starten / stoppen / zurücksetzen",
+            "Bei Bedarf eine Kurznachricht für die Bühne einblenden",
+            "Over-Time (Rotphase) im Blick behalten"
+          ],
+          "nach": [
+            "Timer für das nächste Segment zurücksetzen"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Sprecherfenster auf falschem Monitor",
+            "remedy": "Fenster auf den Talent-Monitor ziehen, Vollbild setzen"
+          },
+          {
+            "risk": "Fernsteuerung reagiert nicht",
+            "remedy": "Gleiches LAN prüfen, Companion-Verbindung kontrollieren"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Einrichtung",
+            "items": [
+              "Presets je Segment angelegt",
+              "Sprecherfenster auf Talent-Monitor",
+              "Fernsteuerung (optional) verbunden"
+            ]
+          },
+          {
+            "title": "Vor Live",
+            "items": [
+              "Test-Start gelaufen",
+              "Auf Stage Display sichtbar"
+            ]
+          }
+        ],
+        "tips": [
+          "Mit JM Rundown koppeln: pro Segment startet der Timer automatisch.",
+          "Den Countdown zusätzlich auf JM Stage Display für die Crew anzeigen."
+        ]
+      }
+    }
+  ]
+}

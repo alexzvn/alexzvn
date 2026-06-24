@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Logo, cn, dragRegion, noDragRegion, isElectronMac } from '@jm/ui';
 import { useTools } from '@/store/tools';
+import { useCookbook } from '@/store/cookbook';
 
 export function Header() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -10,6 +11,7 @@ export function Header() {
   const openShow = useTools((s) => s.openShow);
   const openShowEditor = useTools((s) => s.openShowEditor);
   const openSystem = useTools((s) => s.openSystem);
+  const openCookbook = useCookbook((s) => s.openCookbook);
   const runningCount = useTools((s) => s.presence.filter((p) => p.running).length);
   const version = useTools((s) => s.version);
 
@@ -124,6 +126,22 @@ export function Header() {
               {runningCount}
             </span>
           )}
+        </button>
+        <button
+          type="button"
+          onClick={() => openCookbook()}
+          aria-label="Kochbuch"
+          title="JM Kochbuch · Best Practices & Manuals"
+          className={cn(
+            'grid place-items-center size-8 rounded-[var(--radius)]',
+            'border border-[var(--border)] text-[var(--foreground)]',
+            'hover:bg-[var(--highlight)] transition-colors',
+          )}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+          </svg>
         </button>
         <button
           type="button"

@@ -24,6 +24,7 @@
   "devDependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
     "@jm/app-runtime": "*",
+    "@jm/cookbook": "*",
     "@jm/discovery": "*",
     "@jm/electron-kit": "*",
     "@jm/show": "*",

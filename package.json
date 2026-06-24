@@ -35,6 +35,8 @@
     "daw:dev": "npm run dev -w @jm/daw",
     "daw:build": "npm run build -w @jm/daw",
     "daw:dist": "npm run dist -w @jm/daw",
+    "cookbook:build": "npm run build -w @jm/cookbook",
+    "cookbook:check": "npm run check -w @jm/cookbook",
     "typecheck": "npm run typecheck -w @jm/launcher"
   }
 }
