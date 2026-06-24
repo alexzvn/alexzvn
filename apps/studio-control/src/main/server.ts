@@ -49,6 +49,7 @@ import {
   upsertPtzCamera,
 } from './config/ptz';
 import { logAction, listRecent, onAudit } from './db/audit';
+import { startControlGateway, stopControlGateway } from './gateway/control-gateway';
 import { runAll, isScanning } from './discovery';
 import {
   getAllStatuses,
@@ -1059,12 +1060,25 @@ export function startServer(): Promise<void> {
       console.log(
         `[jm-studio-control] http + socket.io listening on http://${SERVER_HOST}:${SERVER_PORT}`,
       );
+      // Companion-Gateway (TCP-Steuerprotokoll, Port 8735) zusätzlich starten —
+      // fehlertolerant: ein belegter Port darf den HTTP-/Socket.IO-Server nicht
+      // verhindern.
+      startControlGateway()
+        .then((r) => {
+          if (r.ok) {
+            console.log(`[jm-studio-control] companion gateway listening on tcp://0.0.0.0:${r.port}`);
+          } else {
+            console.warn(`[jm-studio-control] companion gateway not started: ${r.error}`);
+          }
+        })
+        .catch((e) => console.warn('[jm-studio-control] companion gateway error', e));
       resolve();
     });
   });
 }
 
 export function stopServer(): void {
+  stopControlGateway();
   io?.close();
   http?.close();
   io = null;

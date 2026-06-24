@@ -165,6 +165,7 @@ var YELLOW = [251, 231, 59];
 var WHITE = [255, 255, 255];
 var BLACK = [0, 0, 0];
 var sceneArg = { id: "scene", label: "Szene (Nr.)", type: "number", default: 1, min: 1, max: 64 };
+var atemInputArg = { id: "input", label: "Eingang (Nr.)", type: "number", default: 1, min: 0, max: 40 };
 var modeArg = {
   id: "mode",
   label: "Modus",
@@ -478,6 +479,56 @@ var CAPABILITIES = {
     feedbacks: [
       { id: "live", label: "VS-Bauchbinde on air", stateKey: "live", match: "truthy", bgcolor: RED, color: WHITE },
       { id: "voting", label: "Voting offen", stateKey: "voting", match: "truthy", bgcolor: YELLOW, color: BLACK }
+    ]
+  },
+  // ── Studio Control Gateway (zentral-auditiert: ATEM / OBS / TriCaster) ───────
+  // studio-control ist ein Geräte-Hub. Das Gateway exponiert die PRIMÄR-Instanz
+  // je Gerätetyp (erste konfigurierte) an Companion; jeder Befehl läuft durch das
+  // Audit-Log. Verben sind typ-präfixiert (atem_/obs_/tricaster_), da eine Rolle
+  // mehrere Gerätetypen bündelt. (PTZ/Audio/Licht folgen als Slice 2.)
+  studio: {
+    role: "studio",
+    label: "JM Studio Control",
+    port: 8735,
+    actions: [
+      // ATEM (Hardware-Mischer, M/E 1)
+      { id: "atem_program", label: "ATEM: Program-Eingang", verb: "atem_program", args: [atemInputArg] },
+      { id: "atem_preview", label: "ATEM: Preview-Eingang", verb: "atem_preview", args: [atemInputArg] },
+      { id: "atem_cut", label: "ATEM: Cut", verb: "atem_cut" },
+      { id: "atem_auto", label: "ATEM: Auto (\xDCbergang)", verb: "atem_auto" },
+      { id: "atem_ftb", label: "ATEM: Fade to Black", verb: "atem_ftb" },
+      { id: "atem_record", label: "ATEM: Aufnahme", verb: "atem_record", args: [modeArg], toggleKey: "atem_rec" },
+      { id: "atem_stream", label: "ATEM: Stream", verb: "atem_stream", args: [modeArg], toggleKey: "atem_stream" },
+      // OBS (WebSocket-Bridge)
+      { id: "obs_scene", label: "OBS: Szene w\xE4hlen (Nr.)", verb: "obs_scene", args: [sceneArg] },
+      { id: "obs_record", label: "OBS: Aufnahme", verb: "obs_record", args: [modeArg], toggleKey: "obs_rec" },
+      { id: "obs_stream", label: "OBS: Stream", verb: "obs_stream", args: [modeArg], toggleKey: "obs_stream" },
+      // TriCaster (LiveControl-Shortcut/Makro; Name muss ein einzelnes Token sein)
+      { id: "tricaster_shortcut", label: "TriCaster: Shortcut/Makro", verb: "tricaster_shortcut", args: [{ id: "name", label: "Shortcut-Name (z. B. main_take)", type: "string", default: "main_take" }] }
+    ],
+    variables: [
+      { id: "atem", label: "ATEM verbunden (1/0)" },
+      { id: "atem_name", label: "ATEM-Modell" },
+      { id: "atem_pgm", label: "ATEM Program (Nr.)" },
+      { id: "atem_pvw", label: "ATEM Preview (Nr.)" },
+      { id: "atem_rec", label: "ATEM Aufnahme (1/0)" },
+      { id: "atem_stream", label: "ATEM Stream (1/0)" },
+      { id: "obs", label: "OBS verbunden (1/0)" },
+      { id: "obs_scene", label: "OBS Szene (Nr.)" },
+      { id: "obs_scene_name", label: "OBS Szene (Name)" },
+      { id: "obs_rec", label: "OBS Aufnahme (1/0)" },
+      { id: "obs_stream", label: "OBS Stream (1/0)" },
+      { id: "tricaster", label: "TriCaster verbunden (1/0)" },
+      { id: "tricaster_name", label: "TriCaster" }
+    ],
+    feedbacks: [
+      { id: "atem_pgm", label: "ATEM: Eingang auf Program", stateKey: "atem_pgm", match: "equalsArg", arg: atemInputArg, bgcolor: RED, color: WHITE },
+      { id: "atem_pvw", label: "ATEM: Eingang auf Preview", stateKey: "atem_pvw", match: "equalsArg", arg: atemInputArg, bgcolor: GREEN, color: WHITE },
+      { id: "atem_rec", label: "ATEM: Aufnahme l\xE4uft", stateKey: "atem_rec", match: "truthy", bgcolor: RED, color: WHITE },
+      { id: "atem_stream", label: "ATEM: Stream l\xE4uft", stateKey: "atem_stream", match: "truthy", bgcolor: YELLOW, color: BLACK },
+      { id: "obs_scene", label: "OBS: Szene aktiv", stateKey: "obs_scene", match: "equalsArg", arg: sceneArg, bgcolor: GREEN, color: WHITE },
+      { id: "obs_rec", label: "OBS: Aufnahme l\xE4uft", stateKey: "obs_rec", match: "truthy", bgcolor: RED, color: WHITE },
+      { id: "obs_stream", label: "OBS: Stream l\xE4uft", stateKey: "obs_stream", match: "truthy", bgcolor: YELLOW, color: BLACK }
     ]
   }
 };
