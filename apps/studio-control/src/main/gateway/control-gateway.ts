@@ -10,8 +10,9 @@
 // möglich). Das Protokoll/Companion-Modell ist „eine Rolle = ein logisches
 // Gerät mit flachem Verb-Set". Wir bündeln daher alle Gerätetypen in EINER
 // Rolle `studio` mit typ-präfixierten Verben (atem_/obs_/tricaster_) und
-// bedienen je Typ die PRIMÄR-Instanz (die erste konfigurierte). Mehrinstanz-
-// Adressierung ist eine spätere Ausbaustufe; PTZ/Audio/Licht folgen als Slice 2.
+// bedienen je Typ die PRIMÄR-Instanz (die erste konfigurierte). Abgedeckt:
+// ATEM, OBS, TriCaster, Panasonic-PTZ, Audiopult, Art-Net-Licht. Mehrinstanz-
+// Adressierung (mehrere ATEMs etc.) ist eine spätere Ausbaustufe.
 //
 //   Client → Gateway:  STUDIO atem_program <n> | STUDIO atem_cut | STUDIO
 //                      obs_scene <n> | STUDIO obs_record on|off | STUDIO
@@ -39,13 +40,20 @@ import {
   getAllStatuses as getTricasterStatuses,
   onStatusChange as onTricasterStatusChange,
 } from '../drivers/tricaster/pool';
+import { getPtzClient, getAllPtzStatuses, onPtzStatusChange } from '../drivers/panasonic-ptz/pool';
+import { sendAudio, getAudioStatuses, onAudioStatusChange } from '../audio/manager';
+import { setBlackout, getLightingState, onLightingChange } from '../lighting/engine';
 import { getAtemInstances } from '../config/atem';
 import { getObsInstances } from '../config/obs';
 import { getTricasters } from '../config/tricasters';
+import { getPtzCameras } from '../config/ptz';
+import { getAudioConsoles } from '../config/audio';
 import { logAction } from '../db/audit';
 import type { AtemCommand, AtemStatus } from '@shared/atem';
 import type { ObsCommand, ObsStatus } from '@shared/obs';
 import type { TricasterStatus } from '@shared/tricaster';
+import type { PtzAction, PtzStatus } from '@shared/ptz';
+import type { AudioAction, AudioStatus } from '@shared/audio';
 
 /** Eigener TCP-Steuerport (getrennt vom REST-/Socket.IO-Port 7778). */
 export const CONTROL_PORT = 8735;
@@ -89,6 +97,16 @@ function primaryTricaster(): { id: string; name: string; status?: TricasterStatu
   if (!cfg) return null;
   return { id: cfg.id, name: cfg.name, status: getTricasterStatuses().find((s) => s.id === cfg.id) };
 }
+function primaryPtz(): { id: string; name: string; status?: PtzStatus } | null {
+  const cfg = getPtzCameras()[0];
+  if (!cfg) return null;
+  return { id: cfg.id, name: cfg.name, status: getAllPtzStatuses().find((s) => s.id === cfg.id) };
+}
+function primaryAudio(): { id: string; name: string; status?: AudioStatus } | null {
+  const cfg = getAudioConsoles()[0];
+  if (!cfg) return null;
+  return { id: cfg.id, name: cfg.name, status: getAudioStatuses().find((s) => s.id === cfg.id) };
+}
 
 /** 1-basierter Index der aktuellen OBS-Szene in der Szenenliste (0 = unbekannt). */
 function obsSceneIndex(status: ObsStatus | undefined): number {
@@ -103,6 +121,9 @@ function buildState(): SuiteState {
   const atem = primaryAtem();
   const obs = primaryObs();
   const tc = primaryTricaster();
+  const ptz = primaryPtz();
+  const audio = primaryAudio();
+  const light = getLightingState();
   const a = atem?.status;
   const o = obs?.status;
   return {
@@ -121,6 +142,13 @@ function buildState(): SuiteState {
       obs_stream: !!o?.streaming,
       tricaster: tc?.status?.state === 'connected',
       tricaster_name: san(tc?.name),
+      ptz: ptz?.status?.state === 'connected',
+      ptz_name: san(ptz?.name),
+      ptz_power: ptz?.status?.power === 'on',
+      audio: audio?.status?.state === 'connected',
+      audio_name: san(audio?.name),
+      lighting: light.config.node != null,
+      lighting_blackout: light.blackout,
     },
   };
 }
@@ -202,12 +230,73 @@ async function handleTricaster(verb: string, args: string[]): Promise<boolean> {
   return true;
 }
 
+async function handlePtz(verb: string, args: string[]): Promise<boolean> {
+  const p = primaryPtz();
+  if (!p) return false;
+  const client = getPtzClient(p.id);
+  if (!client) return false;
+  let action: PtzAction | null = null;
+  switch (verb) {
+    case 'ptz_preset':
+      action = { kind: 'preset-recall', preset: Math.max(0, Math.min(99, num(args[0]))) };
+      break;
+    case 'ptz_power': {
+      // Toggle (mode undefined) anhand des zuletzt gepollten Power-Status auflösen.
+      const on = parseMode(args[0]) ?? p.status?.power !== 'on';
+      action = { kind: 'power', on };
+      break;
+    }
+    default:
+      return false;
+  }
+  await runAudited(verb, p.id, { action }, async () => {
+    await client.send(action as PtzAction);
+  });
+  return true;
+}
+
+async function handleAudio(verb: string, args: string[]): Promise<boolean> {
+  const p = primaryAudio();
+  if (!p) return false;
+  const channel = Math.max(1, Math.min(64, num(args[0])));
+  let action: AudioAction | null = null;
+  switch (verb) {
+    case 'audio_mute':
+      // Expliziter on/off-Token (kein Toggle — der Status führt keine Kanal-Mutes).
+      action = { kind: 'mute', channel, on: (args[1] ?? 'on').toLowerCase() !== 'off' };
+      break;
+    case 'audio_fader': {
+      const db = Number(args[1]);
+      if (!Number.isFinite(db)) return false;
+      action = { kind: 'fader', channel, db };
+      break;
+    }
+    default:
+      return false;
+  }
+  await runAudited(verb, p.id, { action }, async () => {
+    if (!sendAudio(p.id, action as AudioAction)) throw new Error('audio send failed');
+  });
+  return true;
+}
+
+async function handleLighting(verb: string, args: string[]): Promise<boolean> {
+  if (verb !== 'lighting_blackout') return false;
+  // Toggle (mode undefined) anhand des aktuellen Blackout-Zustands auflösen.
+  const on = parseMode(args[0]) ?? !getLightingState().blackout;
+  await runAudited(verb, 'lighting', { on }, async () => setBlackout(on));
+  return true;
+}
+
 async function dispatch(cmd: SuiteCommand): Promise<void> {
   if (cmd.ns !== 'studio') return;
   let handled = false;
   if (cmd.verb.startsWith('atem_')) handled = await handleAtem(cmd.verb, cmd.args);
   else if (cmd.verb.startsWith('obs_')) handled = await handleObs(cmd.verb, cmd.args);
   else if (cmd.verb.startsWith('tricaster_')) handled = await handleTricaster(cmd.verb, cmd.args);
+  else if (cmd.verb.startsWith('ptz_')) handled = await handlePtz(cmd.verb, cmd.args);
+  else if (cmd.verb.startsWith('audio_')) handled = await handleAudio(cmd.verb, cmd.args);
+  else if (cmd.verb.startsWith('lighting_')) handled = await handleLighting(cmd.verb, cmd.args);
   // Nach einem ausgeführten Befehl sofort den Zustand zurückspiegeln (die
   // Treiber-Events pushen ohnehin nochmal, sobald sich der reale Status ändert).
   if (handled) server?.pushState(buildState());
@@ -232,6 +321,9 @@ export function startControlGateway(): Promise<{ ok: boolean; error?: string; po
   unsubscribers.push(onAtemStatusChange(push));
   unsubscribers.push(onObsStatusChange(push));
   unsubscribers.push(onTricasterStatusChange(push));
+  unsubscribers.push(onPtzStatusChange(push));
+  unsubscribers.push(onAudioStatusChange(push));
+  unsubscribers.push(onLightingChange(push));
   return server.start(CONTROL_PORT);
 }
 

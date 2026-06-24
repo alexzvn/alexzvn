@@ -410,7 +410,7 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
   // studio-control ist ein Geräte-Hub. Das Gateway exponiert die PRIMÄR-Instanz
   // je Gerätetyp (erste konfigurierte) an Companion; jeder Befehl läuft durch das
   // Audit-Log. Verben sind typ-präfixiert (atem_/obs_/tricaster_), da eine Rolle
-  // mehrere Gerätetypen bündelt. (PTZ/Audio/Licht folgen als Slice 2.)
+  // mehrere Gerätetypen bündelt. Abgedeckt: ATEM, OBS, TriCaster, PTZ, Audio, Licht.
   studio: {
     role: 'studio',
     label: 'JM Studio Control',
@@ -430,6 +430,14 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
       { id: 'obs_stream', label: 'OBS: Stream', verb: 'obs_stream', args: [modeArg], toggleKey: 'obs_stream' },
       // TriCaster (LiveControl-Shortcut/Makro; Name muss ein einzelnes Token sein)
       { id: 'tricaster_shortcut', label: 'TriCaster: Shortcut/Makro', verb: 'tricaster_shortcut', args: [{ id: 'name', label: 'Shortcut-Name (z. B. main_take)', type: 'string', default: 'main_take' }] },
+      // PTZ (Panasonic AW)
+      { id: 'ptz_preset', label: 'PTZ: Preset abrufen', verb: 'ptz_preset', args: [{ id: 'preset', label: 'Preset (Nr.)', type: 'number', default: 1, min: 0, max: 99 }] },
+      { id: 'ptz_power', label: 'PTZ: Power', verb: 'ptz_power', args: [modeArg], toggleKey: 'ptz_power' },
+      // Audio (Mischpult)
+      { id: 'audio_mute', label: 'Audio: Kanal stumm', verb: 'audio_mute', args: [{ id: 'channel', label: 'Kanal (Nr.)', type: 'number', default: 1, min: 1, max: 64 }, { id: 'state', label: 'Zustand', type: 'dropdown', default: 'on', choices: [{ id: 'on', label: 'Mute an' }, { id: 'off', label: 'Mute aus' }] }] },
+      { id: 'audio_fader', label: 'Audio: Fader (dB)', verb: 'audio_fader', args: [{ id: 'channel', label: 'Kanal (Nr.)', type: 'number', default: 1, min: 1, max: 64 }, { id: 'db', label: 'Pegel (dB)', type: 'number', default: 0, min: -60, max: 10 }] },
+      // Licht (Art-Net)
+      { id: 'lighting_blackout', label: 'Licht: Blackout', verb: 'lighting_blackout', args: [modeArg], toggleKey: 'lighting_blackout' },
     ],
     variables: [
       { id: 'atem', label: 'ATEM verbunden (1/0)' },
@@ -445,6 +453,13 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
       { id: 'obs_stream', label: 'OBS Stream (1/0)' },
       { id: 'tricaster', label: 'TriCaster verbunden (1/0)' },
       { id: 'tricaster_name', label: 'TriCaster' },
+      { id: 'ptz', label: 'PTZ verbunden (1/0)' },
+      { id: 'ptz_name', label: 'PTZ-Kamera' },
+      { id: 'ptz_power', label: 'PTZ Power (1/0)' },
+      { id: 'audio', label: 'Audio verbunden (1/0)' },
+      { id: 'audio_name', label: 'Audiopult' },
+      { id: 'lighting', label: 'Licht konfiguriert (1/0)' },
+      { id: 'lighting_blackout', label: 'Blackout aktiv (1/0)' },
     ],
     feedbacks: [
       { id: 'atem_pgm', label: 'ATEM: Eingang auf Program', stateKey: 'atem_pgm', match: 'equalsArg', arg: atemInputArg, bgcolor: RED, color: WHITE },
@@ -454,6 +469,8 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
       { id: 'obs_scene', label: 'OBS: Szene aktiv', stateKey: 'obs_scene', match: 'equalsArg', arg: sceneArg, bgcolor: GREEN, color: WHITE },
       { id: 'obs_rec', label: 'OBS: Aufnahme läuft', stateKey: 'obs_rec', match: 'truthy', bgcolor: RED, color: WHITE },
       { id: 'obs_stream', label: 'OBS: Stream läuft', stateKey: 'obs_stream', match: 'truthy', bgcolor: YELLOW, color: BLACK },
+      { id: 'ptz_power', label: 'PTZ: Power an', stateKey: 'ptz_power', match: 'truthy', bgcolor: GREEN, color: WHITE },
+      { id: 'lighting_blackout', label: 'Licht: Blackout aktiv', stateKey: 'lighting_blackout', match: 'truthy', bgcolor: RED, color: WHITE },
     ],
   },
 };
