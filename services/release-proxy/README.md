@@ -72,8 +72,9 @@ Header: X-Proxy-Key: <PROXY_KEY>
   via `CHANGELOG_PATH` / `COOKBOOK_PATH` in `wrangler.toml`.
 
 ### Katalog-Quelle (MANIFEST_REF)
-`MANIFEST_REF` in `wrangler.toml` steht aktuell auf `feat/jm-production-suite`.
-**Nach dem Merge nach `main`** dort auf `main` umstellen und erneut `wrangler deploy`.
+`MANIFEST_REF` in `wrangler.toml` steht auf `main` (Default-Branch, aus dem der
+Live-Katalog gelesen wird). Bei einem Branch-Wechsel dort ändern, erneut
+`wrangler deploy` und die CI-Variable `MANIFEST_BRANCH` (Bump-Ziel) synchron halten.
 
 ## Update auf einen Stand mit `/suite.json`
 Wenn der Worker schon läuft und du nur die neue `/suite.json`-Route ausrollst:
