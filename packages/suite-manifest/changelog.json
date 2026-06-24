@@ -840,5 +840,19 @@
         ]
       }
     ]
+  },
+  {
+    "app": "qa",
+    "name": "JM Q&A",
+    "entries": [
+      {
+        "version": "0.1.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Neu im Werkzeugkasten: JM Q&A — die Wortmeldungs-Queue für Pressekonferenzen, Townhalls und Politik-Streams. Der Saal reicht Fragen per QR-Code vom Handy ein (mit Moderation/Freigabe).",
+          "Ein Klick holt jemanden ans Wort — Redezeit (JM Timer) und Bauchbinde mit Name/Funktion (JM Titler) werden automatisch gesteuert. Selbst per Bitfocus Companion fernsteuerbar (Nächste/Beenden/Redezeit/Leeren)."
+        ]
+      }
+    ]
   }
 ]

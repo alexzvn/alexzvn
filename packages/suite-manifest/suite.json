@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T06:11:56.188Z",
+  "updatedAt": "2026-06-24T09:05:00.000Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -371,6 +371,27 @@
         }
       },
       "app": "rundown"
+    },
+    {
+      "id": "jm-qa",
+      "name": "JM Q&A",
+      "tagline": "Wortmeldungen · Pressekonferenz",
+      "description": "Wortmeldungs- und Frage-Queue für Pressekonferenzen, Townhalls und Politik-Streams. Der Saal reicht Fragen per QR-Code vom Handy ein (mit Moderation); per Klick kommt jemand ans Wort — dabei steuert Q&A automatisch die Redezeit (JM Timer) und blendet Name/Funktion als Bauchbinde ein (JM Titler). Findet die Tools im LAN (mDNS) und ist selbst per Bitfocus Companion fernsteuerbar.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.qa",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM QA-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM QA.app"
+        },
+        "win": {
+          "artifact": "JM QA-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM QA\\JM QA.exe"
+        }
+      },
+      "app": "qa"
     }
   ]
 }
