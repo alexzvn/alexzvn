@@ -290,6 +290,156 @@
           "Vorhandene Haustechnik (Licht, LED-Wand, Audiopult) vorab auf Verfügbarkeit und Funktion prüfen — nicht blind aufs Inventar verlassen."
         ]
       }
+    },
+    {
+      "id": "bmukn-berlin",
+      "title": "BMUKN Berlin — hybride Veranstaltung",
+      "category": "Kunden-/Location-Setups",
+      "difficulty": "anspruchsvoll",
+      "setupTimeMin": 1440,
+      "teamSize": "5",
+      "tags": [
+        "bmukn",
+        "ministerium",
+        "hybrid",
+        "livestream",
+        "location",
+        "rahmenvertrag"
+      ],
+      "relatedTools": [
+        "jm-switcher",
+        "jm-caption",
+        "jm-titler",
+        "jm-qa",
+        "jm-timer"
+      ],
+      "prerequisites": [
+        "Strom 230 V / 10 A, einzeln abgesichert",
+        "DSL-/Upload-Zugang vom Kunden (keine Haftung für Kundenleitung)",
+        "Raumzugang am Aufbau- und am Produktionstag",
+        "Crew-Anmeldung über Hausbetrieb (BMU/MKT-Rahmenvertrag)"
+      ],
+      "equipmentOwner": "gemischt",
+      "crewRoles": [
+        "Projektplanung",
+        "Regie",
+        "Media Operator Video (TriCaster) — via Hausbetrieb",
+        "Media Operator Audio — via Hausbetrieb",
+        "Media Operator Virtual — via Hausbetrieb"
+      ],
+      "lastReviewed": "2026-06-24",
+      "owner": "tech@jakobsmedien.com",
+      "summary": "Location-Profil für hybride Veranstaltungen im Bundesumweltministerium — vorhandene Haustechnik plus mitgebrachte JM-Regie/Kamera, abgeleitet aus der Preisverleihung Blauer Kompass.",
+      "blocks": {
+        "ingredients": [
+          {
+            "title": "Vorhandene Haustechnik (BMUKN-Eigentum)",
+            "items": [
+              "ARRI LED-Scheinwerfer für kameragerechte Ausleuchtung",
+              "Optoma 130\" FHDQ LED-Wand inkl. Glasfaserverbindung und Verkabelung",
+              "Yamaha QL1 Audiopult inkl. drahtloser Mikrofonierung, Monitoring für bis zu 8 Personen",
+              "Bis 8 Funkmikrofone (Headset / Handheld)",
+              "AnalogWay Pulse 2 Videoswitch inkl. Vorschaudisplays und Wandler",
+              "MasterCue PPT-Klicker",
+              "Verfahrbares Rednerpult inkl. 2x Schwanenhals-Mikrofon",
+              "Bühnenvorschau 55\"",
+              "Bühne 10 x 3 m"
+            ]
+          },
+          {
+            "title": "Mitgebrachte JM-Technik",
+            "items": [
+              "NewTek TriCaster TC2 Elite (Live-Regie, Recording)",
+              "3x Panasonic AW-UE150 PTZ-Kamera inkl. Stativ + 20 m Verkabelung",
+              "Panasonic AW-RP150 PTZ-Bedienpanel",
+              "Cerevo FlexTally",
+              "GreenGo-Intercom (Beltpacks, Antenne, Tischstation)",
+              "2x Regie-Laptop"
+            ]
+          },
+          {
+            "title": "Stream & digitale Services",
+            "items": [
+              "DSGVO-Livestream (Server-Standort Deutschland)",
+              "Livetranscoding (pro Stunde)",
+              "Aufzeichnung → Video-on-Demand",
+              "Publikums-Interaktion: Slido optional (oder JM Q&A als JM-eigene Alternative)"
+            ]
+          },
+          {
+            "title": "Infrastruktur",
+            "items": [
+              "Pipes & Drapes Regieverkleidung",
+              "Verkabelungspauschalen Video / Audio / Strom / Netzwerk",
+              "Defender-Kabelkanäle"
+            ]
+          }
+        ],
+        "steps": {
+          "vor": [
+            "In enger Abstimmung mit dem Veranstaltungsreferat des BMUKN planen",
+            "Verfügbarkeit und Funktion der Haustechnik vorab bestätigen (nicht blind aufs Inventar verlassen)",
+            "Crew über Hausbetrieb / MKT-Rahmenvertrag anmelden",
+            "Transport (3,5 t) und Aufbau am Vortag",
+            "PTZ-Positionen, TriCaster-Layouts, Intercom und Stream-Endpunkt einrichten",
+            "Abnahme und ausführliche Probe am Vortag (ab ca. 15:00)"
+          ],
+          "waehrend": [
+            "Live-Regie koordiniert Bühnenprogramm und Stream",
+            "Standby und Betreuung im vereinbarten Zeitfenster",
+            "Recording für das Highlight-Video mitlaufen lassen"
+          ],
+          "nach": [
+            "Abbau (ab 17:30), Restabbau und Transport am Folgetag",
+            "Postproduktion: 3-Min-Highlight-Film (Sichtung, Schnitt, Grafiken, Korrekturschleife, Color Grading, Rendering)",
+            "Übergabe als Datei bzw. Embed-Code / iFrame"
+          ]
+        },
+        "troubleshooting": [
+          {
+            "risk": "Kundeninternet ohne Haftung / instabil",
+            "remedy": "Mobiler Backup-Uplink, Stream-Bitrate konservativ wählen"
+          },
+          {
+            "risk": "Haustechnik nicht verfügbar oder defekt",
+            "remedy": "Ersatz aus JM-Bestand einplanen, Funktion früh prüfen"
+          },
+          {
+            "risk": "Raumzugang am Aufbautag fehlt",
+            "remedy": "Zugang vorab mit dem Veranstaltungsreferat verbindlich klären"
+          },
+          {
+            "risk": "Strom nicht separat abgesichert",
+            "remedy": "Eigene Absicherung / Verteilung mitbringen"
+          }
+        ],
+        "checklists": [
+          {
+            "title": "Vorbereitung",
+            "items": [
+              "Abstimmung mit Veranstaltungsreferat erfolgt",
+              "Haustechnik-Verfügbarkeit bestätigt",
+              "Crew via Hausbetrieb / MKT angemeldet",
+              "Transport (3,5 t) gebucht"
+            ]
+          },
+          {
+            "title": "Showtag",
+            "items": [
+              "Probe am Vortag gelaufen",
+              "Stream-Endpunkt live getestet",
+              "Recording armiert (für Highlight-Film)",
+              "Backup-Uplink bereit"
+            ]
+          }
+        ],
+        "tips": [
+          "Als Rahmenvertragspartner darf JM die Haustechnik einrichten und nutzen — Verfügbarkeit und Funktion trotzdem immer früh prüfen.",
+          "Preisverleihungen dynamischer gestalten: mehr Kamerabewegung, Inserts, Publikumsbeteiligung (Slido oder JM Q&A).",
+          "Personal-Obergrenze von 10 h pro Person (inkl. Pausen und Reisezeiten) einplanen; Mehrkosten gesondert abrechnen."
+        ]
+      },
+      "location": "BMUKN Berlin, Stresemannstr. 128-130"
     }
   ]
 }
