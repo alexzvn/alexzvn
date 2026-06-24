@@ -52,12 +52,24 @@ Header: X-Proxy-Key: <PROXY_KEY>
 GET /suite.json
 Header: X-Proxy-Key: <PROXY_KEY>
 → 200 (liefert packages/suite-manifest/suite.json LIVE aus dem Repo)
+
+GET /changelog.json
+Header: X-Proxy-Key: <PROXY_KEY>
+→ 200 (liefert packages/suite-manifest/changelog.json LIVE aus dem Repo)
+
+GET /cookbook.json
+Header: X-Proxy-Key: <PROXY_KEY>
+→ 200 (liefert packages/cookbook/cookbook.json LIVE aus dem Repo)
 ```
 - `:id` = Tool-ID aus suite.json (`jm-copy`, `jm-sync`, … oder `launcher`).
 - Auf macOS bestimmt `arch` das richtige DMG (arm64/x64); auf Windows ist es x64.
 - `/suite.json` liefert den **Katalog** direkt aus git (Branch = `MANIFEST_REF` in
   `wrangler.toml`). Damit erscheinen **neue Tools ohne Launcher-Release** — einfach
   `suite.json` committen. Der Launcher zieht diese URL automatisch als Default.
+- `/changelog.json` und `/cookbook.json` funktionieren analog (gleicher `MANIFEST_REF`):
+  neue Patchnotes bzw. **Rezepte erscheinen ohne Launcher-Release** — die jeweilige JSON
+  committen (bei `cookbook.json` vorher `npm run cookbook:build`). Pfad-Overrides optional
+  via `CHANGELOG_PATH` / `COOKBOOK_PATH` in `wrangler.toml`.
 
 ### Katalog-Quelle (MANIFEST_REF)
 `MANIFEST_REF` in `wrangler.toml` steht aktuell auf `feat/jm-production-suite`.

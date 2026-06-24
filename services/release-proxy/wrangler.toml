@@ -6,7 +6,8 @@ compatibility_date = "2024-11-01"
 [vars]
 # Das Mono-Repo mit den Releases.
 REPO = "AlexmachtCode/alexzvn"
-# Branch/Ref, aus dem der Live-Katalog (suite.json + changelog.json) gelesen wird.
+# Branch/Ref, aus dem der Live-Katalog (suite.json + changelog.json + cookbook.json)
+# gelesen wird.
 # Seit dem Merge von feat/suite-newtools nach main ist das der Default-Branch.
 # Bei einem Wechsel hier ändern, dann `npx wrangler deploy` UND die Repo-Variable
 # MANIFEST_BRANCH (CI-Bump-Ziel) synchron halten — sonst Katalog-Drift.

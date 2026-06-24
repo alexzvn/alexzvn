@@ -129,6 +129,28 @@ export default {
       }
     }
 
+    // Kochbuch-Rezepte (cookbook.json) LIVE aus dem Repo — wie /suite.json, damit
+    // neue Rezepte ohne Launcher-Release erscheinen. Ref = env.MANIFEST_REF.
+    if (request.method === 'GET' && url.pathname === '/cookbook.json') {
+      try {
+        const ref = env.MANIFEST_REF || 'main';
+        const path = env.COOKBOOK_PATH || 'packages/cookbook/cookbook.json';
+        const raw = await ghRaw(
+          `https://api.github.com/repos/${env.REPO}/contents/${path}?ref=${encodeURIComponent(ref)}`,
+          env,
+        );
+        return new Response(raw, {
+          status: 200,
+          headers: {
+            'content-type': 'application/json; charset=utf-8',
+            'cache-control': 'public, max-age=60',
+          },
+        });
+      } catch (e) {
+        return json({ error: String((e && e.message) || e) }, 502);
+      }
+    }
+
     const match = url.pathname.match(/^\/tools\/([^/]+)\/latest\/?$/);
     if (request.method !== 'GET' || !match) {
       return json({ error: 'not found' }, 404);
