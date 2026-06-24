@@ -404,6 +404,31 @@ export const CAPABILITIES: Record<string, RoleCapability> = {
       { id: 'voting', label: 'Voting offen', stateKey: 'voting', match: 'truthy', bgcolor: YELLOW, color: BLACK },
     ],
   },
+
+  // ── Caption (Live-Untertitel) ────────────────────────────────────────────────
+  caption: {
+    role: 'caption',
+    label: 'JM Caption',
+    port: 8732,
+    actions: [
+      { id: 'transcribe', label: 'Transkription', verb: 'transcribe', args: [modeArg], toggleKey: 'running' },
+      { id: 'hold', label: 'Hold (Ausgabe einfrieren)', verb: 'hold', args: [modeArg], toggleKey: 'hold' },
+      { id: 'ndi', label: 'NDI-Ausgabe', verb: 'ndi', args: [modeArg], toggleKey: 'ndi' },
+      { id: 'clear', label: 'Untertitel leeren', verb: 'clear' },
+    ],
+    variables: [
+      { id: 'running', label: 'Transkription läuft (1/0)' },
+      { id: 'hold', label: 'Hold aktiv (1/0)' },
+      { id: 'ndi', label: 'NDI aktiv (1/0)' },
+      { id: 'connections', label: 'NDI-Empfänger' },
+      { id: 'lines', label: 'Zeilen im Verlauf' },
+    ],
+    feedbacks: [
+      { id: 'running', label: 'Transkription läuft', stateKey: 'running', match: 'truthy', bgcolor: GREEN, color: WHITE },
+      { id: 'hold', label: 'Hold aktiv', stateKey: 'hold', match: 'truthy', bgcolor: YELLOW, color: BLACK },
+      { id: 'ndi', label: 'NDI läuft', stateKey: 'ndi', match: 'truthy', bgcolor: GREEN, color: WHITE },
+    ],
+  },
 };
 
 /** Liste aller bekannten Rollen (für mDNS-Filter / Dropdowns). */

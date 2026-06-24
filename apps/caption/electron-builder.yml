@@ -1,0 +1,47 @@
+appId: gmbh.jakobs.caption
+productName: JM Caption
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+copyright: "© Jakobs Medien GmbH"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - "**/*"
+
+asar: true
+
+# whisper.cpp-Binary + Basismodell werden LOKAL auf Windows gestaged (bundle-
+# whisper.mjs, braucht WHISPER_DIR + WHISPER_MODEL_BASE); der suite-release-
+# Workflow überspringt dieses Tool (Tag-Präfix caption-v). NDI-Addon + DLL kommen
+# in Slice 2 dazu (bundle-ndi-Muster wie Titler). electron ans Root gehoistet.
+electronVersion: 33.4.11
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: JM Caption
+  createDesktopShortcut: false
+
+publish:
+  provider: github
+  owner: AlexmachtCode
+  repo: alexzvn
+  private: true
