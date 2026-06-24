@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { JmRundownApi, RundownDoc, RundownNav, RundownState } from '@shared/types';
+import type { JmRundownApi, RundownDoc, RundownNav, RundownState, ToolLink } from '@shared/types';
 
 const api: JmRundownApi = {
   platform: process.platform,
@@ -9,7 +9,16 @@ const api: JmRundownApi = {
     ipcRenderer.on('rundown:state', listener);
     return () => ipcRenderer.off('rundown:state', listener);
   },
+  onLinks: (cb) => {
+    const listener = (_e: unknown, links: ToolLink[]): void => cb(links);
+    ipcRenderer.on('rundown:links', listener);
+    return () => ipcRenderer.off('rundown:links', listener);
+  },
   nav: (cmd: RundownNav) => ipcRenderer.invoke('rundown:nav', cmd) as Promise<RundownState>,
+  fireAction: (role: string, verb: string, args: (string | number)[]) =>
+    ipcRenderer.invoke('rundown:fireAction', role, verb, args) as Promise<boolean>,
+  setEndpoint: (role: string, host: string, port: number) =>
+    ipcRenderer.invoke('rundown:setEndpoint', role, host, port) as Promise<RundownState>,
   setDoc: (doc: RundownDoc) => ipcRenderer.invoke('rundown:setDoc', doc) as Promise<RundownState>,
   newDoc: () => ipcRenderer.invoke('rundown:new') as Promise<RundownState>,
   open: () => ipcRenderer.invoke('rundown:open') as Promise<RundownState>,

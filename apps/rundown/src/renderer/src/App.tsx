@@ -4,13 +4,15 @@ import { ToolLinks } from '@/components/ToolLinks';
 import { Transport } from '@/components/Transport';
 import { RundownList } from '@/components/RundownList';
 import { RowEditor } from '@/components/RowEditor';
+import { ConnectionsPanel } from '@/components/ConnectionsPanel';
 
 const hdrBtn =
   'rounded-md border border-neutral-700 px-2.5 py-1 text-neutral-300 hover:bg-neutral-800';
 
 export function App() {
-  const { state, load, nav, setDoc, newDoc, open, save, saveAs } = useRundown();
+  const { state, load, nav, setDoc, newDoc, open, save, saveAs, setEndpoint } = useRundown();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showConnections, setShowConnections] = useState(false);
 
   useEffect(() => {
     void load();
@@ -71,7 +73,7 @@ export function App() {
         </div>
       </header>
 
-      <ToolLinks links={state.links} />
+      <ToolLinks links={state.links} onOpenConnections={() => setShowConnections(true)} />
 
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1 border-r border-neutral-800">
@@ -96,6 +98,15 @@ export function App() {
       </div>
 
       <Transport state={state} onNav={(cmd) => void nav(cmd)} />
+
+      {showConnections && (
+        <ConnectionsPanel
+          links={state.links}
+          overrides={state.overrides}
+          onSet={(role, host, port) => void setEndpoint(role, host, port)}
+          onClose={() => setShowConnections(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // Selbsttest der reinen Conductor-Logik (kein Framework):
 //   node --experimental-strip-types test/selftest.ts
-import { buildActionLine, clampIndex, navigate } from '../src/shared/conductor.ts';
+import { buildActionLine, clampIndex, mergeEndpoints, navigate } from '../src/shared/conductor.ts';
 import type { RundownDoc } from '../src/shared/types.ts';
 
 let failed = 0;
@@ -59,6 +59,26 @@ eq(navigate(doc, 2, { t: 'go' }).index, 2, 'GO auf letzter Zeile bleibt (clamp)'
 eq(navigate(doc, 2, { t: 'go' }).fire.length, 0, 'GO auf leerer Zeile feuert nichts');
 eq(navigate(doc, 0, { t: 'goto', n: 3 }).index, 2, 'GOTO 3 (1-basiert) → Index 2');
 eq(navigate(doc, 0, { t: 'goto', n: 99 }).index, 2, 'GOTO über Ende → letzte Zeile');
+
+// ── mergeEndpoints (mDNS + manuelle Overrides, Override gewinnt) ──────────────
+eq(
+  mergeEndpoints({ timer: { host: '10.0.0.5', port: 8724 } }, {}),
+  { timer: { host: '10.0.0.5', port: 8724, source: 'mdns' } },
+  'mDNS-Fund ohne Override → source mdns',
+);
+eq(
+  mergeEndpoints(
+    { timer: { host: '10.0.0.5', port: 8724 } },
+    { timer: { host: '192.168.1.9', port: 8724 } },
+  ),
+  { timer: { host: '192.168.1.9', port: 8724, source: 'manual' } },
+  'Override gewinnt über mDNS',
+);
+eq(
+  mergeEndpoints({}, { switcher: { host: '192.168.1.2', port: 8723 } }),
+  { switcher: { host: '192.168.1.2', port: 8723, source: 'manual' } },
+  'reiner Override (kein mDNS) → source manual',
+);
 
 console.log(failed === 0 ? '\nALLE TESTS OK' : `\n${failed} FEHLER`);
 process.exit(failed === 0 ? 0 : 1);

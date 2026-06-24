@@ -2,7 +2,26 @@
 // (test/selftest.ts) ohne Electron prüfbar. Baut Protokollzeilen für das suite-
 // weite Zeilenprotokoll (@jm/suite-control-protocol) und rechnet die Navigation
 // über das Rundown-Dokument aus.
-import type { RundownAction, RundownDoc, RundownNav } from './types';
+import type { Endpoint, RundownAction, RundownDoc, RundownNav } from './types';
+
+/** Endpunkt + woher er stammt. */
+export interface DesiredEndpoint extends Endpoint {
+  source: 'mdns' | 'manual';
+}
+
+/**
+ * Gewünschte Steuer-Endpunkte je Rolle aus mDNS-Funden und manuellen Overrides
+ * zusammenführen — der manuelle Override gewinnt (Cross-Subnet / mDNS aus).
+ */
+export function mergeEndpoints(
+  discovered: Record<string, Endpoint>,
+  overrides: Record<string, Endpoint>,
+): Record<string, DesiredEndpoint> {
+  const out: Record<string, DesiredEndpoint> = {};
+  for (const [role, ep] of Object.entries(discovered)) out[role] = { host: ep.host, port: ep.port, source: 'mdns' };
+  for (const [role, ep] of Object.entries(overrides)) out[role] = { host: ep.host, port: ep.port, source: 'manual' };
+  return out;
+}
 
 /**
  * Protokollzeile für eine Aktion bauen. Switcher-Verben haben KEINEN Namespace

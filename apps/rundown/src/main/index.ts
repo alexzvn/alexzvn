@@ -6,6 +6,7 @@ import { parseShow, parseShowDeepLink } from '@jm/show';
 import { buildActionLine, navigate } from '@shared/conductor';
 import type { FireReport, RundownDoc, RundownNav, RundownState } from '@shared/types';
 import { Conductor } from './conductor';
+import { getOverrides, setOverride } from './config';
 import { defaultDoc, loadAutosave, readDoc, saveAutosave, writeDoc } from './store';
 
 declare const __dirname: string;
@@ -21,7 +22,7 @@ let filePath: string | null = null;
 let dirty = false;
 let lastFired: FireReport | null = null;
 
-const conductor = new Conductor(() => broadcast());
+const conductor = new Conductor(() => broadcastLinks());
 
 function resourcePath(filename: string): string {
   if (app.isPackaged) return path.join(process.resourcesPath, filename);
@@ -29,11 +30,22 @@ function resourcePath(filename: string): string {
 }
 
 function buildState(): RundownState {
-  return { doc, index, filePath, dirty, links: conductor.snapshot(), lastFired };
+  return { doc, index, filePath, dirty, links: conductor.snapshot(), overrides: getOverrides(), lastFired };
 }
 
 function broadcast(): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('rundown:state', buildState());
+}
+
+// Tally/Verbindungen ändern sich häufig (z. B. Timer-Tick 1×/s je Tool) → nur die
+// Links separat und gedrosselt senden, nicht den ganzen Doc.
+let linksTimer: ReturnType<typeof setTimeout> | null = null;
+function broadcastLinks(): void {
+  if (linksTimer) return;
+  linksTimer = setTimeout(() => {
+    linksTimer = null;
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('rundown:links', conductor.snapshot());
+  }, 100);
 }
 
 function setDoc(next: RundownDoc, nextPath: string | null, markDirty: boolean): void {
@@ -106,6 +118,16 @@ function registerIpc(): void {
   ipcMain.handle('rundown:getState', () => buildState());
   ipcMain.handle('rundown:nav', (_e, cmd: RundownNav) => {
     doNav(cmd);
+    return buildState();
+  });
+  ipcMain.handle('rundown:fireAction', (_e, role: string, verb: string, args: (string | number)[]) => {
+    const line = buildActionLine(role, verb, args);
+    const delivered = conductor.fire(role, line);
+    getLog().info(`Test-Fire ${line}${delivered ? '' : ' (offline)'}`);
+    return delivered;
+  });
+  ipcMain.handle('rundown:setEndpoint', (_e, role: string, host: string, port: number) => {
+    conductor.setOverrides(setOverride(role, host || null, Number.isFinite(port) ? port : null));
     return buildState();
   });
   ipcMain.handle('rundown:setDoc', (_e, next: RundownDoc) => {
@@ -227,6 +249,7 @@ if (!gotLock) {
     registerIpc();
     createMainWindow();
     if (runtime.initialDeepLink) applyShowFromDeepLink(runtime.initialDeepLink);
+    conductor.setOverrides(getOverrides());
     conductor.start();
   });
 

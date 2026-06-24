@@ -39,13 +39,23 @@ export type RundownNav =
   | { t: 'prev' }
   | { t: 'goto'; n: number };
 
-/** Verbindungsstatus eines vom Conductor entdeckten Tools. */
+/** Host/Port eines Tool-Steuer-Endpunkts. */
+export interface Endpoint {
+  host: string;
+  port: number;
+}
+
+/** Verbindungsstatus eines vom Conductor entdeckten/konfigurierten Tools. */
 export interface ToolLink {
   role: string;
   label: string;
   host: string;
   port: number;
   connected: boolean;
+  /** Woher kommt der Endpunkt: mDNS-Fund oder manuelle Eingabe. */
+  source: 'mdns' | 'manual';
+  /** Letzter STATE-Push des Tools (Tally/Status) — Schlüssel=Wert als Strings. */
+  state: Record<string, string> | null;
 }
 
 /** Was beim letzten GO tatsächlich an die Tools ging (für die UI-Quittung). */
@@ -65,6 +75,8 @@ export interface RundownState {
   dirty: boolean;
   /** Vom Conductor entdeckte/verbundene Tools. */
   links: ToolLink[];
+  /** Manuelle Endpunkt-Overrides je Rolle (Cross-Subnet, mDNS aus). */
+  overrides: Record<string, Endpoint>;
   lastFired: FireReport | null;
 }
 
@@ -73,8 +85,14 @@ export interface JmRundownApi {
   platform: string;
   getState: () => Promise<RundownState>;
   onState: (cb: (s: RundownState) => void) => () => void;
+  /** Nur die Tool-Verbindungen/Tally (häufige Updates, ohne den ganzen Doc). */
+  onLinks: (cb: (links: ToolLink[]) => void) => () => void;
   /** Navigation/Conductor (GO feuert die scharfe Zeile). */
   nav: (cmd: RundownNav) => Promise<RundownState>;
+  /** Eine einzelne Aktion sofort feuern (Test im Editor). Liefert „zugestellt". */
+  fireAction: (role: string, verb: string, args: (string | number)[]) => Promise<boolean>;
+  /** Manuellen Endpunkt setzen (host leer = Override entfernen → wieder mDNS). */
+  setEndpoint: (role: string, host: string, port: number) => Promise<RundownState>;
   /** Dokument ersetzen (Editor speichert den ganzen Doc zurück). */
   setDoc: (doc: RundownDoc) => Promise<RundownState>;
   /** Datei-Operationen. */

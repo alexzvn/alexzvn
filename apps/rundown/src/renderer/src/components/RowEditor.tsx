@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { buildActionLine } from '@shared/conductor';
 import { CAPABILITIES, KNOWN_ROLES, capAction } from '@/lib/capabilities';
 import { addAction, removeAction, updateAction, updateRow } from '@/lib/doc';
@@ -66,6 +67,13 @@ function ActionRow({
 }) {
   const cap = capAction(action.role, action.verb);
   const line = buildActionLine(action.role, action.verb, action.args);
+  const [fired, setFired] = useState<'' | 'ok' | 'off'>('');
+
+  async function test(): Promise<void> {
+    const ok = await window.jmrundown.fireAction(action.role, action.verb, action.args);
+    setFired(ok ? 'ok' : 'off');
+    setTimeout(() => setFired(''), 1300);
+  }
 
   function setRole(role: string): void {
     const verb = CAPABILITIES[role]?.actions[0]?.verb ?? '';
@@ -106,13 +114,24 @@ function ActionRow({
           ))}
           {!cap && <option value={action.verb}>{action.verb}</option>}
         </select>
-        <button
-          onClick={() => onDoc(removeAction(doc, rowId, action.id))}
-          title="Aktion löschen"
-          className="ml-auto rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100"
-        >
-          ✕
-        </button>
+        <div className="ml-auto flex items-center gap-1">
+          {fired === 'ok' && <span className="text-xs text-green-400">✓ gesendet</span>}
+          {fired === 'off' && <span className="text-xs text-yellow-400">⚠ offline</span>}
+          <button
+            onClick={test}
+            title="diese Aktion jetzt an das Tool senden"
+            className="rounded border border-neutral-700 px-1.5 py-0.5 text-xs text-neutral-300 hover:bg-neutral-700"
+          >
+            Test
+          </button>
+          <button
+            onClick={() => onDoc(removeAction(doc, rowId, action.id))}
+            title="Aktion löschen"
+            className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {cap?.args && cap.args.length > 0 && (
