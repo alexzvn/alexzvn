@@ -9,6 +9,8 @@ import {
   LightingConfigSchema,
 } from './lighting';
 import { AudioActionSchema, AudioConsoleConfigSchema } from './audio';
+import { AtemConfigSchema, AtemCommandSchema } from './atem';
+import { ObsConfigSchema, ObsCommandSchema } from './obs';
 import { ROLES, type Role } from './roles';
 
 // ===== Socket.IO event payload schemas =====
@@ -101,6 +103,41 @@ export const AudioExecSchema = z.object({
   action: AudioActionSchema,
 });
 
+export const AtemStatusSchema = z.object({
+  id: z.string(),
+  state: z.enum(['connected', 'connecting', 'down']),
+  model: z.string().optional(),
+  program: z.number().optional(),
+  preview: z.number().optional(),
+  recording: z.boolean().optional(),
+  streaming: z.boolean().optional(),
+  lastChecked: z.number(),
+  lastError: z.string().optional(),
+});
+export type AtemStatusEvent = z.infer<typeof AtemStatusSchema>;
+
+export const AtemExecSchema = z.object({
+  atemId: z.string().min(1),
+  command: AtemCommandSchema,
+});
+
+export const ObsStatusSchema = z.object({
+  id: z.string(),
+  state: z.enum(['connected', 'connecting', 'down']),
+  currentScene: z.string().optional(),
+  scenes: z.array(z.string()).optional(),
+  recording: z.boolean().optional(),
+  streaming: z.boolean().optional(),
+  lastChecked: z.number(),
+  lastError: z.string().optional(),
+});
+export type ObsStatusEvent = z.infer<typeof ObsStatusSchema>;
+
+export const ObsExecSchema = z.object({
+  obsId: z.string().min(1),
+  command: ObsCommandSchema,
+});
+
 export const AuditEntrySchema = z.object({
   id: z.number().int(),
   ts: z.number(),
@@ -149,6 +186,8 @@ export const EVENTS = {
   LIGHTING_STATE: 'lighting:state',
   AUDIO_STATE: 'audio:state',
   AUDIO_STATUS: 'audio:status',
+  ATEM_STATE: 'atem:state',
+  OBS_STATE: 'obs:state',
   AUDIT_APPEND: 'audit:append',
   USERS_STATE: 'users:state',
 
@@ -161,6 +200,8 @@ export const EVENTS = {
   LIGHTING_SET: 'lighting:set',
   LIGHTING_BLACKOUT: 'lighting:blackout',
   AUDIO_EXEC: 'audio:exec',
+  ATEM_EXEC: 'atem:exec',
+  OBS_EXEC: 'obs:exec',
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
@@ -174,4 +215,6 @@ export {
   FixtureSchema,
   LightingConfigSchema,
   AudioConsoleConfigSchema,
+  AtemConfigSchema,
+  ObsConfigSchema,
 };

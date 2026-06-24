@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import type {
+  AtemStatusEvent,
   AudioStatusEvent,
   AuditEntry,
+  ObsStatusEvent,
   PtzStatusEvent,
   TricasterStatusEvent,
 } from '@shared/protocol';
@@ -11,6 +13,8 @@ import type { PtzCameraConfig } from '@shared/ptz';
 import type { LightingConfig } from '@shared/lighting';
 import { DEFAULT_LIGHTING_CONFIG } from '@shared/lighting';
 import type { AudioConsoleConfig, ChannelState } from '@shared/audio';
+import type { AtemConfig } from '@shared/atem';
+import type { ObsConfig } from '@shared/obs';
 import type { UserRow } from '@/types/admin';
 
 export type Section = 'video' | 'audio' | 'licht' | 'setup';
@@ -49,6 +53,14 @@ interface AppState {
   setAudioStatus: (s: AudioStatusEvent) => void;
   /** Optimistic local update of one channel (live faders/mutes don't echo). */
   patchChannelLocal: (consoleId: string, ch: number, patch: Partial<ChannelState>) => void;
+
+  atem: AtemConfig[];
+  atemStatuses: Record<string, AtemStatusEvent>;
+  setAtem: (cfg: AtemConfig[], statuses: AtemStatusEvent[]) => void;
+
+  obs: ObsConfig[];
+  obsStatuses: Record<string, ObsStatusEvent>;
+  setObs: (cfg: ObsConfig[], statuses: ObsStatusEvent[]) => void;
 
   discovery: {
     running: boolean;
@@ -132,6 +144,16 @@ export const useApp = create<AppState>((set) => ({
         return { ...c, channels };
       }),
     })),
+
+  atem: [],
+  atemStatuses: {},
+  setAtem: (cfg, statuses) =>
+    set({ atem: cfg, atemStatuses: Object.fromEntries(statuses.map((s) => [s.id, s])) }),
+
+  obs: [],
+  obsStatuses: {},
+  setObs: (cfg, statuses) =>
+    set({ obs: cfg, obsStatuses: Object.fromEntries(statuses.map((s) => [s.id, s])) }),
 
   discovery: { running: false, results: [] },
   setDiscoveryRunning: (running) =>
