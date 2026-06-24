@@ -826,5 +826,19 @@
         ]
       }
     ]
+  },
+  {
+    "app": "rundown",
+    "name": "JM Rundown",
+    "entries": [
+      {
+        "version": "0.1.0",
+        "date": "2026-06-24",
+        "notes": [
+          "Neu im Werkzeugkasten: JM Rundown — die Ablaufregie. Ein zeilenbasierter Plan, bei dem ein GO pro Segment mehrere Tools gleichzeitig auslöst (Timer, Prompter, Presenter, Titler, Switcher …).",
+          "Findet die beteiligten Tools automatisch im LAN (mDNS), zeigt deren Live-Status (REC/On Air/läuft) und ist selbst per Bitfocus Companion fern-GO-bar."
+        ]
+      }
+    ]
   }
 ]

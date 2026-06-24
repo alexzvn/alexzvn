@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T05:18:50.029Z",
+  "updatedAt": "2026-06-24T06:11:56.188Z",
   "tools": [
     {
       "id": "jm-copy",
@@ -350,6 +350,27 @@
         }
       },
       "app": "daw"
+    },
+    {
+      "id": "jm-rundown",
+      "name": "JM Rundown",
+      "tagline": "Ablaufregie · ein GO, viele Tools",
+      "description": "Zeilenbasierter Ablaufplan (Rundown) für Live-Produktionen: ein GO startet pro Segment mehrere Tools gleichzeitig — Timer-Block, Prompter-Skript, Presenter-Folie, Titler-Bauchbinde, Switcher-Szene. Findet die Tools automatisch im LAN (mDNS), zeigt deren Live-Status und ist selbst per Bitfocus Companion fern-GO-bar. Speichert als .jmrundown.",
+      "category": "Studio",
+      "appId": "gmbh.jakobs.rundown",
+      "repo": "AlexmachtCode/alexzvn",
+      "latestVersion": "0.1.0",
+      "platforms": {
+        "mac": {
+          "artifact": "JM Rundown-${version}-mac-${arch}.dmg",
+          "appPath": "/Applications/JM Rundown.app"
+        },
+        "win": {
+          "artifact": "JM Rundown-${version}-win-x64.exe",
+          "exePath": "%LOCALAPPDATA%\\Programs\\JM Rundown\\JM Rundown.exe"
+        }
+      },
+      "app": "rundown"
     }
   ]
 }
