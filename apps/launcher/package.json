@@ -24,10 +24,13 @@
   "devDependencies": {
     "@fontsource-variable/manrope": "^5.1.1",
     "@jm/app-runtime": "*",
+    "@jm/discovery": "*",
     "@jm/electron-kit": "*",
     "@jm/show": "*",
+    "@jm/suite-control-protocol": "*",
     "@jm/suite-manifest": "*",
     "@jm/ui": "*",
+    "bonjour-service": "^1.2.1",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.7.5",
     "@types/react": "^18.3.12",

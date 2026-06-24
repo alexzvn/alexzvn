@@ -25,6 +25,7 @@
     "@jm/app-runtime": "*",
     "@jm/discovery": "*",
     "@jm/remote": "*",
+    "@jm/show": "*",
     "@jm/suite-control-protocol": "*",
     "@jm/ui": "*",
     "qrcode": "^1.5.4",

@@ -81,12 +81,27 @@ export interface PresenceRecord {
   lastCrash?: { kind: string; at: string } | null;
 }
 
+/** Live-Zustand eines im LAN entdeckten Steuer-Endpunkts (für das Dashboard). */
+export interface HealthEntry {
+  /** Tool-ID aus dem mDNS-TXT (z. B. "jm-timer", "jm-studio-control"). */
+  appId: string;
+  /** Rolle (z. B. "timer", "switcher", "studio"). */
+  role: string;
+  host: string;
+  port: number;
+  /** TCP-Verbindung zum Steuer-Endpunkt steht. */
+  connected: boolean;
+  /** Letzter STATE-Push (Schlüssel→Wert, Werte als Strings). */
+  kv: Record<string, string>;
+}
+
 /** Dezente Hintergrund-Ereignisse vom Main-Prozess an die UI. */
 export type AppEvent =
   | { type: 'notice'; message: string }
   | { type: 'manifest-changed' }
   | { type: 'changelog-changed' }
-  | { type: 'presence-changed' };
+  | { type: 'presence-changed' }
+  | { type: 'health-changed' };
 
 /** Die unter `window.jmps` bereitgestellte Launcher-API. */
 export interface JmpsApi {
@@ -100,6 +115,8 @@ export interface JmpsApi {
   checkUpdates: () => Promise<ToolState[]>;
   /** Laufzeit-Zustand aller Tools, die einen Heartbeat senden. */
   getPresence: () => Promise<PresenceRecord[]>;
+  /** Live-Zustand aller im LAN entdeckten Steuer-Endpunkte (REC/On-Air/…). */
+  getHealth: () => Promise<HealthEntry[]>;
   open: (id: string) => Promise<ActionResult>;
   /** Show-Datei (.jmshow) wählen und ihre Tools koordiniert starten. */
   openShow: () => Promise<ActionResult>;

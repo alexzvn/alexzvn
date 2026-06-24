@@ -13,6 +13,7 @@ const internalPackages = [
   '@jm/discovery',
   '@jm/remote',
   '@jm/media',
+  '@jm/show',
   'bonjour-service',
 ];
 

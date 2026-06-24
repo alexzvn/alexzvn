@@ -13,6 +13,7 @@ const internalPackages = [
   '@jm/suite-control-protocol',
   '@jm/discovery',
   '@jm/remote',
+  '@jm/show',
   'bonjour-service',
 ];
 

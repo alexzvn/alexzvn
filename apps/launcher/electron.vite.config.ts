@@ -7,9 +7,13 @@ import { resolve } from 'node:path';
 // im Main-/Preload-Output landet statt zur Laufzeit `require`d zu werden.
 const internalPackages = [
   '@jm/app-runtime',
+  '@jm/discovery',
   '@jm/electron-kit',
   '@jm/show',
+  '@jm/suite-control-protocol',
   '@jm/suite-manifest',
+  // Transitiv von @jm/discovery — muss mit in den Main-Bundle.
+  'bonjour-service',
 ];
 
 const sharedAlias = { '@shared': resolve(__dirname, 'src/shared') };

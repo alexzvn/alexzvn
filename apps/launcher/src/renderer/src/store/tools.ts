@@ -3,6 +3,7 @@ import { useChangelog } from '@/store/changelog';
 import type {
   ActionResult,
   FeedbackInput,
+  HealthEntry,
   InstallProgress,
   LauncherUpdate,
   PresenceRecord,
@@ -30,10 +31,12 @@ interface ToolsStore {
   launcherUpdate: LauncherUpdate | null;
   updatingAll: boolean;
   presence: PresenceRecord[];
+  health: HealthEntry[];
   systemOpen: boolean;
   showEditorOpen: boolean;
   load: () => Promise<void>;
   loadPresence: () => Promise<void>;
+  loadHealth: () => Promise<void>;
   openShow: () => Promise<void>;
   openShowEditor: () => void;
   closeShowEditor: () => void;
@@ -111,6 +114,7 @@ export const useTools = create<ToolsStore>((set) => {
     launcherUpdate: null,
     updatingAll: false,
     presence: [],
+    health: [],
     systemOpen: false,
     showEditorOpen: false,
     patchNotes: null,
@@ -140,6 +144,9 @@ export const useTools = create<ToolsStore>((set) => {
           } else if (e.type === 'presence-changed') {
             // Ein Tool ist gestartet/gestoppt → Health-Dashboard auffrischen.
             await useTools.getState().loadPresence();
+          } else if (e.type === 'health-changed') {
+            // Live-Zustand eines entdeckten Steuer-Endpunkts hat sich geändert.
+            await useTools.getState().loadHealth();
           }
         });
         // Nach Rückkehr zum Launcher (z. B. wenn der NSIS-Installer durch ist
@@ -149,6 +156,7 @@ export const useTools = create<ToolsStore>((set) => {
           void useTools.getState().checkUpdates();
           void useTools.getState().loadLauncherUpdate();
           void useTools.getState().loadPresence();
+          void useTools.getState().loadHealth();
         });
         // Hintergrund: regelmäßig auf Updates prüfen, auch ohne Fokuswechsel —
         // so aktualisiert ein länger offener Launcher seine Update-Badges selbst.
@@ -175,6 +183,7 @@ export const useTools = create<ToolsStore>((set) => {
       void useTools.getState().checkUpdates();
       void useTools.getState().loadLauncherUpdate();
       void useTools.getState().loadPresence();
+      void useTools.getState().loadHealth();
     },
 
     loadPresence: async () => {
@@ -182,6 +191,14 @@ export const useTools = create<ToolsStore>((set) => {
         set({ presence: await window.jmps.getPresence() });
       } catch {
         // Hub nicht erreichbar → bestehenden Stand behalten
+      }
+    },
+
+    loadHealth: async () => {
+      try {
+        set({ health: await window.jmps.getHealth() });
+      } catch {
+        // Aggregator nicht erreichbar → bestehenden Stand behalten
       }
     },
 
@@ -203,6 +220,7 @@ export const useTools = create<ToolsStore>((set) => {
     openSystem: () => {
       set({ systemOpen: true });
       void useTools.getState().loadPresence();
+      void useTools.getState().loadHealth();
     },
     closeSystem: () => set({ systemOpen: false }),
 
