@@ -18,4 +18,74 @@
 </p>
 
 <!--START_SECTION:waka-->
+![Profile Views](http://img.shields.io/badge/Profile%20Views-21-blue?style=flat)
+
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-2.99%20million%20lines%20of%20code-blue?style=flat)
+
+**🐱 My GitHub Data** 
+
+> 📦 1.8 MB Used in GitHub's Storage 
+ > 
+> 🏆 649 Contributions in the Year 2026
+ > 
+> 💼 Opted to Hire
+ > 
+> 📜 86 Public Repositories 
+ > 
+> 🔑 62 Private Repositories 
+ > 
+**I'm an Early 🐤** 
+
+```text
+🌞 Morning                887 commits         ████░░░░░░░░░░░░░░░░░░░░░   16.37 % 
+🌆 Daytime                2196 commits        ██████████░░░░░░░░░░░░░░░   40.52 % 
+🌃 Evening                2170 commits        ██████████░░░░░░░░░░░░░░░   40.04 % 
+🌙 Night                  166 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   03.06 % 
+```
+📅 **I'm Most Productive on Thursday** 
+
+```text
+Monday                   930 commits         ████░░░░░░░░░░░░░░░░░░░░░   17.16 % 
+Tuesday                  840 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.50 % 
+Wednesday                848 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.65 % 
+Thursday                 953 commits         ████░░░░░░░░░░░░░░░░░░░░░   17.59 % 
+Friday                   746 commits         ███░░░░░░░░░░░░░░░░░░░░░░   13.77 % 
+Saturday                 654 commits         ███░░░░░░░░░░░░░░░░░░░░░░   12.07 % 
+Sunday                   448 commits         ██░░░░░░░░░░░░░░░░░░░░░░░   08.27 % 
+```
+
+
+📊 **This Week I Spent My Time On** 
+
+```text
+🕑︎ Time Zone: Asia/Ho_Chi_Minh
+
+💬 Programming Languages: 
+No Activity Tracked This Week
+
+🔥 Editors: 
+No Activity Tracked This Week
+
+💻 Operating System: 
+No Activity Tracked This Week
+```
+
+**I Mostly Code in TypeScript** 
+
+```text
+TypeScript               40 repos            ███████░░░░░░░░░░░░░░░░░░   29.41 % 
+Vue                      24 repos            ████░░░░░░░░░░░░░░░░░░░░░   17.65 % 
+Kotlin                   7 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   05.15 % 
+HTML                     3 repos             █░░░░░░░░░░░░░░░░░░░░░░░░   02.21 % 
+Svelte                   2 repos             ░░░░░░░░░░░░░░░░░░░░░░░░░   01.47 % 
+```
+
+
+
+**Timeline**
+
+![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
+
+
+ Last Updated on 04/07/2026 12:29:49 UTC
 <!--END_SECTION:waka-->
