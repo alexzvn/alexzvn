@@ -1,5 +1,4 @@
 # Alex say: "Hello ~~work~~ world 🐾"
-Email me to: `personal@alexzvn.me`
 
 <div align="center">
   <a href="https://commit-history.com/alexzvn">
