@@ -1,6 +1,16 @@
 # Alex say: "Hello ~~work~~ world 🐾"
 Email me to: `personal@alexzvn.me`
 
+<div align="center">
+  <a href="https://commit-history.com/alexzvn">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://commit-history.com/embed/alexzvn?theme=dark" />
+      <img alt="alexzvn's commit history" src="https://commit-history.com/embed/alexzvn" />
+    </picture>
+  </a>
+</div>
+
+---
 
 <p align=center>
   <a href="https://skillicons.dev">
