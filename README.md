@@ -22,13 +22,13 @@
 
 ![Profile Views](http://img.shields.io/badge/Profile%20Views-15-blue?style=flat)
 
-![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-3.01%20million%20lines%20of%20code-blue?style=flat)
+![Lines of code](https://img.shields.io/badge/From%20Hello%20World%20I%27ve%20Written-1.73%20million%20lines%20of%20code-blue?style=flat)
 
 **🐱 My GitHub Data** 
 
 > 📦 1.8 MB Used in GitHub's Storage 
  > 
-> 🏆 978 Contributions in the Year 2026
+> 🏆 971 Contributions in the Year 2026
  > 
 > 💼 Opted to Hire
  > 
@@ -39,21 +39,21 @@
 **I'm an Early 🐤** 
 
 ```text
-🌞 Morning                938 commits         ████░░░░░░░░░░░░░░░░░░░░░   16.18 % 
-🌆 Daytime                2403 commits        ██████████░░░░░░░░░░░░░░░   41.45 % 
-🌃 Evening                2266 commits        ██████████░░░░░░░░░░░░░░░   39.09 % 
-🌙 Night                  190 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   03.28 % 
+🌞 Morning                508 commits         ████░░░░░░░░░░░░░░░░░░░░░   14.87 % 
+🌆 Daytime                1455 commits        ███████████░░░░░░░░░░░░░░   42.59 % 
+🌃 Evening                1307 commits        ██████████░░░░░░░░░░░░░░░   38.26 % 
+🌙 Night                  146 commits         █░░░░░░░░░░░░░░░░░░░░░░░░   04.27 % 
 ```
-📅 **I'm Most Productive on Monday** 
+📅 **I'm Most Productive on Wednesday** 
 
 ```text
-Monday                   996 commits         ████░░░░░░░░░░░░░░░░░░░░░   17.18 % 
-Tuesday                  862 commits         ████░░░░░░░░░░░░░░░░░░░░░   14.87 % 
-Wednesday                908 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.66 % 
-Thursday                 991 commits         ████░░░░░░░░░░░░░░░░░░░░░   17.10 % 
-Friday                   814 commits         ████░░░░░░░░░░░░░░░░░░░░░   14.04 % 
-Saturday                 762 commits         ███░░░░░░░░░░░░░░░░░░░░░░   13.14 % 
-Sunday                   464 commits         ██░░░░░░░░░░░░░░░░░░░░░░░   08.00 % 
+Monday                   546 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.98 % 
+Tuesday                  515 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.08 % 
+Wednesday                627 commits         █████░░░░░░░░░░░░░░░░░░░░   18.35 % 
+Thursday                 478 commits         ███░░░░░░░░░░░░░░░░░░░░░░   13.99 % 
+Friday                   491 commits         ████░░░░░░░░░░░░░░░░░░░░░   14.37 % 
+Saturday                 462 commits         ███░░░░░░░░░░░░░░░░░░░░░░   13.52 % 
+Sunday                   297 commits         ██░░░░░░░░░░░░░░░░░░░░░░░   08.69 % 
 ```
 
 
@@ -95,5 +95,5 @@ Lua                      1 repo              ░░░░░░░░░░░�
 ![Lines of Code chart](https://raw.githubusercontent.com/alexzvn/alexzvn/main/assets/bar_graph.png)
 
 
- Last Updated on 01/08/2026 11:12:17 UTC
+ Last Updated on 01/08/2026 11:14:28 UTC
 <!--END_SECTION:waka-->
